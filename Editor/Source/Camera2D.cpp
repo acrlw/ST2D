@@ -37,8 +37,8 @@ namespace STEditor
 
 	Camera2D::Camera2D()
 	{
-		m_meterToPixelEasing.restart(m_defaultMeterToPixel * 0.5f, m_defaultMeterToPixel, m_easingDuration);
 		m_meterToPixelEasing.setEasingFunction(EasingFunction::easeOutExpo);
+		m_meterToPixelEasing.restart(m_defaultMeterToPixel * 3.0f , m_defaultMeterToPixel * 4.0f, m_easingDuration * 0.2f);
 		m_origin = m_viewport.center();
 	}
 

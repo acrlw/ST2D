@@ -31,6 +31,7 @@ namespace STEditor
 		const sf::Color LightGreen = sf::Color(139, 195, 74);
 		const sf::Color Pink = sf::Color(233, 30, 99);
 		const sf::Color DarkGreen = sf::Color(44, 113, 48);
+		const sf::Color LightGray = sf::Color(158, 158, 158);
 		const sf::Color Gray = sf::Color(189, 189, 189);
 		const sf::Color Orange = sf::Color(255, 138, 101);
 		const sf::Color Teal = sf::Color(29, 233, 182);

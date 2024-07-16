@@ -279,7 +279,7 @@ namespace STEditor
 		ImGui::Checkbox("User Draw", &m_userDrawVisible);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Smooth Zooming", &m_camera.smoothZoom());
-		ImGui::SliderFloat("Zoom", &m_zoomFactor, 0.1f, 0.5f, "%.1f");
+		ImGui::SliderFloat("Zoom", &m_zoomFactor, 0.1f, 0.8f, "%.1f");
 		ImGui::Checkbox("Distance Check", &m_enableDistanceCheck);
 
 		ImGui::NextColumn();

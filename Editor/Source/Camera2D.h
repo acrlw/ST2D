@@ -104,9 +104,9 @@ namespace STEditor
 		bool m_drawCoordinateScale = true;
 		bool m_smoothZoom = true;
 
-		real m_defaultMeterToPixel = 50.0f;
+		real m_defaultMeterToPixel = 80.0f;
 		real m_pixelToMeter = 0.02f;
-		real m_easingDuration = 0.6f;
+		real m_easingDuration = 0.5f;
 
 		Vector2 m_transform;
 		Vector2 m_origin;
