@@ -19,7 +19,7 @@ namespace STEditor
 		void exec();
 
 	private:
-
+		void styleUI();
 		//events
 		void onResized(sf::Event& event);
 		void onClosed(sf::Event& event);

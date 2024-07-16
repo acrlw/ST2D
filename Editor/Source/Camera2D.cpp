@@ -47,7 +47,11 @@ namespace STEditor
 		if (!m_smoothZoom)
 		{
 			m_meterToPixelEasing.finish();
-			m_transform += (screenToWorld(m_preScreenMousePos) - m_preWorldMousePos) * m_meterToPixelEasing.value();
+			if(!m_preScreenMousePos.isOrigin())
+			{
+				Vector2 deltaTransform = (screenToWorld(m_preScreenMousePos) - m_preWorldMousePos) * m_meterToPixelEasing.value();
+				m_transform += deltaTransform;
+			}
 		}
 		else
 			m_meterToPixelEasing.update(deltaTime);
@@ -57,7 +61,9 @@ namespace STEditor
 		bool isZooming = !m_meterToPixelEasing.isFinished();
 
 		if (isZooming && !m_preScreenMousePos.isOrigin())
+		{
 			m_transform += (screenToWorld(m_preScreenMousePos) - m_preWorldMousePos) * m_meterToPixelEasing.value();
+		}
 	}
 
 	void Camera2D::onRender(sf::RenderWindow& window)
