@@ -1,7 +1,5 @@
 #include "NarrowphaseScene.h"
 
-#include "Render.h"
-
 namespace STEditor
 {
 	NarrowphaseScene::~NarrowphaseScene()

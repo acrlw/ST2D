@@ -9,7 +9,10 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <chrono>
 
+#include <deque>
+#include <queue>
 #include <list>
 #include <vector>
 #include <array>

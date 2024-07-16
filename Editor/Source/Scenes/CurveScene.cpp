@@ -10,6 +10,7 @@ namespace STEditor
 
 	void CurveScene::onLoad()
 	{
+
 	}
 
 	void CurveScene::onUnLoad()

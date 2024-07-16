@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ST2DCore.h"
-
 #include "Camera2D.h"
+#include "Render.h"
 
 namespace STEditor
 {

@@ -3,7 +3,7 @@
 
 #include "Scenes/CurveScene.h"
 #include "Scenes/NarrowphaseScene.h"
-
+#include "Scenes/HelloWorldScene.h"
 #include <SFML/Graphics/Font.hpp>
 #include "ST2DCore.h"
 
@@ -33,7 +33,7 @@ namespace STEditor
 		void renderGUI(sf::RenderWindow& window, sf::Clock& clock);
 		void render(sf::RenderWindow& window);
 		//simulation
-		void pause();
+
 		void restart();
 
 		void onUpdate(float deltaTime);
@@ -50,9 +50,9 @@ namespace STEditor
 
 		Camera2D m_camera;
 
-		std::array<const char*, 2> m_sceneName = { "CurveScene", "NarrowphaseScene" };
+		std::array<const char*, 3> m_sceneName = { "HelloWorldScene", "CurveScene", "NarrowphaseScene" };
 
-		std::array<std::function<std::unique_ptr<AbstractScene> (const SceneSettings& settings)>, 2> m_sceneList;
+		std::array<std::function<std::unique_ptr<AbstractScene> (const SceneSettings& settings)>, 3> m_sceneList;
 		std::unique_ptr<sf::RenderWindow> m_window;
 
 		real m_zoomFactor = 0.5f;

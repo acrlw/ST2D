@@ -15,6 +15,10 @@ namespace STEditor
 			{
 				[&](const SceneSettings& settings)
 				{
+					return std::make_unique<HelloWorldScene>(settings);
+				},
+				[&](const SceneSettings& settings)
+				{
 					return std::make_unique<CurveScene>(settings);
 				},
 				[&](const SceneSettings& settings)
@@ -238,11 +242,6 @@ namespace STEditor
 
 	void ST2DEditor::renderGUI(sf::RenderWindow& window, sf::Clock& clock)
 	{
-		const char* items[] = {
-			"CurveScene", "NarrowphaseScene"
-		};
-
-
 		ImGui::SFML::Update(window, clock.restart());
 		ImGui::SetWindowPos("Panel", ImVec2(0, 0));
 
@@ -256,7 +255,7 @@ namespace STEditor
 		ImGui::Text("Scenes");
 
 		int oldItem = m_currentSceneIndex;
-		ImGui::Combo("Current Scene", &m_currentSceneIndex, m_sceneName.data(), IM_ARRAYSIZE(items));
+		ImGui::Combo("Current Scene", &m_currentSceneIndex, m_sceneName.data(), m_sceneName.size());
 		if (oldItem != m_currentSceneIndex)
 			switchScene(m_currentSceneIndex);
 
@@ -341,16 +340,21 @@ namespace STEditor
 		}
 	}
 
-	void ST2DEditor::pause()
-	{
-	}
-
 	void ST2DEditor::restart()
 	{
+		if(m_currentScene != nullptr)
+		{
+			m_currentScene->onUnLoad();
+			m_currentScene.reset();
+			switchScene(m_currentSceneIndex);
+		}
 	}
 
 	void ST2DEditor::onUpdate(float deltaTime)
 	{
+
+		if (m_currentScene != nullptr)
+			m_currentScene->onUpdate(deltaTime);
 	}
 
 	void ST2DEditor::switchScene(int index)

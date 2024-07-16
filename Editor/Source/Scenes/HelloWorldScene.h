@@ -4,15 +4,15 @@
 
 namespace STEditor
 {
-	class CurveScene : public AbstractScene
+	class HelloWorldScene : public AbstractScene
 	{
 	public:
-		explicit CurveScene(const SceneSettings& settings)
-			: AbstractScene(settings, "CurveScene")
+		explicit HelloWorldScene(const SceneSettings& settings)
+			: AbstractScene(settings, "HelloWorldScene")
 		{
 		}
 
-		~CurveScene() override;
+		~HelloWorldScene() override;
 		void onLoad() override;
 		void onUnLoad() override;
 		void onUpdate(float deltaTime) override;
@@ -26,6 +26,11 @@ namespace STEditor
 		void onKeyPressed(sf::Event& event) override;
 
 	private:
-		
+
+		Vector2 position;
+		float theta = 0.0f;
+		float r = 1.5f;
+		EasingObject<float> thetaEasing = EasingObject(0.0f);
+		std::deque<Vector2> pList;
 	};
 }
