@@ -85,6 +85,9 @@ namespace STEditor
 		void setFont(sf::Font* font);
 		sf::Font* font();
 
+		bool checkPointInViewport(const Vector2& worldPos);
+		
+
 	private:
 
 		void drawGridScaleLine(sf::RenderWindow& window);

@@ -162,6 +162,7 @@ namespace ST
 		 */
 		static std::optional<Vector2> raycast(const Vector2& p, const Vector2& dir, const Vector2& a, const Vector2& b);
 		static std::optional<std::pair<Vector2, Vector2>> raycastAABB(const Vector2& p, const Vector2& dir, const Vector2& topLeft, const Vector2& bottomRight);
+		inline static bool isPointInsideAABB(const Vector2& pos, const Vector2& topLeft, const Vector2& bottomRight);
 		static bool isPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight);
 		/**
 		 * \brief Rotate point 'p' around point 'center' by 'angle' degrees
