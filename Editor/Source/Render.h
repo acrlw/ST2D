@@ -6,11 +6,15 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics.hpp>
 
+#include "ST2DCore.h"
+
+using namespace ST;
+
 namespace STEditor
 {
 	namespace RenderConstant
 	{
-		constexpr real PointSize = 2.0f;
+		constexpr ST::real PointSize = 2.0f;
 		constexpr int BorderSize = 1;
 		constexpr int FillAlpha = 38;
 		constexpr int BasicCirclePointCount = 60;

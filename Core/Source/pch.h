@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 
+#include <list>
 #include <vector>
 #include <array>
 #include <ranges>

@@ -1,11 +1,11 @@
-#include "SFMLTestbed.h"
+#include "ST2DEditor.h"
 
 int main()
 {
 	ST::Log::init();
 
 	{
-		STEditor::SFMLTestbedEditor testbed;
+		STEditor::ST2DEditor testbed;
 		testbed.exec();
 	}
 
