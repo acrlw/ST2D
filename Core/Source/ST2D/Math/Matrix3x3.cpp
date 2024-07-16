@@ -74,6 +74,21 @@ namespace ST
 		return *this;
 	}
 
+	Matrix3x3 Matrix3x3::operator*(const real& factor) const
+	{
+		return Matrix3x3(column1 * factor, column2 * factor, column3 * factor);
+	}
+
+	Matrix3x3 Matrix3x3::operator+(const Matrix3x3& rhs) const
+	{
+		return Matrix3x3(column1 + rhs.column1, column2 + rhs.column2, column3 + rhs.column3);
+	}
+
+	Matrix3x3 Matrix3x3::operator-(const Matrix3x3& rhs) const
+	{
+		return Matrix3x3(column1 - rhs.column1, column2 - rhs.column2, column3 - rhs.column3);
+	}
+
 	Vector3 Matrix3x3::row1() const
 	{
 		return Vector3(column1.x, column2.x, column3.x);

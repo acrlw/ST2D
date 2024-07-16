@@ -28,6 +28,10 @@ namespace ST
         Matrix4x4& operator*=(const real& factor);
         Matrix4x4& operator/=(const real& factor);
 
+        Matrix4x4 operator*(const real& factor) const;
+        Matrix4x4 operator+(const Matrix4x4& rhs) const;
+        Matrix4x4 operator-(const Matrix4x4& rhs) const;
+
         Vector4 row1()const;
         Vector4 row2()const;
         Vector4 row3()const;

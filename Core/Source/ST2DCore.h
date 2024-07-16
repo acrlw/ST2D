@@ -27,3 +27,5 @@
 #include "ST2D/Geometry/Shape/Circle.h"
 #include "ST2D/Geometry/Shape/Capsule.h"
 #include "ST2D/Geometry/Shape/Rectangle.h"
+
+#include "ST2D/Utility/Easing.h"

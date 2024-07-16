@@ -13,8 +13,7 @@ find_package(Ceres CONFIG REQUIRED)
 link_directories(${CMAKE_BINARY_DIR}/lib)
 
 include_directories(${CMAKE_SOURCE_DIR}/Core/Source)
-include_directories(${CMAKE_SOURCE_DIR}/Core/)
-include_directories(${CMAKE_SOURCE_DIR}/Source/)
+include_directories(${CMAKE_SOURCE_DIR}/Editor/Source)
 
 file(GLOB_RECURSE EDITOR_SRC
     "${CMAKE_SOURCE_DIR}/Editor/Source/*.cpp"

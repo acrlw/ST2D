@@ -70,6 +70,13 @@ namespace ST
 		return Matrix2x2(column1 - rhs.column1, column2 - rhs.column2);
 	}
 
+	Matrix2x2 Matrix2x2::operator*(const real& factor) const
+	{
+		Matrix2x2 result = *this;
+		result *= factor;
+		return result;
+	}
+
 	Vector2 Matrix2x2::row1() const
 	{
 		return Vector2(column1.x, column2.x);

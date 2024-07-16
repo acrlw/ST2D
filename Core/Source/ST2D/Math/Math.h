@@ -208,14 +208,14 @@ namespace ST
 			return num;
 		}
 
-		ST_API static real degreeToRadian(const real& angle)
+		ST_API static real radians(const real& degree)
 		{
-			return angle * (Constant::Pi / 180.0f);
+			return degree * Constant::Pi * Constant::ReciprocalOf180;
 		}
 
-		ST_API static real radianToDegree(const real& radian)
+		ST_API static real degree(const real& radian)
 		{
-			return radian * (180.0f / Constant::Pi);
+			return radian * 180.0f * Constant::ReciprocalOfPi;
 		}
 
 		ST_API static float fastInvSqrtDouble(double x, size_t maxIter = 4)

@@ -29,6 +29,7 @@ namespace ST
 		constexpr real Pi = 3.1415926535f;
 		constexpr real HalfPi = Pi / 2.0f;
 		constexpr real DoublePi = Pi * 2.0f;
+		constexpr real ReciprocalOf180 = 1.0f / 180.0f;
 		constexpr real ReciprocalOfPi = 0.3183098861f;
 		constexpr real GeometryEpsilon = 1e-6f;
 		constexpr real TrignometryEpsilon = 1e-3f;
