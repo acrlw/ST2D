@@ -184,6 +184,8 @@ namespace ST
 
         void continueTo(const T& endValue, float duration);
 
+        void finish();
+
         T startValue()const;
 
         T endValue()const;
@@ -277,6 +279,13 @@ namespace ST
     void EasingObject<T>::continueTo(const T& endValue, float duration)
     {
         restart(value(), endValue, duration);
+    }
+
+    template <typename T>
+    void EasingObject<T>::finish()
+    {
+        m_timeAccumulator = m_duration;
+        m_startValue = m_endValue;
     }
 
     template<typename T>

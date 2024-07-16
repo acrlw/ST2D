@@ -44,7 +44,14 @@ namespace STEditor
 
 	void Camera2D::onUpdate(float deltaTime)
 	{
-		m_meterToPixelEasing.update(deltaTime);
+		if (!m_smoothZoom)
+		{
+			m_meterToPixelEasing.finish();
+			m_transform += (screenToWorld(m_preScreenMousePos) - m_preWorldMousePos) * m_meterToPixelEasing.value();
+		}
+		else
+			m_meterToPixelEasing.update(deltaTime);
+
 		m_pixelToMeter = 1.0f / m_meterToPixelEasing.value();
 
 		bool isZooming = !m_meterToPixelEasing.isFinished();
@@ -246,6 +253,13 @@ namespace STEditor
 		return m_font;
 	}
 
+	bool Camera2D::checkPointInViewport(const Vector2& pos)
+	{
+		Vector2 topLeft = screenToWorld(m_viewport.topLeft);
+		Vector2 bottomRight = screenToWorld(m_viewport.bottomRight);
+		return GeometryAlgorithm2D::isPointInsideAABB(pos, topLeft, bottomRight);
+	}
+
 	void Camera2D::drawGridScaleLine(sf::RenderWindow& window)
 	{
 		Vector2 topLeft = screenToWorld(m_viewport.topLeft);
@@ -315,7 +329,7 @@ namespace STEditor
 			else if (m_meterToPixelEasing.value() < 800)
 				slice = 10;
 			else if (m_meterToPixelEasing.value() < 2000)
-				slice = 20;
+				slice = 25;
 
 			const real inv = 1.0f / static_cast<real>(slice);
 			for (int i = -m_axisPointCount, j = -m_axisPointCount + h; i < m_axisPointCount; i += h, j += h)

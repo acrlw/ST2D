@@ -42,11 +42,11 @@ namespace STEditor
 		void clearAll();
 
 		bool m_userDrawVisible = true;
-		bool m_running = true;
+
 		bool m_cameraViewportMovement = false;
 		bool m_onDistanceCheck = false;
 
-		int m_currentSceneIndex = 0;
+		int m_currentSceneIndex = 1;
 
 		Camera2D m_camera;
 

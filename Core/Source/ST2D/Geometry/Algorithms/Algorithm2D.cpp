@@ -561,6 +561,11 @@ namespace ST
 
 	}
 
+	bool GeometryAlgorithm2D::isPointInsideAABB(const Vector2&pos, const Vector2& topLeft, const Vector2& bottomRight)
+	{
+		return !(pos.x > bottomRight.x || pos.x < topLeft.x && pos.y > topLeft.y || pos.y < bottomRight.y);
+	}
+
 	bool GeometryAlgorithm2D::isPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight)
 	{
 		return Math::isInRange(p.x, topLeft.x, bottomRight.x) &&
