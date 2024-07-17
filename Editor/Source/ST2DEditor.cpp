@@ -319,7 +319,9 @@ namespace STEditor
 
 	void ST2DEditor::onWheelScrolled(sf::Event& event)
 	{
-		m_camera.setPreScreenMousePos(m_screenMousePos);
+		auto x = event.mouseWheelScroll.x;
+		auto y = event.mouseWheelScroll.y;
+		m_camera.setPreScrollScreenMousePos(Vector2(static_cast<float>(x), static_cast<float>(y)));
 		if (event.mouseWheelScroll.delta > 0)
 			m_camera.setMeterToPixel(m_camera.meterToPixel() + m_camera.meterToPixel() * m_zoomFactor);
 		else

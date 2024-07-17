@@ -80,7 +80,7 @@ namespace STEditor
 		real defaultMeterToPixel()const;
 		void setDefaultMeterToPixel(const real& number);
 
-		void setPreScreenMousePos(const Vector2& pos);
+		void setPreScrollScreenMousePos(const Vector2& pos);
 
 		void setFont(sf::Font* font);
 		sf::Font* font();
@@ -117,8 +117,8 @@ namespace STEditor
 		
 		int m_axisPointCount = 100;
 
-		Vector2 m_preScreenMousePos;
-		Vector2 m_preWorldMousePos;
+		Vector2 m_preScrollScreenMousePos;
+		Vector2 m_preScrollWorldMousePos;
 
 		EasingObject<float> m_meterToPixelEasing = EasingObject(50.0f);
 

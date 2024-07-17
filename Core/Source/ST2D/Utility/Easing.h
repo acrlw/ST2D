@@ -285,7 +285,6 @@ namespace ST
     void EasingObject<T>::finish()
     {
         m_timeAccumulator = m_duration;
-        m_startValue = m_endValue;
     }
 
     template<typename T>
