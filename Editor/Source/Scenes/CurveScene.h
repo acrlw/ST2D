@@ -45,6 +45,12 @@ namespace STEditor
 
 		void computeG3Vertices();
 
+		bool m_lockCornerStart = false;
+
+		float m_lockWidthSize = 0.0f;
+		float m_lockHeightSize = 0.0f;
+
+		bool m_connectInner = false;
 		bool m_connectWeights = false;
 		bool m_enableCornerSmoothing = false;
 		bool m_numOptimize = false;

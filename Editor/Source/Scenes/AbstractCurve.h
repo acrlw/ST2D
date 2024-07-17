@@ -20,7 +20,7 @@ namespace STEditor
 			if(m_count != count)
 			{
 				m_needUpdateCurvePoints = true;
-				m_needUpdateCurvePoints = true;
+				m_needUpdateCurvaturePoints = true;
 			}
 			m_count = count;
 		}
@@ -49,7 +49,6 @@ namespace STEditor
 	protected:
 
 		virtual void sampleCurvePoints() = 0;
-
 		virtual void sampleCurvaturePoints() = 0;
 
 		std::vector<Vector2> m_curvePoints;

@@ -124,10 +124,8 @@ namespace STEditor
 
 	void RationalCubicBezier::setWeights(float w0, float w1, float w2, float w3)
 	{
-		if( w0 == m_weights[0] && 
-			w1 == m_weights[1] &&
-			w2 == m_weights[2] &&
-			w3 == m_weights[3] )
+		if( realEqual(w0, m_weights[0]) && realEqual(w1, m_weights[1]) &&
+			realEqual(w2, m_weights[2]) && realEqual(w3, m_weights[3]))
 			return;
 
 		m_weights[0] = w0;

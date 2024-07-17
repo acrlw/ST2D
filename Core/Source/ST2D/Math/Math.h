@@ -68,6 +68,16 @@ namespace ST
 				(n - i) * (n - i - 1.0f) * std::pow(t, i) * std::pow(1.0f - t, n - i - 2.0f));
 		}
 
+		ST_API static real clampRadian(const real& radian)
+		{
+			real result = radian;
+			while (result > Constant::Pi)
+				result -= Constant::DoublePi;
+			while (result < -Constant::Pi)
+				result += Constant::DoublePi;
+			return result;
+		}
+
 		ST_API static real combination(const real& n, const real& m)
 		{
 			real a = 1.0f, b = 1.0f, c = 1.0f;

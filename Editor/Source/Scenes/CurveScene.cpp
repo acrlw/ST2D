@@ -116,6 +116,9 @@ namespace STEditor
 		ImGui::DragFloat("Half Width", &m_halfWidth, 0.01f, 0.5f, 50.0f);
 		ImGui::DragFloat("Half Height", &m_halfHeight, 0.01f, 0.5f, 50.0f);
 		ImGui::DragFloat("Rounded Radius Percentage", &m_percentage, 0.005f, 0.005f, 1.0f);
+		ImGui::Checkbox("Connect Inner", &m_connectInner);
+		ImGui::SameLine();
+		ImGui::Checkbox("Lock Corner Start", &m_lockCornerStart);
 		ImGui::DragFloat("Inner Width Percentage", &m_innerWidthFactor, 0.001f, 0.0f, 1.0f);
 		ImGui::DragFloat("Inner Height Percentage", &m_innerHeightFactor, 0.001f, 0.0f, 1.0f);
 		ImGui::DragFloat("Corner Angle Percentage", &m_cornerPercentage, 0.005f, 0.0f, 0.995f);
@@ -221,6 +224,9 @@ namespace STEditor
 	void CurveScene::drawCurvature(sf::RenderWindow& window, const std::vector<Vector2>& start,
 		const std::vector<Vector2>& end, const sf::Color& color, bool flip)
 	{
+		if(start.size() != end.size())
+			return;
+
 		Vector2 lastEnd;
 		for (size_t i = 0; i < start.size(); ++i)
 		{
@@ -258,6 +264,33 @@ namespace STEditor
 			currentRadius * std::sin(Math::radians(45)));
 
 		roundCorner += roundCenter;
+
+		float mixWidth = (1.0f - m_innerWidthFactor) * (m_halfWidth - currentRadius);
+		float mixHeight = (1.0f - m_innerHeightFactor) * (m_halfHeight - currentRadius);
+		if(m_lockCornerStart)
+		{
+			if (m_lockWidthSize == 0.0f)
+				m_lockWidthSize = mixWidth;
+
+			if (m_lockHeightSize == 0.0f)
+				m_lockHeightSize = mixHeight;
+
+			m_innerWidthFactor = 1.0f - m_lockWidthSize / (m_halfWidth - currentRadius);
+			m_innerHeightFactor = 1.0f - m_lockHeightSize / (m_halfHeight - currentRadius);
+		}
+		else
+		{
+			m_lockWidthSize = 0.0f;
+			m_lockHeightSize = 0.0f;
+		}
+
+		if(m_connectInner)
+		{
+			m_innerHeightFactor = Math::clamp(1.0f - mixWidth / (m_halfHeight - currentRadius), 0.0f, 1.0f);
+
+			m_innerWidthFactor = Math::clamp(m_innerWidthFactor, 0.0f, 1.0f);
+		}
+		
 
 		p01.set(m_innerWidthFactor * (m_halfWidth - currentRadius), m_halfHeight);
 		p10.set(m_halfWidth, m_innerHeightFactor * (m_halfHeight - currentRadius));
@@ -341,8 +374,6 @@ namespace STEditor
 	{
 		g2Vertices.clear();
 		g2Vertices.push_back(p00);
-
-		
 
 		m_bezier1.setCount(m_bezierCount);
 		m_bezier2.setCount(m_bezierCount);

@@ -278,8 +278,9 @@ namespace ST
 		real realT = Math::clamp(t, 0.0f, 1.0f);
 		Complex nStart = start.normal();
 		Complex nEnd = end.normal();
-		float rStart = std::acos(nStart.re);
-		float rEnd = std::acos(nEnd.re);
+		float rStart = Math::clampRadian(nStart.theta());
+		float rEnd = Math::clampRadian(nEnd.theta());
+		
 		return { rStart * (1 - realT) + rEnd * realT };
 	}
 

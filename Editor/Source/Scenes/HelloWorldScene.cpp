@@ -11,7 +11,7 @@ namespace STEditor
 	void HelloWorldScene::onLoad()
 	{
 		thetaEasing.setEasingFunction(EasingFunction::smoothStep);
-		matEasing.restart(Complex(Math::radians(45)), Complex(Math::radians(135)), 3.0f);
+		matEasing.restart(Complex(Math::radians(179)), Complex(Math::radians(-179)), 3.0f);
 	}
 
 	void HelloWorldScene::onUnLoad()
@@ -29,12 +29,12 @@ namespace STEditor
 		{
 			if(!flip)
 			{
-				matEasing.continueTo(Complex(Math::radians(45)), 3.0f);
+				matEasing.continueTo(Complex(Math::radians(179)), 3.0f);
 				flip = true;
 			}
 			else
 			{
-				matEasing.continueTo(Complex(Math::radians(135)), 3.0f);
+				matEasing.continueTo(Complex(Math::radians(-179)), 3.0f);
 				flip = false;
 			}
 		}
