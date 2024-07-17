@@ -49,10 +49,17 @@ namespace STEditor
 			m_meterToPixelEasing.finish();
 
 		m_pixelToMeter = 1.0f / m_meterToPixelEasing.value();
-		if(!m_meterToPixelEasing.isFinished() && !m_preScrollScreenMousePos.isOrigin())
+
+		if (!m_preScrollScreenMousePos.isOrigin())
 		{
 			Vector2 deltaTransform = (screenToWorld(m_preScrollScreenMousePos) - m_preScrollWorldMousePos) * m_meterToPixelEasing.value();
 			m_transform += deltaTransform;
+
+			if (m_meterToPixelEasing.isFinished() || !m_smoothZoom)
+			{
+				m_preScrollScreenMousePos.clear();
+				m_preScrollWorldMousePos.clear();
+			}
 		}
 	}
 
