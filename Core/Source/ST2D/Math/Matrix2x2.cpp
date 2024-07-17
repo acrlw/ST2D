@@ -60,6 +60,11 @@ namespace ST
 		return *this;
 	}
 
+	bool Matrix2x2::operator==(const Matrix2x2& rhs) const
+	{
+		return column1 == rhs.column1 && column2 == rhs.column2;
+	}
+
 	Matrix2x2 Matrix2x2::operator+(const Matrix2x2& rhs) const
 	{
 		return Matrix2x2(column1 + rhs.column1, column2 + rhs.column2);

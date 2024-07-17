@@ -17,6 +17,8 @@ namespace ST
         Matrix2x2& operator*=(const real& factor);
         Matrix2x2& operator/=(const real& factor);
 
+        bool operator==(const Matrix2x2& rhs)const;
+
         Matrix2x2 operator+(const Matrix2x2& rhs)const;
         Matrix2x2 operator-(const Matrix2x2& rhs)const;
 

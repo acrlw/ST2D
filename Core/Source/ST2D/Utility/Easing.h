@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ST2D/Log.h"
+#include "ST2D/Math/Complex.h"
 #include "ST2D/Math/Vector2.h"
 #include "ST2D/Math/Vector3.h"
 #include "ST2D/Math/Vector4.h"
@@ -52,6 +53,15 @@ namespace ST
         static Vector2 lerp(const Vector2& startValue, const Vector2& endValue, float t)
         {
             return startValue * (1.0f - t) + endValue * t;
+        }
+    };
+
+    template<>
+    struct LerpTraits<Complex>
+    {
+        static Complex lerp(const Complex& startValue, const Complex& endValue, float t)
+        {
+            return Complex::slerp(startValue, endValue, t);
         }
     };
 
@@ -262,12 +272,11 @@ namespace ST
         //duration cannot be zero
         CORE_ASSERT(duration > 0.0f, "Duration cannot be zero")
 
-
-            if (startValue == endValue)
-            {
-                m_timeAccumulator = m_duration;
-                return;
-            }
+        if (startValue == endValue)
+        {
+            m_timeAccumulator = m_duration;
+            return;
+        }
 
         m_timeAccumulator = 0.0f;
         m_startValue = startValue;

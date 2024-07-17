@@ -95,6 +95,12 @@ namespace ST
 		return *this;
 	}
 
+	bool Vector4::operator==(const Vector4& rhs) const
+	{
+		return realEqual(x, rhs.x) && realEqual(y, rhs.y)
+			&& realEqual(z, rhs.z) && realEqual(w, rhs.w);
+	}
+
 	Vector4& Vector4::set(const real& _x, const real& _y, const real& _z, const real& _w)
 	{
 		x = _x;

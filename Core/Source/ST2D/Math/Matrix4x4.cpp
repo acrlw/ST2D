@@ -89,6 +89,11 @@ namespace ST
 		return Matrix4x4(column1 - rhs.column1, column2 - rhs.column2, column3 - rhs.column3, column4 - rhs.column4);
 	}
 
+	bool Matrix4x4::operator==(const Matrix4x4& rhs) const
+	{
+		return column1 == rhs.column1 && column2 == rhs.column2 && column3 == rhs.column3 && column4 == rhs.column4;
+	}
+
 	Vector4 Matrix4x4::row1() const
 	{
 		return Vector4(column1.x, column2.x,

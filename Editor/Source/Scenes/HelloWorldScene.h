@@ -32,5 +32,8 @@ namespace STEditor
 		float r = 1.5f;
 		EasingObject<float> thetaEasing = EasingObject(0.0f);
 		std::deque<Vector2> pList;
+		bool flip = false;
+		EasingObject<Complex> matEasing = EasingObject(Complex(Math::radians(45)));
+		Vector2 arrow;
 	};
 }

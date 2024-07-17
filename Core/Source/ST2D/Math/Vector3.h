@@ -26,6 +26,8 @@ namespace ST
         Vector3& operator/=(const real& factor);
         Vector3& operator/=(const int& factor);
 
+        bool operator==(const Vector3& rhs)const;
+
         Vector3& set(const real& x, const real& y, const real& z);
         Vector3& set(const Vector3& other);
         Vector3& clear();
