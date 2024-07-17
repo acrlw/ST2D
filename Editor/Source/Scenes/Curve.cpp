@@ -1,31 +1,165 @@
 #include "Curve.h"
 
+
 namespace STEditor
 {
-	void RationalCubicBezier::set(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3, float w0,
-		float w1, float w2, float w3)
+	CubicBezierAD::CubicBezierAD(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3)
 	{
+		m_params1.p0 = p0.x;
+		m_params1.p1 = p1.x;
+		m_params1.p2 = p2.x;
+		m_params1.p3 = p3.x;
+
+		m_params2.p0 = p0.y;
+		m_params2.p1 = p1.y;
+		m_params2.p2 = p2.y;
+		m_params2.p3 = p3.y;
+	}
+
+	void CubicBezierAD::setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3)
+	{
+		if( realEqual(p0.x, m_params1.p0.expr->val) && realEqual(p1.x, m_params1.p1.expr->val) && 
+			realEqual(p2.x, m_params1.p2.expr->val) && realEqual(p3.x, m_params1.p3.expr->val) &&
+			realEqual(p0.y, m_params2.p0.expr->val) && realEqual(p1.y, m_params2.p1.expr->val) && 
+			realEqual(p2.y, m_params2.p2.expr->val) && realEqual(p3.y, m_params2.p3.expr->val))
+		{
+			m_needUpdateCurvePoints = false;
+			m_needUpdateCurvaturePoints = false;
+			return;
+		}
+
+		m_params1.p0 = p0.x;
+		m_params1.p1 = p1.x;
+		m_params1.p2 = p2.x;
+		m_params1.p3 = p3.x;
+
+		m_params2.p0 = p0.y;
+		m_params2.p1 = p1.y;
+		m_params2.p2 = p2.y;
+		m_params2.p3 = p3.y;
+
+		m_needUpdateCurvePoints = true;
+		m_needUpdateCurvaturePoints = true;
+	}
+
+	Vector2 CubicBezierAD::sample(float t) const
+	{
+		Vector2 result;
+		var tVar = t;
+		result.x = bezier3Func(tVar, m_params1).expr->val;
+		result.y = bezier3Func(tVar, m_params2).expr->val;
+		return result;
+	}
+
+	std::vector<Vector2> CubicBezierAD::curvePoints()
+	{
+		if (m_needUpdateCurvePoints)
+		{
+			samplePoints();
+			m_needUpdateCurvePoints = false;
+		}
+		return m_curvePoints;
+	}
+
+	std::vector<Vector2> CubicBezierAD::curvaturePoints()
+	{
+		if (m_needUpdateCurvaturePoints)
+		{
+			sampleCurvaturePoints();
+			m_needUpdateCurvaturePoints = false;
+		}
+		return m_curvaturePoints;
+	}
+
+	float CubicBezierAD::curvatureAt(float t)
+	{
+		return 0.0f;
+	}
+
+	void CubicBezierAD::samplePoints()
+	{
+		m_curvePoints.clear();
+		m_curvePoints.reserve(m_count);
+		float step = 1.0f / (m_count - 1);
+		for (size_t i = 0; i < m_count; i++)
+		{
+			m_curvePoints.push_back(sample(i * step));
+		}
+	}
+
+	void CubicBezierAD::sampleCurvaturePoints()
+	{
+		m_curvaturePoints.clear();
+		m_curvaturePoints.reserve(m_count);
+		float step = 1.0f / (m_count - 1);
+		for (size_t i = 0; i < m_count; i++)
+		{
+			float t = i * step;
+			float k = curvatureAt(t);
+				
+			Vector2 p = sample(t);
+			Vector2 dir;
+			Vector2 normal = Vector2(dir.y, -dir.x);
+			normal.normalize();
+			m_curvaturePoints.push_back(p + normal * k);
+		}
+	}
+
+	void RationalCubicBezier::setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3)
+	{
+		if(p0.equal(m_points[0]) && 
+			p1.equal(m_points[1]) && 
+			p2.equal(m_points[2]) && 
+			p3.equal(m_points[3]))
+			return;
+
 		m_points[0] = p0;
 		m_points[1] = p1;
 		m_points[2] = p2;
 		m_points[3] = p3;
+		
+		m_needUpdateCurvaturePoints = true;
+		m_needUpdateCurvePoints = true;
+	}
+
+	void RationalCubicBezier::setWeights(float w0, float w1, float w2, float w3)
+	{
+		if( w0 == m_weights[0] && 
+			w1 == m_weights[1] &&
+			w2 == m_weights[2] &&
+			w3 == m_weights[3] )
+			return;
+
 		m_weights[0] = w0;
 		m_weights[1] = w1;
 		m_weights[2] = w2;
 		m_weights[3] = w3;
+
+		m_needUpdateCurvaturePoints = true;
+		m_needUpdateCurvePoints = true;
 	}
 
-	Vector2& RationalCubicBezier::pointAt(size_t index)
+	std::array<Vector2, 4> RationalCubicBezier::points() const
+	{
+		return m_points;
+	}
+
+	std::array<float, 4> RationalCubicBezier::weights() const
+	{
+		return m_weights;
+	}
+
+	Vector2 RationalCubicBezier::pointAt(size_t index) const
 	{
 		return m_points[index];
 	}
 
-	float& RationalCubicBezier::weightAt(size_t index)
+	float RationalCubicBezier::weightAt(size_t index) const
 	{
 		return m_weights[index];
 	}
 
-	Vector2 RationalCubicBezier::sample(float t) const
+	Vector2 RationalCubicBezier::sample(float t)const
 	{
 		float u0 = m_weights[0] * Math::bernstein(t, 0.0f, 3.0f);
 		float u1 = m_weights[1] * Math::bernstein(t, 1.0f, 3.0f);
@@ -37,26 +171,8 @@ namespace STEditor
 		return result;
 	}
 
-	std::vector<Vector2> RationalCubicBezier::samplePoints(size_t count) const
-	{
-		std::vector<Vector2> result;
-		result.reserve(count);
-		float step = 1.0f / static_cast<float>(count);
 
-		for (float t = 0.0f; t <= 1.0f; t += step)
-			result.push_back(sample(t));
-
-		return result;
-	}
-
-	float RationalCubicBezier::curvatureAD(float t) const
-	{
-
-
-		return 0.0f;
-	}
-
-	float RationalCubicBezier::curvature(float t) const
+	float RationalCubicBezier::curvatureAt(float t)const
 	{
 		// \left( (t-1)^3w_0-t\left( 3(t-1)^2w_1+t\left( tw_3-3(t-1)w_2 \right) \right) \right) ^2
 		float det = std::pow((std::pow(t - 1.0f, 3.0f) * m_weights[0] -
@@ -114,12 +230,20 @@ namespace STEditor
 		return k;
 	}
 
-	std::vector<Vector2> RationalCubicBezier::curvaturePoints(size_t count, float scale, bool flip) const
+	void RationalCubicBezier::sampleCurvePoints()
 	{
-		std::vector<Vector2> result;
-		result.reserve(count);
+		m_curvePoints.clear();
+		float step = 1.0f / static_cast<float>(m_count);
 
-		float step = 1.0f / static_cast<float>(count);
+		for (float t = 0.0f; t <= 1.0f; t += step)
+			m_curvePoints.push_back(sample(t));
+	}
+
+	void RationalCubicBezier::sampleCurvaturePoints()
+	{
+		m_curvaturePoints.clear();
+
+		float step = 1.0f / static_cast<float>(m_count);
 		for (float t = 0.0f; t <= 1.0f; t += step)
 		{
 			Vector2 p1 = sample(t);
@@ -127,7 +251,7 @@ namespace STEditor
 
 			// \left( (t-1)^3w_0-t\left( 3(t-1)^2w_1+t\left( tw_3-3(t-1)w_2 \right) \right) \right) ^2
 			float det = std::pow((std::pow(t - 1.0f, 3.0f) * m_weights[0] -
-				                     t * (3.0f * std::pow(t - 1.0f, 2.0f) * m_weights[1] + t * (t * m_weights[3] - 3.0f * (t - 1.0f) * m_weights[2]))), 2.0f);
+				t * (3.0f * std::pow(t - 1.0f, 2.0f) * m_weights[1] + t * (t * m_weights[3] - 3.0f * (t - 1.0f) * m_weights[2]))), 2.0f);
 
 			// -3(t-1)^2w_0\left( (t-1)^2w_1+t\left( tw_3-2(t-1)w_2 \right) \right)
 
@@ -180,50 +304,14 @@ namespace STEditor
 
 			Vector2 tangent = dp.normal();
 			Vector2 normal = tangent.perpendicular();
-			Vector2 v = normal * k * scale;
-
-			if (flip)
-				v.negate();
+			Vector2 v = normal * k;
 
 			Vector2 curvaturePoint = v + p1;
-			result.push_back(curvaturePoint);
+			m_curvaturePoints.push_back(curvaturePoint);
 
 		}
-
-		return result;
 	}
 
-	void RationalQuadraticBezier::set(const Vector2& p0, const Vector2& p1, const Vector2& p2, float w0, float w1,
-		float w2)
-	{
-		m_points[0] = p0;
-		m_points[1] = p1;
-		m_points[2] = p2;
-		m_weights[0] = w0;
-		m_weights[1] = w1;
-		m_weights[2] = w2;
-	}
-
-	Vector2& RationalQuadraticBezier::pointAt(size_t index)
-	{
-		return m_points[index];
-	}
-
-	float& RationalQuadraticBezier::weightAt(size_t index)
-	{
-		return m_weights[index];
-	}
-
-	Vector2 RationalQuadraticBezier::sample(float t) const
-	{
-		float u0 = m_weights[0] * Math::bernstein(t, 0.0f, 3.0f);
-		float u1 = m_weights[1] * Math::bernstein(t, 1.0f, 3.0f);
-		float u2 = m_weights[2] * Math::bernstein(t, 2.0f, 3.0f);
-
-		Vector2 result = (m_points[0] * u0 + m_points[1] * u1 + m_points[2] * u2) / (u0 + u1 + u2);
-
-		return result;
-	}
 
 	CubicBezier CubicBezier::fromControlPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2,
 		const Vector2& p3)
@@ -240,26 +328,6 @@ namespace STEditor
 		return bezier;
 	}
 
-	float CubicBezier::torsion(float t) const
-	{
-		Vector2 dp = -3.0f * (1.0f - t) * (1.0f - t) * m_points[0] +
-			(9.0f * t * t - 12.0f * t + 3.0f) * m_points[1] +
-			(6.0f * t - 9.0f * t * t) * m_points[2] +
-			3.0f * t * t * m_points[3];
-
-		Vector2 ddp = 6.0f * (1.0f - t) * m_points[0] +
-			(18.0f * t - 12.0f) * m_points[1] +
-			(6.0f - 18.0f * t) * m_points[2] +
-			6.0f * t * m_points[3];
-
-		Vector2 dddp = -6.0f * m_points[0] +
-			18.0f * m_points[1] -
-			18.0f * m_points[2] +
-			6.0f * m_points[3];
-
-		return 0;
-	}
-
 	Vector2 CubicBezier::sample(float t) const
 	{
 		return Math::bernstein(t, 0, 3) * m_points[0] +
@@ -268,7 +336,7 @@ namespace STEditor
 			Math::bernstein(t, 3, 3) * m_points[3];
 	}
 
-	float CubicBezier::curvature(float t) const
+	float CubicBezier::curvatureAt(float t)const
 	{
 		//Vector2 dp = Math::dBernstein(t, 0, 3) * m_points[0] +
 		//	Math::dBernstein(t, 1, 3) * m_points[1] +
@@ -290,15 +358,139 @@ namespace STEditor
 		return k;
 	}
 
-	std::vector<Vector2> CubicBezier::curvaturePoints(size_t count, float scale, bool flip) const
+	std::array<Vector2, 4> CubicBezier::points() const
 	{
-		std::vector<Vector2> result;
-		result.reserve(count);
+		return m_points;
+	}
 
-		float step = 1.0f / static_cast<float>(count);
+	Vector2 CubicBezier::pointAt(size_t index) const
+	{
+		return m_points[index];
+	}
+
+	Vector2 CubicBezier::operator[](size_t index) const
+	{
+		return m_points[index];
+	}
+
+	void CubicBezier::setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3)
+	{
+		if (p0.equal(m_points[0]) && p1.equal(m_points[1]) && p2.equal(m_points[2]) && p3.equal(m_points[3]))
+			return;
+
+		m_points[0] = p0;
+		m_points[1] = p1;
+		m_points[2] = p2;
+		m_points[3] = p3;
+
+		m_needUpdateCurvaturePoints = true;
+		m_needUpdateCurvePoints = true;
+	}
+
+
+	void CubicBezier::sampleCurvePoints()
+	{
+		m_curvePoints.clear();
+		float step = 1.0f / static_cast<float>(m_count);
+
+		for (float t = 0.0f; t <= 1.0f; t += step)
+			m_curvePoints.push_back(sample(t));
+	}
+
+	void CubicBezier::sampleCurvaturePoints()
+	{
+		m_curvaturePoints.clear();
+
+		{
+			//APP_INFO("----------")
+			//Params param1, param2;
+			//param1.p0 = m_points[0].x;
+			//param1.p1 = m_points[1].x;
+			//param1.p2 = m_points[2].x;
+			//param1.p3 = m_points[3].x;
+
+			//param2.p0 = m_points[0].y;
+			//param2.p1 = m_points[1].y;
+			//param2.p2 = m_points[2].y;
+			//param2.p3 = m_points[3].y;
+
+			//var t = 0.1;
+			//var ux = f(t, param1);
+			//var uy = f(t, param2);
+
+			//auto [Vdxdt] = reverse::detail::derivativesx(ux, wrt(t));
+			//auto [Vdydt] = reverse::detail::derivativesx(uy, wrt(t));
+
+			//auto [Vd2xdt2] = reverse::detail::derivativesx(Vdxdt, wrt(t));
+			//auto [Vd2ydt2] = reverse::detail::derivativesx(Vdydt, wrt(t));
+
+			//double dxdt = Vdxdt.expr->val;
+			//double dydt = Vdydt.expr->val;
+
+			//double d2xdt2 = Vd2xdt2.expr->val;
+			//double d2ydt2 = Vd2ydt2.expr->val;
+
+
+			//double k = std::abs(dxdt * d2ydt2 - dydt * d2xdt2) / std::pow(dxdt * dxdt + dydt * dydt, 3.0);
+
+			//APP_INFO("AD Curvature at t:{} is {}", t.expr->val, k);
+
+			//Vector2 dp = Math::dBernstein(t.expr->val, 0, 3) * m_points[0] +
+			//	Math::dBernstein(t.expr->val, 1, 3) * m_points[1] +
+			//	Math::dBernstein(t.expr->val, 2, 3) * m_points[2] +
+			//	Math::dBernstein(t.expr->val, 3, 3) * m_points[3];
+
+			//Vector2 dp2 = -3.0f * (1.0f - t.expr->val) * (1.0f - t.expr->val) * m_points[0] +
+			//	(9.0f * t.expr->val * t.expr->val - 12.0f * t.expr->val + 3.0f) * m_points[1] +
+			//	(6.0f * t.expr->val - 9.0f * t.expr->val * t.expr->val) * m_points[2] +
+			//	3.0f * t.expr->val * t.expr->val * m_points[3];
+
+			//APP_INFO("AD: t:{}, dx/dt:{}, dy/dt:{}", t.expr->val, dxdt, dydt);
+			//APP_INFO("Bernstein: t:{}, dx/dt:{}, dy/dt:{}", t.expr->val, dp.x, dp.y);
+			//APP_INFO("Manual: t:{}, dx/dt:{}, dy/dt:{}", t.expr->val, dp2.x, dp2.y);
+
+			//t.update(0.5);
+			//ux.update();
+			//uy.update();
+
+			//auto [V2dxdt] = reverse::detail::derivativesx(ux, wrt(t));
+			//auto [V2dydt] = reverse::detail::derivativesx(uy, wrt(t));
+
+			//auto [V2d2xdt2] = reverse::detail::derivativesx(Vdxdt, wrt(t));
+			//auto [V2d2ydt2] = reverse::detail::derivativesx(Vdydt, wrt(t));
+
+			//dxdt = V2dxdt.expr->val;
+			//dydt = V2dydt.expr->val;
+
+			//d2xdt2 = V2d2xdt2.expr->val;
+			//d2ydt2 = V2d2ydt2.expr->val;
+
+
+			//k = std::abs(dxdt * d2ydt2 - dydt * d2xdt2) / std::pow(dxdt * dxdt + dydt * dydt, 3.0);
+			//APP_INFO("---")
+			//APP_INFO("AD Curvature at t:{} is {}", t.expr->val, k);
+
+			//dp = Math::dBernstein(t.expr->val, 0, 3) * m_points[0] +
+			//	Math::dBernstein(t.expr->val, 1, 3) * m_points[1] +
+			//	Math::dBernstein(t.expr->val, 2, 3) * m_points[2] +
+			//	Math::dBernstein(t.expr->val, 3, 3) * m_points[3];
+
+			//dp2 = -3.0f * (1.0f - t.expr->val) * (1.0f - t.expr->val) * m_points[0] +
+			//	(9.0f * t.expr->val * t.expr->val - 12.0f * t.expr->val + 3.0f) * m_points[1] +
+			//	(6.0f * t.expr->val - 9.0f * t.expr->val * t.expr->val) * m_points[2] +
+			//	3.0f * t.expr->val * t.expr->val * m_points[3];
+
+			//APP_INFO("AD: t:{}, dx/dt:{}, dy/dt:{}", t.expr->val, dxdt, dydt);
+			//APP_INFO("Bernstein: t:{}, dx/dt:{}, dy/dt:{}", t.expr->val, dp.x, dp.y);
+			//APP_INFO("Manual: t:{}, dx/dt:{}, dy/dt:{}", t.expr->val, dp2.x, dp2.y);
+			//APP_INFO("----------")
+		}
+
+
+
+		float step = 1.0f / static_cast<float>(m_count);
 		for (float t = 0.0f; t <= 1.0f; t += step)
 		{
-
 			Vector2 p1 = sample(t);
 
 			//Vector2 dp = -3.0f * (1.0f - t) * (1.0f - t) * m_points[0] +
@@ -310,6 +502,8 @@ namespace STEditor
 				Math::dBernstein(t, 1, 3) * m_points[1] +
 				Math::dBernstein(t, 2, 3) * m_points[2] +
 				Math::dBernstein(t, 3, 3) * m_points[3];
+
+
 
 			Vector2 ddp = Math::d2Bernstein(t, 0, 3) * m_points[0] +
 				Math::d2Bernstein(t, 1, 3) * m_points[1] +
@@ -325,45 +519,18 @@ namespace STEditor
 
 			Vector2 tangent = dp.normal();
 			Vector2 normal = tangent.perpendicular();
-			Vector2 v = normal * k * scale;
+			Vector2 v = normal;
 
-			if (flip)
-				v.negate();
-
-			Vector2 curvaturePoint = v + p1;
-			result.push_back(curvaturePoint);
+			Vector2 curvaturePoint = v * k + p1 ;
+			m_curvaturePoints.push_back(curvaturePoint);
 		}
-		return result;
-
 	}
 
-	Vector2& CubicBezier::operator[](size_t index)
+	var bezier3Func(var t, const Params& param)
 	{
-		return m_points[index];
-	}
-
-	Vector2& CubicBezier::at(size_t index)
-	{
-		return m_points[index];
-	}
-
-	void CubicBezier::setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3)
-	{
-		m_points[0] = p0;
-		m_points[1] = p1;
-		m_points[2] = p2;
-		m_points[3] = p3;
-	}
-
-	std::vector<Vector2> CubicBezier::samplePoints(size_t count)
-	{
-		std::vector<Vector2> result;
-		result.reserve(count);
-		float step = 1.0f / static_cast<float>(count);
-
-		for (float t = 0.0f; t <= 1.0f; t += step)
-			result.push_back(sample(t));
-
-		return result;
+		return (1.0 - t) * (1.0 - t) * (1.0 - t) * param.p0 +
+			3.0 * t * (1.0 - t) * (1.0 - t) * param.p1 +
+			3.0 * t * t * (1.0 - t) * param.p2 +
+			t * t * t * param.p3;
 	}
 }

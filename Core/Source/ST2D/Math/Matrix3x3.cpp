@@ -81,32 +81,32 @@ namespace ST
 
 	Matrix3x3 Matrix3x3::operator*(const real& factor) const
 	{
-		return Matrix3x3(column1 * factor, column2 * factor, column3 * factor);
+		return { column1 * factor, column2 * factor, column3 * factor };
 	}
 
 	Matrix3x3 Matrix3x3::operator+(const Matrix3x3& rhs) const
 	{
-		return Matrix3x3(column1 + rhs.column1, column2 + rhs.column2, column3 + rhs.column3);
+		return {column1 + rhs.column1, column2 + rhs.column2, column3 + rhs.column3};
 	}
 
 	Matrix3x3 Matrix3x3::operator-(const Matrix3x3& rhs) const
 	{
-		return Matrix3x3(column1 - rhs.column1, column2 - rhs.column2, column3 - rhs.column3);
+		return {column1 - rhs.column1, column2 - rhs.column2, column3 - rhs.column3};
 	}
 
 	Vector3 Matrix3x3::row1() const
 	{
-		return Vector3(column1.x, column2.x, column3.x);
+		return { column1.x, column2.x, column3.x };
 	}
 
 	Vector3 Matrix3x3::row2() const
 	{
-		return Vector3(column1.y, column2.y, column3.y);
+		return {column1.y, column2.y, column3.y};
 	}
 
 	Vector3 Matrix3x3::row3() const
 	{
-		return Vector3(column1.z, column2.z, column3.z);
+		return {column1.z, column2.z, column3.z};
 	}
 
 	real& Matrix3x3::e11()
@@ -225,35 +225,40 @@ namespace ST
 
 	Matrix3x3 Matrix3x3::skewSymmetricMatrix(const Vector3& v)
 	{
-		return Matrix3x3(
+		return {
 			0, v.z, -v.y,
 			-v.z, 0, v.x,
-			v.y, -v.x, 0);
+			v.y, -v.x, 0 };
 	}
 
 	Matrix3x3 Matrix3x3::identityMatrix()
 	{
-		return Matrix3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);
+		return {
+			1, 0, 0,
+			0, 1, 0,
+			0, 0, 1 };
 	}
 
 	Matrix3x3 Matrix3x3::multiply(const Matrix3x3& lhs, const Matrix3x3& rhs)
 	{
-		return Matrix3x3(multiply(lhs, rhs.column1),
+		return {
+			multiply(lhs, rhs.column1),
 			multiply(lhs, rhs.column2),
-			multiply(lhs, rhs.column3));
+			multiply(lhs, rhs.column3)
+		};
 	}
 
 	Vector3 Matrix3x3::multiply(const Matrix3x3& lhs, const Vector3& rhs)
 	{
-		return Vector3(lhs.column1.x * rhs.x + lhs.column2.x * rhs.y + lhs.column3.x * rhs.z,
+		return { lhs.column1.x * rhs.x + lhs.column2.x * rhs.y + lhs.column3.x * rhs.z,
 			lhs.column1.y * rhs.x + lhs.column2.y * rhs.y + lhs.column3.y * rhs.z,
-			lhs.column1.z * rhs.x + lhs.column2.z * rhs.y + lhs.column3.z * rhs.z);
+			lhs.column1.z * rhs.x + lhs.column2.z * rhs.y + lhs.column3.z * rhs.z };
 	}
 
 	Vector2 Matrix3x3::multiply(const Matrix3x3& lhs, const Vector2& rhs)
 	{
-		return Vector2(lhs.column1.x * rhs.x + lhs.column2.x * rhs.y,
-			lhs.column1.y * rhs.x + lhs.column2.y * rhs.y);
+		return { lhs.column1.x * rhs.x + lhs.column2.x * rhs.y,
+			lhs.column1.y * rhs.x + lhs.column2.y * rhs.y };
 	}
 
 	real Matrix3x3::determinant(const Matrix3x3& mat)

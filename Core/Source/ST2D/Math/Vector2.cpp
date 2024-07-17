@@ -16,26 +16,26 @@ namespace ST
 
 	Vector2 Vector2::operator+(const Vector2& rhs) const
 	{
-		return Vector2(x + rhs.x, y + rhs.y);
+		return { x + rhs.x, y + rhs.y };
 	}
 
 	Vector2 Vector2::operator-(const Vector2& rhs) const
 	{
-		return Vector2(x - rhs.x, y - rhs.y);
+		return {x - rhs.x, y - rhs.y};
 	}
 	Vector2 Vector2::operator-()const
 	{
-		return Vector2(-x, -y);
+		return {-x, -y};
 	}
 	Vector2 Vector2::operator*(const int& factor) const
 	{
-		return Vector2(x * factor, y * factor);
+		return {x * factor, y * factor};
 	}
 
 	Vector2 Vector2::operator/(const real& factor) const
 	{
 		assert(!realEqual(factor, 0));
-		return Vector2(x / factor, y / factor);
+		return { x / factor, y / factor };
 	}
 
 	Vector2& Vector2::operator+=(const Vector2& rhs)
@@ -131,7 +131,6 @@ namespace ST
 	{
 		const real length_inv = 1.0f / std::sqrt(lengthSquare());
 		assert(!std::isinf(length_inv));
-		//
 
 		//const real length_inv = Math::fastInverseSqrt<real>(lengthSquare());
 		x *= length_inv;
@@ -193,7 +192,7 @@ namespace ST
 
 	Vector2 Vector2::perpendicular() const
 	{
-		return Vector2(-y, x);
+		return { -y, x };
 	}
 
 	real Vector2::dotProduct(const Vector2& lhs, const Vector2& rhs)
@@ -213,12 +212,12 @@ namespace ST
 
 	Vector2 Vector2::crossProduct(const real& lhs, const Vector2& rhs)
 	{
-		return Vector2(-rhs.y, rhs.x) * lhs;
+		return { -rhs.y * lhs, rhs.x * lhs };
 	}
 
 	Vector2 Vector2::crossProduct(const Vector2& lhs, const real& rhs)
 	{
-		return Vector2(lhs.y, -lhs.x) * rhs;
+		return {lhs.y * rhs, -lhs.x * rhs };
 	}
 
 	Vector2 Vector2::lerp(const Vector2& lhs, const Vector2& rhs, const real& t)
@@ -244,12 +243,12 @@ namespace ST
 	Vector2 Vector2::operator/(const int& factor) const
 	{
 		assert(!realEqual(factor, 0));
-		return Vector2(x / factor, y / factor);
+		return {x / factor, y / factor};
 	}
 
 	Vector2 Vector2::operator*(const real& factor) const
 	{
-		return Vector2(x * factor, y * factor);
+		return {x * factor, y * factor};
 	}
 
 	Vector2& Vector2::operator=(const Vector2& copy)

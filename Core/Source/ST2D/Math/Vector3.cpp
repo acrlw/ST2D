@@ -12,28 +12,28 @@ namespace ST
 
 	Vector3 Vector3::operator+(const Vector3& rhs) const
 	{
-		return Vector3(x + rhs.x, y + rhs.y, z + rhs.z);
+		return { x + rhs.x, y + rhs.y, z + rhs.z };
 	}
 
 	Vector3 Vector3::operator-(const Vector3& other) const
 	{
-		return Vector3(x - other.x, y - other.y, z - other.z);
+		return {x - other.x, y - other.y, z - other.z};
 	}
 
 	Vector3 Vector3::operator-() const
 	{
-		return Vector3(-x, -y, -z);
+		return {-x, -y, -z};
 	}
 
 	Vector3 Vector3::operator*(const real& factor) const
 	{
-		return Vector3(x * factor, y * factor, z * factor);
+		return {x * factor, y * factor, z * factor};
 	}
 
 	Vector3 Vector3::operator/(const real& factor) const
 	{
 		assert(!realEqual(factor, 0));
-		return Vector3(x / factor, y / factor, z / factor);
+		return {x / factor, y / factor, z / factor};
 	}
 
 	Vector3& Vector3::operator+=(const Vector3& rhs)
@@ -95,7 +95,7 @@ namespace ST
 
 	Vector3 Vector3::negative() const
 	{
-		return Vector3(-x, -y, -z);
+		return { -x, -y, -z };
 	}
 	Vector3& Vector3::negate()
 	{
@@ -170,7 +170,7 @@ namespace ST
 
 	Vector3 Vector3::crossProduct(const Vector3& lhs, const Vector3& rhs)
 	{
-		return Vector3(lhs.y * rhs.z - rhs.y * lhs.z, rhs.x * lhs.z - lhs.x * rhs.z, lhs.x * rhs.y - lhs.y * rhs.x);
+		return { lhs.y * rhs.z - rhs.y * lhs.z, rhs.x * lhs.z - lhs.x * rhs.z, lhs.x * rhs.y - lhs.y * rhs.x };
 	}
 
 	Vector3& Vector3::operator/=(const int& factor)
@@ -198,12 +198,12 @@ namespace ST
 	Vector3 Vector3::operator/(const int& factor) const
 	{
 		assert(!realEqual(factor, 0));
-		return Vector3(x / factor, y / factor, z / factor);
+		return {x / factor, y / factor, z / factor};
 	}
 
 	Vector3 Vector3::operator*(const int& factor) const
 	{
-		return Vector3(x * factor, y * factor, z * factor);
+		return {x * factor, y * factor, z * factor};
 	}
 
 	Vector3& Vector3::operator=(const Vector3& copy)

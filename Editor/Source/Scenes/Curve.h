@@ -2,28 +2,81 @@
 
 #include "ST2DCore.h"
 
+// autodiff include
+#include <autodiff/reverse/var.hpp>
+#include <Eigen/Dense>
+#include "AbstractCurve.h"
+
 namespace STEditor
 {
 	using namespace ST;
-	class RationalCubicBezier
+	using namespace autodiff;
+
+	// A type defining parameters for a function of interest
+
+	struct Params
+	{
+		var p0, p1, p2, p3;
+	};
+
+	var bezier3Func(var t, const Params& param);
+
+
+	class CubicBezierAD
 	{
 	public:
 
-		void set(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3, float w0 = 1.0f, float w1 = 1.0f, float w2 = 1.0f, float w3 = 1.0f);
+		CubicBezierAD(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3);
 
-		Vector2& pointAt(size_t index);
-
-		float& weightAt(size_t index);
+		void setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3);
 
 		Vector2 sample(float t)const;
 
-		std::vector<Vector2> samplePoints(size_t count)const;
+		std::vector<Vector2> curvePoints();
 
-		float curvatureAD(float t)const;
+		std::vector<Vector2> curvaturePoints();
 
-		float curvature(float t)const;
+		float curvatureAt(float t);
 
-		std::vector<Vector2> curvaturePoints(size_t count, float scale = 1.0, bool flip = false) const;
+	private:
+
+
+		void samplePoints();
+
+		void sampleCurvaturePoints();
+
+		Params m_params1;
+		Params m_params2;
+		std::vector<Vector2> m_curvePoints;
+		std::vector<Vector2> m_curvaturePoints;
+		bool m_needUpdateCurvePoints = true;
+		bool m_needUpdateCurvaturePoints = true;
+
+		size_t m_count = 50;
+	};
+
+	class RationalCubicBezier : public AbstractCurve
+	{
+	public:
+
+		void setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3);
+		void setWeights(float w0, float w1, float w2, float w3);
+
+		std::array<Vector2, 4> points() const;
+		std::array<float, 4> weights() const;
+
+		Vector2 pointAt(size_t index) const;
+
+		float weightAt(size_t index) const;
+
+		Vector2 sample(float t)const override;
+
+		float curvatureAt(float t)const override;
+
+	protected:
+
+		void sampleCurvePoints()override;
+		void sampleCurvaturePoints()override;
 
 	private:
 		std::array<Vector2, 4> m_points;
@@ -32,25 +85,8 @@ namespace STEditor
 		std::array<float, 4> m_weights = { 0.8029640f, 0.9434249f, 0.8017000f, 0.8254001f };
 	};
 
-	class RationalQuadraticBezier
-	{
 
-	public:
-
-		void set(const Vector2& p0, const Vector2& p1, const Vector2& p2, float w0 = 1.0f, float w1 = 1.0f, float w2 = 1.0f);
-
-		Vector2& pointAt(size_t index);
-
-		float& weightAt(size_t index);
-
-		Vector2 sample(float t)const;
-
-	private:
-		std::array<Vector2, 3> m_points;
-		std::array<float, 3> m_weights = { 1.0f, 1.0f, 1.0f };
-	};
-
-	class CubicBezier
+	class CubicBezier : public AbstractCurve
 	{
 	public:
 
@@ -59,70 +95,26 @@ namespace STEditor
 		static CubicBezier fromHermite(const Vector2& p0, const Vector2& dir0, const Vector2& p1, const Vector2& dir1);
 
 
-		float torsion(float t)const;
 
-		Vector2 sample(float t)const;
+		Vector2 sample(float t)const override;
 
-		float curvature(float t)const;
+		float curvatureAt(float t)const override;
 
-		std::vector<Vector2> curvaturePoints(size_t count, float scale = 1.0, bool flip = false) const;
-
-		Vector2& operator[](size_t index);
-
-		Vector2& at(size_t index);
+		std::array<Vector2, 4> points() const;
+		Vector2 pointAt(size_t index) const;
+		Vector2 operator[](size_t index) const;
 
 		void setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3);
 
-		std::vector<Vector2> samplePoints(size_t count);
-
-	private:
-		std::array<Vector2, 4> m_points;
-	};
-
-	class AbstractSpline
-	{
-	public:
-		virtual ~AbstractSpline() = default;
-		virtual std::vector<Vector2> sample(size_t count) = 0;
-
-		void addPoints(const std::vector<Vector2>& points)
-		{
-			m_points.insert(m_points.end(), points.begin(), points.end());
-		}
-
-		Vector2& at(size_t index)
-		{
-			return m_points[index];
-		}
 
 	protected:
-		std::vector<Vector2> m_points;
-	};
+		void sampleCurvePoints() override;
+		void sampleCurvaturePoints() override;
 
-	class CatmullRomSpline : public AbstractSpline
-	{
-
-	public:
-		std::vector<Vector2> sample(size_t count) override
-		{
-			std::vector<Vector2> result;
-
-			return result;
-		}
-
-	};
-
-	class BSpline : public AbstractSpline
-	{
-	public:
-		std::vector<Vector2> sample(size_t count) override
-		{
-			std::vector<Vector2> result;
-
-			return result;
-
-		}
 
 	private:
+
+		std::array<Vector2, 4> m_points;
+		
 	};
 }

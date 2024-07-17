@@ -3,6 +3,7 @@
 #include "AbstractScene.h"
 #include "Curve.h"
 
+
 namespace STEditor
 {
 	class CurveScene : public AbstractScene
@@ -27,9 +28,14 @@ namespace STEditor
 		void onKeyPressed(sf::Event& event) override;
 
 	private:
+
+		// The single-variable function for which derivatives are needed
+		
+
 		void drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve, const sf::Color& color) const;
 
-		void drawCurvature(sf::RenderWindow& window, const std::vector<Vector2>& start, const std::vector<Vector2>& end, const sf::Color& color);
+		void drawCurvature(sf::RenderWindow& window, const std::vector<Vector2>& start, 
+			const std::vector<Vector2>& end, const sf::Color& color, bool flip = false);
 
 		void computeBasicParam();
 
@@ -86,8 +92,12 @@ namespace STEditor
 		std::vector<Vector2> bezierCurvature1,bezierCurvature2;
 		std::vector<Vector2> rationalBezierCurve1, rationalBezierCurve2;
 		std::vector<Vector2> rationalBezierCurvature1, rationalBezierCurvature2;
+
+		std::array<float, 4> rationalBezierWeight1 = { 0.8029640f, 0.9434249f, 0.8017000f, 0.8254001f };
+		std::array<float, 4> rationalBezierWeight2 = { 0.8029640f, 0.9434249f, 0.8017000f, 0.8254001f };
 		// shared param for generating curves
 		Vector2 p00, p01, p10, p11;
+		Vector2 b1P01, b1P10, b2P01, b2P10;
 		Vector2 roundCenter, roundCorner;
 		Vector2 startRoundedPos, endRoundedPos;
 		float currentRadius = 0.0f;

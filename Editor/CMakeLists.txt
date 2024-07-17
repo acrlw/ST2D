@@ -14,6 +14,7 @@ link_directories(${CMAKE_BINARY_DIR}/lib)
 
 include_directories(${CMAKE_SOURCE_DIR}/Core/Source)
 include_directories(${CMAKE_SOURCE_DIR}/Editor/Source)
+include_directories(${CMAKE_SOURCE_DIR}/ThirdParty)
 
 file(GLOB_RECURSE EDITOR_SRC
     "${CMAKE_SOURCE_DIR}/Editor/Source/*.cpp"
@@ -30,7 +31,7 @@ target_compile_definitions(ST2DEditor PRIVATE
 
 target_link_libraries(ST2DEditor PRIVATE 
     ST2DCore
-    
+    autodiff::autodiff
     sfml-system sfml-network sfml-graphics sfml-window
     ImGui-SFML::ImGui-SFML
     Eigen3::Eigen

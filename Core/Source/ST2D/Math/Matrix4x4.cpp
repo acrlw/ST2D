@@ -76,17 +76,17 @@ namespace ST
 
 	Matrix4x4 Matrix4x4::operator*(const real& factor) const
 	{
-		return Matrix4x4(column1 * factor, column2 * factor, column3 * factor, column4 * factor);
+		return { column1 * factor, column2 * factor, column3 * factor, column4 * factor };
 	}
 
 	Matrix4x4 Matrix4x4::operator+(const Matrix4x4& rhs) const
 	{
-		return Matrix4x4(column1 + rhs.column1, column2 + rhs.column2, column3 + rhs.column3, column4 + rhs.column4);
+		return {column1 + rhs.column1, column2 + rhs.column2, column3 + rhs.column3, column4 + rhs.column4};
 	}
 
 	Matrix4x4 Matrix4x4::operator-(const Matrix4x4& rhs) const
 	{
-		return Matrix4x4(column1 - rhs.column1, column2 - rhs.column2, column3 - rhs.column3, column4 - rhs.column4);
+		return {column1 - rhs.column1, column2 - rhs.column2, column3 - rhs.column3, column4 - rhs.column4};
 	}
 
 	bool Matrix4x4::operator==(const Matrix4x4& rhs) const
@@ -96,26 +96,26 @@ namespace ST
 
 	Vector4 Matrix4x4::row1() const
 	{
-		return Vector4(column1.x, column2.x,
-			column3.x, column4.x);
+		return { column1.x, column2.x,
+			column3.x, column4.x };
 	}
 
 	Vector4 Matrix4x4::row2() const
 	{
-		return Vector4(column1.y, column2.y,
-			column3.y, column4.y);
+		return {column1.y, column2.y,
+			column3.y, column4.y};
 	}
 
 	Vector4 Matrix4x4::row3() const
 	{
-		return Vector4(column1.z, column2.z,
-			column3.z, column4.z);
+		return {column1.z, column2.z,
+			column3.z, column4.z};
 	}
 
 	Vector4 Matrix4x4::row4() const
 	{
-		return Vector4(column1.w, column2.w,
-			column3.w, column4.w);
+		return {column1.w, column2.w,
+			column3.w, column4.w};
 	}
 
 	real& Matrix4x4::e11()

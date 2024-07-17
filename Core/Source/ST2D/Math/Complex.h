@@ -59,7 +59,7 @@ namespace ST
 		Complex& dot(const Complex& rhs);
 		Complex conjugate() const;
 
-
+		static Vector2 dotProduct(const Complex& lhs, const Vector2& rhs);
 		static Complex dotProduct(const Complex& lhs, const Complex& rhs);
 		static Complex slerp(const Complex& start, const Complex& end, const real& t);
 

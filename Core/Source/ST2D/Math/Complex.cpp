@@ -224,7 +224,7 @@ namespace ST
 
 	Complex& Complex::normalize()
 	{
-		float ls = length();
+		const float ls = length();
 		assert(!realEqual(ls, 0));
 		re /= ls;
 		im /= ls;
@@ -234,7 +234,7 @@ namespace ST
 
 	Complex Complex::perpendicular() const
 	{
-		return Complex(-im, re);
+		return { -im, re };
 	}
 
 	Complex& Complex::matchSign(const Complex& rhs)
@@ -263,6 +263,11 @@ namespace ST
 		return { re, -im };
 	}
 
+	Vector2 Complex::dotProduct(const Complex& lhs, const Vector2& rhs)
+	{
+		return { lhs.re * rhs.x - lhs.im * rhs.y, lhs.im * rhs.x + lhs.re * rhs.y };
+	}
+
 	Complex Complex::dotProduct(const Complex& lhs, const Complex& rhs)
 	{
 		return { lhs.re * rhs.im - lhs.im * rhs.re, lhs.im * rhs.re + lhs.re * rhs.im };
@@ -280,7 +285,6 @@ namespace ST
 
 	Matrix2x2 Complex::toMatrix() const
 	{
-		Matrix2x2 result(re, im, -im, re);
-		return result;
+		return { re, im, -im, re };
 	}
 }
