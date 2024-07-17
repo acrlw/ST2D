@@ -72,8 +72,8 @@ namespace STEditor
 		RationalCubicBezier m_rationalCubicBezier2;
 		RationalCubicBezier m_rationalCubicBezier1;
 
-		CubicBezier m_bezier1;
-		CubicBezier m_bezier2;
+		CubicBezierAD m_bezier1;
+		CubicBezierAD m_bezier2;
 
 		//std::array<Vector2, 4> m_bezierPoints1;
 		//std::array<Vector2, 4> m_bezierPoints2;

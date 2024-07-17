@@ -10,49 +10,48 @@
 namespace STEditor
 {
 	using namespace ST;
-	using namespace autodiff;
 
+	using namespace autodiff;
 	// A type defining parameters for a function of interest
 
-	struct Params
-	{
-		var p0, p1, p2, p3;
-	};
-
-	var bezier3Func(var t, const Params& param);
 
 
-	class CubicBezierAD
+	class CubicBezierAD : public AbstractCurve
 	{
 	public:
 
-		CubicBezierAD(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3);
+
+		struct Params
+		{
+			var p0, p1, p2, p3;
+		};
+
+		static var bezier3Func(var t, const Params& param);
+
+
+		CubicBezierAD(const Vector2& p0 = {}, const Vector2& p1 = {}, const Vector2& p2 = {}, const Vector2& p3 = {});
 
 		void setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3);
 
-		Vector2 sample(float t)const;
+		float curvatureAt(float t) override;
 
-		std::vector<Vector2> curvePoints();
+		Vector2 sample(float t) override;
 
-		std::vector<Vector2> curvaturePoints();
+		std::array<Vector2, 4> points() const;
+		Vector2 pointAt(size_t index) const;
+		Vector2 operator[](size_t index) const;
 
-		float curvatureAt(float t);
+	protected:
+		void sampleCurvePoints() override;
+		void sampleCurvaturePoints() override;
 
 	private:
+		Vector2 tangent(float t);
 
+		std::array<Vector2, 4> m_points;
 
-		void samplePoints();
-
-		void sampleCurvaturePoints();
-
-		Params m_params1;
-		Params m_params2;
-		std::vector<Vector2> m_curvePoints;
-		std::vector<Vector2> m_curvaturePoints;
-		bool m_needUpdateCurvePoints = true;
-		bool m_needUpdateCurvaturePoints = true;
-
-		size_t m_count = 50;
+		var m_px, m_py;
+		var m_t;
 	};
 
 	class RationalCubicBezier : public AbstractCurve
@@ -69,9 +68,9 @@ namespace STEditor
 
 		float weightAt(size_t index) const;
 
-		Vector2 sample(float t)const override;
+		Vector2 sample(float t) override;
 
-		float curvatureAt(float t)const override;
+		float curvatureAt(float t) override;
 
 	protected:
 
@@ -96,9 +95,9 @@ namespace STEditor
 
 
 
-		Vector2 sample(float t)const override;
+		Vector2 sample(float t) override;
 
-		float curvatureAt(float t)const override;
+		float curvatureAt(float t) override;
 
 		std::array<Vector2, 4> points() const;
 		Vector2 pointAt(size_t index) const;
