@@ -182,6 +182,11 @@ namespace ST
 		return *this;
 	}
 
+	bool Vector3::operator==(const Vector3& rhs) const
+	{
+		return realEqual(x, rhs.x) && realEqual(y, rhs.y) && realEqual(z, rhs.z);
+	}
+
 	Vector3& Vector3::operator*=(const int& factor)
 	{
 		x *= factor;

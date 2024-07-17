@@ -23,6 +23,8 @@ namespace ST
         Matrix3x3& operator*=(const real& factor);
         Matrix3x3& operator/=(const real& factor);
 
+        bool operator==(const Matrix3x3&) const;
+
         Matrix3x3 operator*(const real& factor) const;
         Matrix3x3 operator+(const Matrix3x3& rhs) const;
         Matrix3x3 operator-(const Matrix3x3& rhs) const;

@@ -37,37 +37,36 @@ namespace STEditor
 
 	Camera2D::Camera2D()
 	{
-		m_meterToPixelEasing.restart(m_defaultMeterToPixel * 0.5f, m_defaultMeterToPixel, m_easingDuration);
 		m_meterToPixelEasing.setEasingFunction(EasingFunction::easeOutExpo);
+		m_meterToPixelEasing.restart(m_defaultMeterToPixel * 3.0f , m_defaultMeterToPixel * 4.0f, m_easingDuration * 0.2f);
 		m_origin = m_viewport.center();
 	}
 
 	void Camera2D::onUpdate(float deltaTime)
 	{
+		m_meterToPixelEasing.update(deltaTime);
 		if (!m_smoothZoom)
-		{
 			m_meterToPixelEasing.finish();
-			m_transform += (screenToWorld(m_preScreenMousePos) - m_preWorldMousePos) * m_meterToPixelEasing.value();
-		}
-		else
-			m_meterToPixelEasing.update(deltaTime);
 
 		m_pixelToMeter = 1.0f / m_meterToPixelEasing.value();
 
-		bool isZooming = !m_meterToPixelEasing.isFinished();
+		if (!m_preScrollScreenMousePos.isOrigin())
+		{
+			Vector2 deltaTransform = (screenToWorld(m_preScrollScreenMousePos) - m_preScrollWorldMousePos) * m_meterToPixelEasing.value();
+			m_transform += deltaTransform;
 
-		if (isZooming && !m_preScreenMousePos.isOrigin())
-			m_transform += (screenToWorld(m_preScreenMousePos) - m_preWorldMousePos) * m_meterToPixelEasing.value();
+			if (m_meterToPixelEasing.isFinished() || !m_smoothZoom)
+			{
+				m_preScrollScreenMousePos.clear();
+				m_preScrollWorldMousePos.clear();
+			}
+		}
 	}
 
 	void Camera2D::onRender(sf::RenderWindow& window)
 	{
 		if (m_visible)
 		{
-
-			//draw background
-			window.clear(sf::Color(50, 50, 50));
-
 			
 			if (m_treeVisible)
 			{
@@ -157,7 +156,7 @@ namespace STEditor
 
 	void Camera2D::setMeterToPixel(real value)
 	{
-		m_meterToPixelEasing.continueTo(value, m_easingDuration);
+		m_meterToPixelEasing.restart(m_meterToPixelEasing.value(), value, m_easingDuration);
 	}
 
 	real Camera2D::meterToPixel() const
@@ -188,8 +187,8 @@ namespace STEditor
 	void Camera2D::setViewport(const Viewport& viewport)
 	{
 		m_viewport = viewport;
-		m_origin.set((m_viewport.topLeft.x + m_viewport.bottomRight.x) * (0.5),
-			(m_viewport.topLeft.y + m_viewport.bottomRight.y) * (0.5));
+		m_origin.set((m_viewport.topLeft.x + m_viewport.bottomRight.x) * 0.5f,
+			(m_viewport.topLeft.y + m_viewport.bottomRight.y) * 0.5f);
 	}
 
 	Vector2 Camera2D::worldToScreen(const Vector2& pos) const
@@ -237,10 +236,10 @@ namespace STEditor
 		m_defaultMeterToPixel = number;
 	}
 
-	void Camera2D::setPreScreenMousePos(const Vector2& pos)
+	void Camera2D::setPreScrollScreenMousePos(const Vector2& pos)
 	{
-		m_preScreenMousePos = pos;
-		m_preWorldMousePos = screenToWorld(pos);
+		m_preScrollScreenMousePos = pos;
+		m_preScrollWorldMousePos = screenToWorld(pos);
 	}
 
 	void Camera2D::setFont(sf::Font* font)

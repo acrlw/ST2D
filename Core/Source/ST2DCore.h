@@ -5,6 +5,7 @@
 #include "ST2D/Log.h"
 
 #include "ST2D/Math/Math.h"
+#include "ST2D/Math/Complex.h"
 #include "ST2D/Math/Vector2.h"
 #include "ST2D/Math/Vector3.h"
 #include "ST2D/Math/Vector4.h"

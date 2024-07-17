@@ -28,6 +28,7 @@ namespace ST
 
 		bool operator==(const Vector2& rhs) const;
 		bool operator!=(const Vector2& rhs) const;
+
 		bool equal(const Vector2& rhs) const;
 		bool fuzzyEqual(const Vector2& rhs, const real& epsilon = Constant::GeometryEpsilon) const;
 		bool isOrigin(const real& epsilon = Constant::GeometryEpsilon) const;
@@ -48,11 +49,11 @@ namespace ST
 
 		Vector2& normalize();
 		Vector2 perpendicular() const;
+		Vector2& matchSign(const Vector2& rhs);
 
 		real dot(const Vector2& rhs) const;
 		real cross(const Vector2& rhs) const;
 
-		Vector2& matchSign(const Vector2& rhs);
 
 		static real dotProduct(const Vector2& lhs, const Vector2& rhs);
 		static real crossProduct(const Vector2& lhs, const Vector2& rhs);

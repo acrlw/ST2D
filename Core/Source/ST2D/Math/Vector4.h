@@ -24,6 +24,8 @@ namespace ST
         Vector4& operator*=(const real& factor);
         Vector4& operator/=(const real& factor);
 
+        bool operator==(const Vector4& rhs)const;
+
         Vector4& set(const real& x, const real& y, const real& z, const real& w);
         Vector4& set(const Vector4& other);
         Vector4& set(const Vector3& other);
