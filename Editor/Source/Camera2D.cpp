@@ -67,10 +67,6 @@ namespace STEditor
 	{
 		if (m_visible)
 		{
-
-			//draw background
-			window.clear(sf::Color(50, 50, 50));
-
 			
 			if (m_treeVisible)
 			{

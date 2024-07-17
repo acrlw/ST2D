@@ -129,6 +129,10 @@ namespace STEditor
 
 			onUpdate(deltaTime);
 			m_camera.onUpdate(deltaTime);
+
+			//draw background
+			m_window->clear(sf::Color(40, 40, 40));
+
 			m_camera.onRender(*m_window);
 
 			const bool show = m_currentScene != nullptr && m_userDrawVisible;
@@ -411,7 +415,7 @@ namespace STEditor
 			RenderSFMLImpl::renderPoint(window, m_camera, m_mouseArray[0], RenderConstant::Green);
 			RenderSFMLImpl::renderPoint(window, m_camera, m_mouseArray[1], RenderConstant::Green);
 			RenderSFMLImpl::renderLine(window, m_camera, m_mouseArray[0], m_mouseArray[1], RenderConstant::Green);
-			std::string str = std::format("{:.6f}", length);
+			std::string str = std::format("{:.7f}", length);
 			sf::Text text;
 			text.setFont(m_font);
 			text.setString(str);
@@ -458,9 +462,6 @@ namespace STEditor
 		m_currentScene->onLoad();
 
 	}
-
-	
-
 	void ST2DEditor::clearAll()
 	{
 		if (m_currentScene != nullptr)
