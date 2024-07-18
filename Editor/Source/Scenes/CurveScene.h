@@ -60,7 +60,7 @@ namespace STEditor
 		bool m_showG3 = true;
 		bool m_showG3Curvature = false;
 		bool m_showRoundedCurvature = true;
-		bool m_showBezierCurvature = true;
+		bool m_showBezierCurvature = false;
 		bool m_showQuinticBezier = false;
 		bool m_showQuinticBezierCurvature = false;
 		bool m_showReferenceLine = true;
@@ -69,8 +69,8 @@ namespace STEditor
 		bool m_isMoving = false;
 		Vector2 m_mousePos;
 
-		RationalCubicBezierAD m_rationalCubicBezier1;
-		RationalCubicBezierAD m_rationalCubicBezier2;
+		RationalCubicBezier m_rationalCubicBezier1;
+		RationalCubicBezier m_rationalCubicBezier2;
 
 		CubicBezier m_bezier1;
 		CubicBezier m_bezier2;
@@ -89,7 +89,7 @@ namespace STEditor
 		float m_halfWidth = 1.0f;
 		float m_halfHeight = 1.0f;
 		float m_percentage = 0.681f;
-		float m_cornerPercentage = 0.4f;
+		float m_cornerPercentage = 0.3f;
 
 
 		std::vector<Vector2> g1Vertices, g2Vertices, g3Vertices;
@@ -99,8 +99,8 @@ namespace STEditor
 		std::vector<Vector2> rationalBezierCurve1, rationalBezierCurve2;
 		std::vector<Vector2> rationalBezierCurvature1, rationalBezierCurvature2;
 
-		std::array<float, 4> rationalBezierWeight1 = { 0.8029640f, 0.9434249f, 0.8017000f, 0.8254001f };
-		std::array<float, 4> rationalBezierWeight2 = { 0.8029640f, 0.9434249f, 0.8017000f, 0.8254001f };
+		std::array<float, 4> rationalBezierWeight1 = { 0.085, 0.24000002, 0.2098289430, 0.183451116 };
+		std::array<float, 4> rationalBezierWeight2 = { 0.085, 0.24000002, 0.2098289430, 0.183451116 };
 		// shared param for generating curves
 		Vector2 p00, p01, p10, p11;
 		Vector2 b1P01, b1P10, b2P01, b2P10;

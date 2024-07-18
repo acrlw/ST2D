@@ -16,7 +16,7 @@
 namespace ST
 {
 	using Index = uint32_t;
-	using real = float;
+	using real = double;
 
 	namespace Constant
 	{
@@ -31,7 +31,7 @@ namespace ST
 		constexpr real DoublePi = Pi * 2.0f;
 		constexpr real ReciprocalOf180 = 1.0f / 180.0f;
 		constexpr real ReciprocalOfPi = 0.3183098861f;
-		constexpr real GeometryEpsilon = 1e-6f;
+		constexpr real GeometryEpsilon = 1e-38f;
 		constexpr real TrignometryEpsilon = 1e-3f;
 		constexpr real CCDMinVelocity = 100.0f;
 		constexpr real MaxVelocity = 1000.0f;

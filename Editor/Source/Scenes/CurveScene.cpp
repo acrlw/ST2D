@@ -62,7 +62,9 @@ namespace STEditor
 
 		if(m_showG1)
 		{
-			drawCurve(window, g1Vertices, RenderConstant::Red);
+			auto color = RenderConstant::Red;
+			//color.a = 100;
+			drawCurve(window, g1Vertices, color);
 		}
 
 		if(m_showG2)
@@ -74,7 +76,9 @@ namespace STEditor
 			//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, g2Vertices[i], RenderConstant::Green, 2.0f);
 			// 
 			//}
-			drawCurve(window, g2Vertices, RenderConstant::Green);
+			auto color = RenderConstant::Green;
+			//color.a = 100;
+			drawCurve(window, g2Vertices, color);
 		}
 
 		if (m_showG3)
@@ -87,17 +91,19 @@ namespace STEditor
 			//	//RenderSFMLImpl::renderPoint(window, *m_settings.camera, elem, RenderConstant::Green, 2.0f);
 			//}
 
-			drawCurve(window, g3Vertices, RenderConstant::Blue);
+			auto color = RenderConstant::Blue;
+			//color.a = 100;
+			drawCurve(window, g3Vertices, color);
 
-			Vector2 p = m_rationalCubicBezier1.sample(1.0f);
-			Vector2 tangent = m_rationalCubicBezier1.tangent(1.0f);
+			//Vector2 p = m_rationalCubicBezier1.sample(1.0f);
+			//Vector2 tangent = m_rationalCubicBezier1.tangent(1.0f);
 
-			float curvature = m_rationalCubicBezier1.curvatureAt(1.0f);
+			//float curvature = m_rationalCubicBezier1.curvatureAt(1.0f);
 
-			Vector2 n = tangent.perpendicular().normal();
-			//Vector2 curvaturePoint = p + n * curvature * m_curvatureScaleFactor;
+			//Vector2 n = tangent.perpendicular().normal();
+			////Vector2 curvaturePoint = p + n * curvature * m_curvatureScaleFactor;
 
-			RenderSFMLImpl::renderArrow(window, *m_settings.camera, p, p + tangent, RenderConstant::Blue, 0.1f);
+			//RenderSFMLImpl::renderArrow(window, *m_settings.camera, p, p + tangent, RenderConstant::Blue, 0.1f);
 			//RenderSFMLImpl::renderArrow(window, *m_settings.camera, p, curvaturePoint, RenderConstant::Blue, 0.1f);
 		}
 
@@ -139,10 +145,10 @@ namespace STEditor
 
 		ImGui::SeparatorText("Weights");
 	   
-		ImGui::DragFloat("Bezier1 Weight P0", &rationalBezierWeight1[0], 1e-4f, 1e-7f, 5.0f, "%.7f");
-		ImGui::DragFloat("Bezier1 Weight P1", &rationalBezierWeight1[1], 1e-4f, 1e-7f, 5.0f, "%.7f");
-		ImGui::DragFloat("Bezier1 Weight P2", &rationalBezierWeight1[2], 1e-4f, 1e-7f, 5.0f, "%.7f");
-		ImGui::DragFloat("Bezier1 Weight P3", &rationalBezierWeight1[3], 1e-4f, 1e-7f, 5.0f, "%.7f");
+		ImGui::DragFloat("Bezier1 Weight P0", &rationalBezierWeight1[0], 1e-5f, 1e-15f, 5.0f, "%.15f");
+		ImGui::DragFloat("Bezier1 Weight P1", &rationalBezierWeight1[1], 1e-5f, 1e-15f, 5.0f, "%.15f");
+		ImGui::DragFloat("Bezier1 Weight P2", &rationalBezierWeight1[2], 1e-5f, 1e-15f, 5.0f, "%.15f");
+		ImGui::DragFloat("Bezier1 Weight P3", &rationalBezierWeight1[3], 1e-5f, 1e-15f, 5.0f, "%.15f");
 
 		ImGui::Checkbox("Connect Weights", &m_connectWeights);
 
@@ -152,10 +158,10 @@ namespace STEditor
 				rationalBezierWeight2[i] = rationalBezierWeight1[i];
 		}
 
-		ImGui::DragFloat("Bezier2 Weight P0", &rationalBezierWeight2[0], 1e-4f, 1e-7f, 5.0f, "%.7f");
-		ImGui::DragFloat("Bezier2 Weight P1", &rationalBezierWeight2[1], 1e-4f, 1e-7f, 5.0f, "%.7f");
-		ImGui::DragFloat("Bezier2 Weight P2", &rationalBezierWeight2[2], 1e-4f, 1e-7f, 5.0f, "%.7f");
-		ImGui::DragFloat("Bezier2 Weight P3", &rationalBezierWeight2[3], 1e-4f, 1e-7f, 5.0f, "%.7f");
+		ImGui::DragFloat("Bezier2 Weight P0", &rationalBezierWeight2[0], 1e-5f, 1e-15f, 5.0f, "%.15f");
+		ImGui::DragFloat("Bezier2 Weight P1", &rationalBezierWeight2[1], 1e-5f, 1e-15f, 5.0f, "%.15f");
+		ImGui::DragFloat("Bezier2 Weight P2", &rationalBezierWeight2[2], 1e-5f, 1e-15f, 5.0f, "%.15f");
+		ImGui::DragFloat("Bezier2 Weight P3", &rationalBezierWeight2[3], 1e-5f, 1e-15f, 5.0f, "%.15f");
 
 
 		if (m_connectWeights)
@@ -219,16 +225,16 @@ namespace STEditor
 		{
 			Vector2 point0 = curve[i];
 			Vector2 point1 = curve[i - 1];
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, point0, point1, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color);
 			point0.y = -point0.y;
 			point1.y = -point1.y;
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, point0, point1, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color);
 			point0.x = -point0.x;
 			point1.x = -point1.x;
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, point0, point1, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color);
 			point0.y = -point0.y;
 			point1.y = -point1.y;
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, point0, point1, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color);
 		}
 	}
 
@@ -444,16 +450,16 @@ namespace STEditor
 				float residual2 = (k1 - k2) / bezierStep;
 
 				if (residual2 > 0)
-					rationalBezierWeight1[0] *=  (1.0f + m_optimizeSpeed);
+					rationalBezierWeight1[2] *=  (1.0f + m_optimizeSpeed);
 				else
-					rationalBezierWeight1[0] *=  (1.0f - m_optimizeSpeed);
+					rationalBezierWeight1[2] *=  (1.0f - m_optimizeSpeed);
 
 				float residual3 = k1 - scaleK;
 
 				if (residual3 > 0)
-					rationalBezierWeight1[1] *=  0.9999f;
+					rationalBezierWeight1[3] *=  0.9999f;
 				else
-					rationalBezierWeight1[1] *=  1.0001f;
+					rationalBezierWeight1[3] *=  1.0001f;
 
 				APP_INFO("res1:{}, res2:{}, res3:{}, w0:{}", residual1, residual2, residual3, m_rationalCubicBezier1.weightAt(0))
 

@@ -55,7 +55,7 @@ namespace STEditor
 		std::array<std::function<std::unique_ptr<AbstractScene> (const SceneSettings& settings)>, 3> m_sceneList;
 		std::unique_ptr<sf::RenderWindow> m_window;
 
-		real m_zoomFactor = 0.5f;
+		float m_zoomFactor = 0.5f;
 		bool m_enableDistanceCheck = true;
 
 		Vector2 m_mousePos;

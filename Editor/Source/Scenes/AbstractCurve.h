@@ -56,5 +56,6 @@ namespace STEditor
 		bool m_needUpdateCurvePoints = true;
 		bool m_needUpdateCurvaturePoints = true;
 		size_t m_count = 100;
+		float m_threshold = 1e-3;
 	};
 }

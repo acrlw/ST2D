@@ -1,4 +1,5 @@
 #include "ST2DEditor.h"
+#pragma comment(linker, "/STACK:104857600")
 
 int main()
 {

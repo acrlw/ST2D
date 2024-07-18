@@ -184,7 +184,7 @@ namespace STEditor
 		return m_points;
 	}
 
-	std::array<float, 4> RationalCubicBezierAD::weights() const
+	std::array<real, 4> RationalCubicBezierAD::weights() const
 	{
 		return m_weights;
 	}
@@ -566,7 +566,7 @@ namespace STEditor
 		return m_points;
 	}
 
-	std::array<float, 4> RationalCubicBezier::weights() const
+	std::array<real, 4> RationalCubicBezier::weights() const
 	{
 		return m_weights;
 	}
@@ -655,6 +655,11 @@ namespace STEditor
 		Vector2 dp = dp0 * m_points[0] + dp1 * m_points[1] + dp2 * m_points[2] + dp3 * m_points[3];
 		dp /= det;
 
+		det = std::pow(
+			std::pow(t - 1.0f, 3.0f) * m_weights[0] -
+			t * (3.0f * std::pow(t - 1.0f, 2.0f) * m_weights[1] + t * (t * m_weights[3] - 3.0f * (t - 1.0f) * m_weights[2])), 3.0f);
+
+
 		// 6(t-1)w_0\left( (t-1)^3w_0\left( \left( -2t^2+t+1 \right) w_2+(t-1)^2w_1+t(t+1)w_3 \right) +t^2\left( t\left( 5t^2-13t+8 \right) w_3w_2-(t-2)t^2w_{3}^{2}-3(t-1)^2(2t-3)w_{2}^{2} \right) -3(t-1)^5w_{1}^{2}+t(t-1)^2w_1\left( 9(t-1)^2w_2+t(3-4t)w_3 \right) \right)
 
 		float ddp0 = 6.0f * (t - 1.0f) * m_weights[0] *
@@ -687,25 +692,51 @@ namespace STEditor
 	void RationalCubicBezier::sampleCurvePoints()
 	{
 		m_curvePoints.clear();
-		float step = 1.0f / static_cast<float>(m_count);
 
-		for (float t = 0.0f; t <= 1.0f; t += step)
-			m_curvePoints.push_back(sample(t));
+		Vector2 lastPoint;
+		for (size_t i = 0; i <= m_count; ++i)
+		{
+			float t = static_cast<float>(i) / static_cast<float>(m_count);
+			Vector2 p = sample(t);
+			if (i == 0)
+			{
+				lastPoint = p;
+				m_curvePoints.push_back(p);
+				continue;
+			}
+
+			if ((lastPoint - p).length() > m_threshold && i != m_count)
+			{
+				m_curvePoints.push_back(p);
+				lastPoint = p;
+			}
+			if (i == m_count)
+				m_curvePoints.push_back(p);
+		}
+
 	}
 
 	void RationalCubicBezier::sampleCurvaturePoints()
 	{
 		m_curvaturePoints.clear();
+		Vector2 lastPoint;
 
-		float step = 1.0f / static_cast<float>(m_count);
-		for (float t = 0.0f; t <= 1.0f; t += step)
+		for (size_t i = 0; i <= m_count; ++i)
 		{
+			float t = static_cast<float>(i) / static_cast<float>(m_count);
+
 			Vector2 p1 = sample(t);
 
+			if (!lastPoint.isOrigin() && (lastPoint - p1).length() <= m_threshold && i != m_count)
+				continue;
+
+
+			lastPoint = p1;
 
 			// \left( (t-1)^3w_0-t\left( 3(t-1)^2w_1+t\left( tw_3-3(t-1)w_2 \right) \right) \right) ^2
-			float det = std::pow((std::pow(t - 1.0f, 3.0f) * m_weights[0] -
-				t * (3.0f * std::pow(t - 1.0f, 2.0f) * m_weights[1] + t * (t * m_weights[3] - 3.0f * (t - 1.0f) * m_weights[2]))), 2.0f);
+			float det = std::pow(
+				std::pow(t - 1.0f, 3.0f) * m_weights[0] -
+				t * (3.0f * std::pow(t - 1.0f, 2.0f) * m_weights[1] + t * (t * m_weights[3] - 3.0f * (t - 1.0f) * m_weights[2])), 2.0f);
 
 			// -3(t-1)^2w_0\left( (t-1)^2w_1+t\left( tw_3-2(t-1)w_2 \right) \right)
 
@@ -729,6 +760,12 @@ namespace STEditor
 
 			Vector2 dp = dp0 * m_points[0] + dp1 * m_points[1] + dp2 * m_points[2] + dp3 * m_points[3];
 			dp /= det;
+
+			// \left( (t-1)^3w_0-t\left( 3(t-1)^2w_1+t\left( tw_3-3(t-1)w_2 \right) \right) \right) ^3
+
+			det = std::pow(
+				std::pow(t - 1.0f, 3.0f) * m_weights[0] -
+				t * (3.0f * std::pow(t - 1.0f, 2.0f) * m_weights[1] + t * (t * m_weights[3] - 3.0f * (t - 1.0f) * m_weights[2])), 3.0f);
 
 			// 6(t-1)w_0\left( (t-1)^3w_0\left( \left( -2t^2+t+1 \right) w_2+(t-1)^2w_1+t(t+1)w_3 \right) +t^2\left( t\left( 5t^2-13t+8 \right) w_3w_2-(t-2)t^2w_{3}^{2}-3(t-1)^2(2t-3)w_{2}^{2} \right) -3(t-1)^5w_{1}^{2}+t(t-1)^2w_1\left( 9(t-1)^2w_2+t(3-4t)w_3 \right) \right)
 
@@ -845,20 +882,46 @@ namespace STEditor
 	void CubicBezier::sampleCurvePoints()
 	{
 		m_curvePoints.clear();
-		float step = 1.0f / static_cast<float>(m_count);
 
-		for (float t = 0.0f; t <= 1.0f; t += step)
-			m_curvePoints.push_back(sample(t));
+		Vector2 lastPoint;
+		for(size_t i = 0;i <= m_count; ++i)
+		{
+			float t = static_cast<float>(i) / static_cast<float>(m_count);
+			Vector2 p = sample(t);
+			if (i == 0)
+			{
+				lastPoint = p;
+				m_curvePoints.push_back(p);
+				continue;
+			}
+
+			if ((lastPoint - p).length() > m_threshold && i != m_count)
+			{
+				m_curvePoints.push_back(p);
+				lastPoint = p;
+			}
+			if (i == m_count)
+				m_curvePoints.push_back(p);
+		}
 	}
 
 	void CubicBezier::sampleCurvaturePoints()
 	{
 		m_curvaturePoints.clear();
 
-		float step = 1.0f / static_cast<float>(m_count);
-		for (float t = 0.0f; t <= 1.0f; t += step)
+		Vector2 lastPoint;
+
+		for (size_t i = 0; i <= m_count; ++i)
 		{
+			float t = static_cast<float>(i) / static_cast<float>(m_count);
+
 			Vector2 p1 = sample(t);
+
+			if (!lastPoint.isOrigin() && (lastPoint - p1).length() <= m_threshold && i != m_count)
+				continue;
+
+
+			lastPoint = p1;
 
 			//Vector2 dp = -3.0f * (1.0f - t) * (1.0f - t) * m_points[0] +
 			//	(9.0f * t * t - 12.0f * t + 3.0f) * m_points[1] +
@@ -889,7 +952,10 @@ namespace STEditor
 			Vector2 v = normal;
 
 			Vector2 curvaturePoint = v * k + p1 ;
+
 			m_curvaturePoints.push_back(curvaturePoint);
 		}
+		if (m_curvaturePoints.size() != m_curvePoints.size())
+			__debugbreak();
 	}
 }

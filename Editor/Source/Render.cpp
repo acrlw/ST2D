@@ -365,8 +365,34 @@ namespace STEditor
 			}
 		}
 
+		void RenderSFMLImpl::renderThickLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1,
+			const Vector2& p2, const sf::Color& color, const real& thickness)
+		{
+			sf::Vector2f start = toVector2f(camera.worldToScreen(p1));
+			sf::Vector2f end = toVector2f(camera.worldToScreen(p2));
+
+			sf::Vector2f direction = end - start;
+			sf::Vector2f unitDirection = direction / std::sqrt(direction.x * direction.x + direction.y * direction.y);
+			sf::Vector2f unitPerpendicular(-unitDirection.y, unitDirection.x);
+
+			sf::Vector2f offset = unitPerpendicular;
+			offset.x *= thickness * 0.5f;
+			offset.y *= thickness * 0.5f;
+			
+			sf::VertexArray lines(sf::Quads, 4);
+			lines[0].position = start - offset;
+			lines[1].position = end - offset;
+			lines[2].position = end + offset;
+			lines[3].position = start + offset;
+
+			for (int i = 0; i < 4; ++i)
+				lines[i].color = color;
+
+			window.draw(lines);
+		}
+
 		void RenderSFMLImpl::renderArrow(sf::RenderWindow& window, Camera2D& camera, const Vector2& start, const Vector2& end,
-			const sf::Color& color, const real& size, const real& degree)
+		                                 const sf::Color& color, const real& size, const real& degree)
 		{
 			renderLine(window, camera, start, end, color);
 			Vector2 tf = start - end;

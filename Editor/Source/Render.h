@@ -99,6 +99,8 @@ namespace STEditor
 		static void renderSimplex(sf::RenderWindow& window, Camera2D& camera, const Simplex& simplex,
 			const sf::Color& color, const sf::Font& font, bool showIndex = true, const unsigned int& indexSize = 18);
 
+		static void renderThickLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1, const Vector2& p2,
+			const sf::Color& color, const real& thickness = 2.0f);
 
 		static void renderPolytope(sf::RenderWindow& window, Camera2D& camera, const std::vector<Vector2>& polytope,
 			const sf::Color& color, const sf::Font& font,
