@@ -13,7 +13,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(Core)
 add_subdirectory(Editor)
-add_subdirectory(ThirdParty/autodiff)
 
 
 

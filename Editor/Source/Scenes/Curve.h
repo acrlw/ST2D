@@ -14,6 +14,44 @@ namespace STEditor
 	using namespace autodiff;
 	// A type defining parameters for a function of interest
 
+	class RationalCubicBezierAD : public AbstractCurve
+	{
+	public:
+
+		RationalCubicBezierAD(const Vector2& p0 = {}, const Vector2& p1 = {}, const Vector2& p2 = {}, const Vector2& p3 = {}
+		, real w0 = 0.8029640f, real w1 = 0.9434249f, real w2 = 0.8017000f, real w3 = 0.8254001f);
+
+		struct Params
+		{
+			var p0, p1, p2, p3, w0, w1, w2, w3;
+		};
+
+		void setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3);
+		void setWeights(float w0, float w1, float w2, float w3);
+
+		static var bezierFunc(var t, const Params& param);
+
+		float curvatureAt(float t) override;
+		Vector2 sample(float t) override;
+
+		Vector2 tangent(float t);
+
+		std::array<Vector2, 4> points() const;
+		std::array<float, 4> weights() const;
+
+		Vector2 pointAt(size_t index) const;
+
+		float weightAt(size_t index) const;
+	protected:
+		void sampleCurvePoints() override;
+		void sampleCurvaturePoints() override;
+
+	private:
+
+		std::array<Vector2, 4> m_points;
+		std::array<float, 4> m_weights = { 0.8029640f, 0.9434249f, 0.8017000f, 0.8254001f };
+
+	};
 
 
 	class CubicBezierAD : public AbstractCurve
@@ -26,7 +64,7 @@ namespace STEditor
 			var p0, p1, p2, p3;
 		};
 
-		static var bezier3Func(var t, const Params& param);
+		static var bezierFunc(var t, const Params& param);
 
 
 		CubicBezierAD(const Vector2& p0 = {}, const Vector2& p1 = {}, const Vector2& p2 = {}, const Vector2& p3 = {});
@@ -47,11 +85,8 @@ namespace STEditor
 
 	private:
 		Vector2 tangent(float t);
-
 		std::array<Vector2, 4> m_points;
 
-		var m_px, m_py;
-		var m_t;
 	};
 
 	class RationalCubicBezier : public AbstractCurve
@@ -69,6 +104,8 @@ namespace STEditor
 		float weightAt(size_t index) const;
 
 		Vector2 sample(float t) override;
+
+		Vector2 tangent(float t) const;
 
 		float curvatureAt(float t) override;
 
@@ -92,8 +129,6 @@ namespace STEditor
 		static CubicBezier fromControlPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3);
 
 		static CubicBezier fromHermite(const Vector2& p0, const Vector2& dir0, const Vector2& p1, const Vector2& dir1);
-
-
 
 		Vector2 sample(float t) override;
 

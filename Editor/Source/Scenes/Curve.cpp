@@ -3,7 +3,273 @@
 
 namespace STEditor
 {
-	var CubicBezierAD::bezier3Func(var t, const Params& param)
+
+	RationalCubicBezierAD::RationalCubicBezierAD(const Vector2& p0, const Vector2& p1, const Vector2& p2,
+		const Vector2& p3, real w0, real w1, real w2, real w3)
+	{
+		m_points[0] = p0;
+		m_points[1] = p1;
+		m_points[2] = p2;
+		m_points[3] = p3;
+
+		m_weights[0] = w0;
+		m_weights[1] = w1;
+		m_weights[2] = w2;
+		m_weights[3] = w3;
+
+	}
+
+	void RationalCubicBezierAD::setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3)
+	{
+		if (p0.equal(m_points[0]) &&
+			p1.equal(m_points[1]) &&
+			p2.equal(m_points[2]) &&
+			p3.equal(m_points[3]))
+			return;
+
+		m_points[0] = p0;
+		m_points[1] = p1;
+		m_points[2] = p2;
+		m_points[3] = p3;
+
+		m_needUpdateCurvaturePoints = true;
+		m_needUpdateCurvePoints = true;
+	}
+
+	void RationalCubicBezierAD::setWeights(float w0, float w1, float w2, float w3)
+	{
+		if (realEqual(w0, m_weights[0]) && realEqual(w1, m_weights[1]) &&
+			realEqual(w2, m_weights[2]) && realEqual(w3, m_weights[3]))
+			return;
+
+		m_weights[0] = w0;
+		m_weights[1] = w1;
+		m_weights[2] = w2;
+		m_weights[3] = w3;
+
+		m_needUpdateCurvaturePoints = true;
+		m_needUpdateCurvePoints = true;
+	}
+
+	var RationalCubicBezierAD::bezierFunc(var t, const Params& param)
+	{
+		return ((1.0 - t) * (1.0 - t) * (1.0 - t) * param.w0 * param.p0 +
+			3.0 * t * (1.0 - t) * (1.0 - t) * param.w1 * param.p1 +
+			3.0 * t * t * (1.0 - t) * param.w2 * param.p2 +
+			t * t * t * param.w3 * param.p3) / (param.w0 * (1.0 - t) * (1.0 - t) * (1.0 - t) +
+				param.w1 * 3.0 * t * (1.0 - t) * (1.0 - t) +
+				param.w2 * 3.0 * t * t * (1.0 - t) +
+				param.w3 * t * t * t);
+	}
+	float RationalCubicBezierAD::curvatureAt(float T)
+	{
+
+		Params param1, param2;
+		param1.p0 = m_points[0].x;
+		param1.p1 = m_points[1].x;
+		param1.p2 = m_points[2].x;
+		param1.p3 = m_points[3].x;
+
+		param1.w0 = m_weights[0];
+		param1.w1 = m_weights[1];
+		param1.w2 = m_weights[2];
+		param1.w3 = m_weights[3];
+
+		param2.p0 = m_points[0].y;
+		param2.p1 = m_points[1].y;
+		param2.p2 = m_points[2].y;
+		param2.p3 = m_points[3].y;
+
+		param2.w0 = m_weights[0];
+		param2.w1 = m_weights[1];
+		param2.w2 = m_weights[2];
+		param2.w3 = m_weights[3];
+
+		var t = T;
+		var px = bezierFunc(t, param1);
+		var py = bezierFunc(t, param2);
+
+		auto [Vdxdt] = reverse::detail::derivativesx(px, wrt(t));
+		auto [Vdydt] = reverse::detail::derivativesx(py, wrt(t));
+
+		auto [Vd2xdt2] = reverse::detail::derivativesx(Vdxdt, wrt(t));
+		auto [Vd2ydt2] = reverse::detail::derivativesx(Vdydt, wrt(t));
+
+		double dxdt = Vdxdt.expr->val;
+		double dydt = Vdydt.expr->val;
+
+		double d2xdt2 = Vd2xdt2.expr->val;
+		double d2ydt2 = Vd2ydt2.expr->val;
+
+		float k = std::abs(dxdt * d2ydt2 - dydt * d2xdt2) / std::pow(dxdt * dxdt + dydt * dydt, 1.5);
+
+		return k;
+
+
+	}
+
+	Vector2 RationalCubicBezierAD::sample(float T)
+	{
+		Vector2 result;
+
+		Params param1, param2;
+		param1.p0 = m_points[0].x;
+		param1.p1 = m_points[1].x;
+		param1.p2 = m_points[2].x;
+		param1.p3 = m_points[3].x;
+
+		param1.w0 = m_weights[0];
+		param1.w1 = m_weights[1];
+		param1.w2 = m_weights[2];
+		param1.w3 = m_weights[3];
+
+		param2.p0 = m_points[0].y;
+		param2.p1 = m_points[1].y;
+		param2.p2 = m_points[2].y;
+		param2.p3 = m_points[3].y;
+
+		param2.w0 = m_weights[0];
+		param2.w1 = m_weights[1];
+		param2.w2 = m_weights[2];
+		param2.w3 = m_weights[3];
+
+		var t = T;
+		var px = bezierFunc(t, param1);
+		var py = bezierFunc(t, param2);
+
+		double x = px.expr->val;
+		double y = py.expr->val;
+
+		return Vector2(x, y);
+	}
+
+	Vector2 RationalCubicBezierAD::tangent(float T)
+	{
+		Params param1, param2;
+		param1.p0 = m_points[0].x;
+		param1.p1 = m_points[1].x;
+		param1.p2 = m_points[2].x;
+		param1.p3 = m_points[3].x;
+
+		param1.w0 = m_weights[0];
+		param1.w1 = m_weights[1];
+		param1.w2 = m_weights[2];
+		param1.w3 = m_weights[3];
+
+		param2.p0 = m_points[0].y;
+		param2.p1 = m_points[1].y;
+		param2.p2 = m_points[2].y;
+		param2.p3 = m_points[3].y;
+
+		param2.w0 = m_weights[0];
+		param2.w1 = m_weights[1];
+		param2.w2 = m_weights[2];
+		param2.w3 = m_weights[3];
+
+		var t = T;
+		var px = bezierFunc(t, param1);
+		var py = bezierFunc(t, param2);
+
+		auto [Vdxdt] = reverse::detail::derivativesx(px, wrt(t));
+		auto [Vdydt] = reverse::detail::derivativesx(py, wrt(t));
+
+		double dxdt = Vdxdt.expr->val;
+		double dydt = Vdydt.expr->val;
+
+		return Vector2(dxdt, dydt);
+	}
+
+	std::array<Vector2, 4> RationalCubicBezierAD::points() const
+	{
+		return m_points;
+	}
+
+	std::array<float, 4> RationalCubicBezierAD::weights() const
+	{
+		return m_weights;
+	}
+
+	Vector2 RationalCubicBezierAD::pointAt(size_t index) const
+	{
+		return m_points[index];
+	}
+
+	float RationalCubicBezierAD::weightAt(size_t index) const
+	{
+		return m_weights[index];
+	}
+
+
+	void RationalCubicBezierAD::sampleCurvePoints()
+	{
+		m_curvePoints.clear();
+		m_curvePoints.reserve(m_count);
+		float step = 1.0f / (m_count - 1);
+		for (size_t i = 0; i < m_count; i++)
+		{
+			m_curvePoints.push_back(sample(i * step));
+		}
+	}
+
+	void RationalCubicBezierAD::sampleCurvaturePoints()
+	{
+		m_curvaturePoints.clear();
+		m_curvaturePoints.reserve(m_count);
+
+		Params param1, param2;
+		param1.p0 = m_points[0].x;
+		param1.p1 = m_points[1].x;
+		param1.p2 = m_points[2].x;
+		param1.p3 = m_points[3].x;
+
+		param1.w0 = m_weights[0];
+		param1.w1 = m_weights[1];
+		param1.w2 = m_weights[2];
+		param1.w3 = m_weights[3];
+
+		param2.p0 = m_points[0].y;
+		param2.p1 = m_points[1].y;
+		param2.p2 = m_points[2].y;
+		param2.p3 = m_points[3].y;
+
+		param2.w0 = m_weights[0];
+		param2.w1 = m_weights[1];
+		param2.w2 = m_weights[2];
+		param2.w3 = m_weights[3];
+
+
+		float step = 1.0f / (m_count - 1);
+		for (size_t i = 0; i < m_count; i++)
+		{
+			Vector2 p = sample(i * step);
+
+			var t = i * step;
+			var px = bezierFunc(t, param1);
+			var py = bezierFunc(t, param2);
+
+			auto [Vdxdt] = reverse::detail::derivativesx(px, wrt(t));
+			auto [Vdydt] = reverse::detail::derivativesx(py, wrt(t));
+
+			auto [Vd2xdt2] = reverse::detail::derivativesx(Vdxdt, wrt(t));
+			auto [Vd2ydt2] = reverse::detail::derivativesx(Vdydt, wrt(t));
+
+			double dxdt = Vdxdt.expr->val;
+			double dydt = Vdydt.expr->val;
+
+			double d2xdt2 = Vd2xdt2.expr->val;
+			double d2ydt2 = Vd2ydt2.expr->val;
+
+			float k = std::abs(dxdt * d2ydt2 - dydt * d2xdt2) / std::pow(dxdt * dxdt + dydt * dydt, 1.5);
+
+
+			Vector2 dir(dxdt, dydt);
+			Vector2 normal = dir.perpendicular().normal();
+			m_curvaturePoints.push_back(p + normal * k);
+		}
+
+	}
+
+	var CubicBezierAD::bezierFunc(var t, const Params& param)
 	{
 		return (1.0 - t) * (1.0 - t) * (1.0 - t) * param.p0 +
 			3.0 * t * (1.0 - t) * (1.0 - t) * param.p1 +
@@ -16,23 +282,6 @@ namespace STEditor
 		m_points[1] = p1;
 		m_points[2] = p2;
 		m_points[3] = p3;
-	   
-		m_t = 0.0;
-
-		Params param1, param2;
-		param1.p0 = m_points[0].x;
-		param1.p1 = m_points[1].x;
-		param1.p2 = m_points[2].x;
-		param1.p3 = m_points[3].x;
-
-		param2.p0 = m_points[0].y;
-		param2.p1 = m_points[1].y;
-		param2.p2 = m_points[2].y;
-		param2.p3 = m_points[3].y;
-
-
-		m_px = bezier3Func(m_t, param1);
-		m_py = bezier3Func(m_t, param2);
 	}
 
 	void CubicBezierAD::setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3)
@@ -50,10 +299,9 @@ namespace STEditor
 	}
 
 
-	Vector2 CubicBezierAD::sample(float t)
+	Vector2 CubicBezierAD::sample(float T)
 	{
 		Vector2 result;
-		m_t = t;
 		Params param1, param2;
 		param1.p0 = m_points[0].x;
 		param1.p1 = m_points[1].x;
@@ -66,11 +314,12 @@ namespace STEditor
 		param2.p3 = m_points[3].y;
 
 
-		m_px = bezier3Func(m_t, param1);
-		m_py = bezier3Func(m_t, param2);
+		var t = T;
+		var px = bezierFunc(t, param1);
+		var py = bezierFunc(t, param2);
 
-		double x = m_px.expr->val;
-		double y = m_py.expr->val;
+		double x = px.expr->val;
+		double y = py.expr->val;
 
 		return Vector2(x, y);
 	}
@@ -90,37 +339,29 @@ namespace STEditor
 		return m_points[index];
 	}
 
-	float CubicBezierAD::curvatureAt(float t)
+	float CubicBezierAD::curvatureAt(float T)
 	{
-		m_t.update(t);
+		var t = T;
 
-		if (m_needUpdateCurvePoints)
-		{
-			Params param1, param2;
-			param1.p0 = m_points[0].x;
-			param1.p1 = m_points[1].x;
-			param1.p2 = m_points[2].x;
-			param1.p3 = m_points[3].x;
+		Params param1, param2;
+		param1.p0 = m_points[0].x;
+		param1.p1 = m_points[1].x;
+		param1.p2 = m_points[2].x;
+		param1.p3 = m_points[3].x;
 
-			param2.p0 = m_points[0].y;
-			param2.p1 = m_points[1].y;
-			param2.p2 = m_points[2].y;
-			param2.p3 = m_points[3].y;
+		param2.p0 = m_points[0].y;
+		param2.p1 = m_points[1].y;
+		param2.p2 = m_points[2].y;
+		param2.p3 = m_points[3].y;
 
-			m_px = bezier3Func(m_t, param1);
-			m_py = bezier3Func(m_t, param2);
-		}
-		else
-		{
-			m_px.update();
-			m_py.update();
-		}
+		var px = bezierFunc(t, param1);
+		var py = bezierFunc(t, param2);
 
-		auto [Vdxdt] = reverse::detail::derivativesx(m_px, wrt(m_t));
-		auto [Vdydt] = reverse::detail::derivativesx(m_py, wrt(m_t));
+		auto [Vdxdt] = reverse::detail::derivativesx(px, wrt(t));
+		auto [Vdydt] = reverse::detail::derivativesx(py, wrt(t));
 
-		auto [Vd2xdt2] = reverse::detail::derivativesx(Vdxdt, wrt(m_t));
-		auto [Vd2ydt2] = reverse::detail::derivativesx(Vdydt, wrt(m_t));
+		auto [Vd2xdt2] = reverse::detail::derivativesx(Vdxdt, wrt(t));
+		auto [Vd2ydt2] = reverse::detail::derivativesx(Vdydt, wrt(t));
 
 		double dxdt = Vdxdt.expr->val;
 		double dydt = Vdydt.expr->val;
@@ -128,7 +369,7 @@ namespace STEditor
 		double d2xdt2 = Vd2xdt2.expr->val;
 		double d2ydt2 = Vd2ydt2.expr->val;
 
-		double k = std::abs(dxdt * d2ydt2 - dydt * d2xdt2) / std::pow(dxdt * dxdt + dydt * dydt, 3.0);
+		double k = std::abs(dxdt * d2ydt2 - dydt * d2xdt2) / std::pow(dxdt * dxdt + dydt * dydt, 1.5);
 
 		if (std::isnan(k))
 			__debugbreak();
@@ -237,38 +478,36 @@ namespace STEditor
 		m_curvaturePoints.clear();
 		m_curvaturePoints.reserve(m_count);
 
-		if (m_needUpdateCurvePoints)
-		{
-			Params param1, param2;
-			param1.p0 = m_points[0].x;
-			param1.p1 = m_points[1].x;
-			param1.p2 = m_points[2].x;
-			param1.p3 = m_points[3].x;
+		var t = 0.0;
 
-			param2.p0 = m_points[0].y;
-			param2.p1 = m_points[1].y;
-			param2.p2 = m_points[2].y;
-			param2.p3 = m_points[3].y;
+		Params param1, param2;
+		param1.p0 = m_points[0].x;
+		param1.p1 = m_points[1].x;
+		param1.p2 = m_points[2].x;
+		param1.p3 = m_points[3].x;
 
-			m_px = bezier3Func(m_t, param1);
-			m_py = bezier3Func(m_t, param2);
-		}
+		param2.p0 = m_points[0].y;
+		param2.p1 = m_points[1].y;
+		param2.p2 = m_points[2].y;
+		param2.p3 = m_points[3].y;
+
+		var px = bezierFunc(t, param1);
+		var py = bezierFunc(t, param2);
 
 		float step = 1.0f / (m_count - 1);
 		for (size_t i = 0; i < m_count; i++)
 		{
-			float t = i * step;
+			Vector2 p = sample(i * step);
+			t.update(i * step);
 
-			Vector2 p = sample(t);
-			m_t.update(t);
-			m_px.update();
-			m_py.update();
+			px.update();
+			py.update();
 
-			auto [Vdxdt] = reverse::detail::derivativesx(m_px, wrt(m_t));
-			auto [Vdydt] = reverse::detail::derivativesx(m_py, wrt(m_t));
+			auto [Vdxdt] = reverse::detail::derivativesx(px, wrt(t));
+			auto [Vdydt] = reverse::detail::derivativesx(py, wrt(t));
 
-			auto [Vd2xdt2] = reverse::detail::derivativesx(Vdxdt, wrt(m_t));
-			auto [Vd2ydt2] = reverse::detail::derivativesx(Vdydt, wrt(m_t));
+			auto [Vd2xdt2] = reverse::detail::derivativesx(Vdxdt, wrt(t));
+			auto [Vd2ydt2] = reverse::detail::derivativesx(Vdydt, wrt(t));
 
 			double dxdt = Vdxdt.expr->val;
 			double dydt = Vdydt.expr->val;
@@ -352,6 +591,38 @@ namespace STEditor
 		Vector2 result = (m_points[0] * u0 + m_points[1] * u1 + m_points[2] * u2 + m_points[3] * u3) / (u0 + u1 + u2 + u3);
 
 		return result;
+	}
+
+	Vector2 RationalCubicBezier::tangent(float t) const
+	{
+		// \left( (t-1)^3w_0-t\left( 3(t-1)^2w_1+t\left( tw_3-3(t-1)w_2 \right) \right) \right) ^2
+		float det = std::pow((std::pow(t - 1.0f, 3.0f) * m_weights[0] -
+			t * (3.0f * std::pow(t - 1.0f, 2.0f) * m_weights[1] + t * (t * m_weights[3] - 3.0f * (t - 1.0f) * m_weights[2]))), 2.0f);
+
+		// -3(t-1)^2w_0\left( (t-1)^2w_1+t\left( tw_3-2(t-1)w_2 \right) \right)
+
+		float dp0 = -3.0f * std::pow(t - 1.0f, 2.0f) * m_weights[0] *
+			(std::pow(t - 1.0f, 2.0f) * m_weights[1] + t * (t * m_weights[3] - 2.0f * (t - 1.0f) * m_weights[2]));
+
+		// +3(t-1)w_1\left( t^2\left( 2tw_3-3(t-1)w_2 \right) +(t-1)^3w_0 \right)
+
+		float dp1 = 3.0f * (t - 1.0f) * m_weights[1] *
+			(t * t * (2.0f * t * m_weights[3] - 3.0f * (t - 1.0f) * m_weights[2]) + std::pow(t - 1.0f, 3.0f) * m_weights[0]);
+
+		// -3tw_2\left( t\left( t^2w_3-3(t-1)^2w_1 \right) +2(t-1)^3w_0 \right)
+
+		float dp2 = -3.0f * t * m_weights[2] *
+			(t * (t * t * m_weights[3] - 3.0f * std::pow(t - 1.0f, 2.0f) * m_weights[1]) + 2.0f * std::pow(t - 1.0f, 3.0f) * m_weights[0]);
+
+		// +3t^2w_3\left( (t-1)^2w_0+t\left( tw_2-2(t-1)w_1 \right) \right)
+
+		float dp3 = 3.0f * t * t * m_weights[3] *
+			(std::pow(t - 1.0f, 2.0f) * m_weights[0] + t * (t * m_weights[2] - 2.0f * (t - 1.0f) * m_weights[1]));
+
+		Vector2 dp = dp0 * m_points[0] + dp1 * m_points[1] + dp2 * m_points[2] + dp3 * m_points[3];
+		dp /= det;
+
+		return dp;
 	}
 
 

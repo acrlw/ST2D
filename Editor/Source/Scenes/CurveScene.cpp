@@ -88,6 +88,17 @@ namespace STEditor
 			//}
 
 			drawCurve(window, g3Vertices, RenderConstant::Blue);
+
+			Vector2 p = m_rationalCubicBezier1.sample(1.0f);
+			Vector2 tangent = m_rationalCubicBezier1.tangent(1.0f);
+
+			float curvature = m_rationalCubicBezier1.curvatureAt(1.0f);
+
+			Vector2 n = tangent.perpendicular().normal();
+			//Vector2 curvaturePoint = p + n * curvature * m_curvatureScaleFactor;
+
+			RenderSFMLImpl::renderArrow(window, *m_settings.camera, p, p + tangent, RenderConstant::Blue, 0.1f);
+			//RenderSFMLImpl::renderArrow(window, *m_settings.camera, p, curvaturePoint, RenderConstant::Blue, 0.1f);
 		}
 
 		if(m_showRoundedCurvature)
@@ -469,6 +480,8 @@ namespace STEditor
 
 
 		g3Vertices.push_back(p11);
+
+
 
 		if (m_showG3Curvature)
 		{

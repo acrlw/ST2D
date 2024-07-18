@@ -58,7 +58,7 @@ namespace STEditor
 		bool m_showG1 = false;
 		bool m_showG2 = true;
 		bool m_showG3 = true;
-		bool m_showG3Curvature = true;
+		bool m_showG3Curvature = false;
 		bool m_showRoundedCurvature = true;
 		bool m_showBezierCurvature = true;
 		bool m_showQuinticBezier = false;
@@ -69,11 +69,11 @@ namespace STEditor
 		bool m_isMoving = false;
 		Vector2 m_mousePos;
 
-		RationalCubicBezier m_rationalCubicBezier2;
-		RationalCubicBezier m_rationalCubicBezier1;
+		RationalCubicBezierAD m_rationalCubicBezier1;
+		RationalCubicBezierAD m_rationalCubicBezier2;
 
-		CubicBezierAD m_bezier1;
-		CubicBezierAD m_bezier2;
+		CubicBezier m_bezier1;
+		CubicBezier m_bezier2;
 
 		//std::array<Vector2, 4> m_bezierPoints1;
 		//std::array<Vector2, 4> m_bezierPoints2;
