@@ -89,7 +89,7 @@ namespace STEditor
 		float m_halfWidth = 1.0f;
 		float m_halfHeight = 1.0f;
 		float m_percentage = 0.681f;
-		float m_cornerPercentage = 0.3f;
+		float m_cornerPercentage = 0.001f;
 
 
 		std::vector<Vector2> g1Vertices, g2Vertices, g3Vertices;
@@ -99,8 +99,8 @@ namespace STEditor
 		std::vector<Vector2> rationalBezierCurve1, rationalBezierCurve2;
 		std::vector<Vector2> rationalBezierCurvature1, rationalBezierCurvature2;
 
-		std::array<float, 4> rationalBezierWeight1 = { 0.085, 0.24000002, 0.2098289430, 0.183451116 };
-		std::array<float, 4> rationalBezierWeight2 = { 0.085, 0.24000002, 0.2098289430, 0.183451116 };
+		std::array<float, 4> rationalBezierWeight1 = { 0.119910001754, 0.27414998412, 0.1731877326, 0.1093989685 };
+		std::array<float, 4> rationalBezierWeight2 = { 0.119910001754, 0.27414998412, 0.1731877326, 0.1093989685 };
 		// shared param for generating curves
 		Vector2 p00, p01, p10, p11;
 		Vector2 b1P01, b1P10, b2P01, b2P10;

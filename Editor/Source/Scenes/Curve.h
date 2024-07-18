@@ -118,7 +118,7 @@ namespace STEditor
 		std::array<Vector2, 4> m_points;
 		//std::array<float, 4> m_weights = {1.0006114f, 0.9667583f, 0.8220000f, 0.8360001f };
 		//std::array<float, 4> m_weights = { 0.5235227f, 0.9434174f, 0.8017000f, 0.8254001f };
-		std::array<real, 4> m_weights = { 0.3533164, 0.09592488, 0.000523, 0.000000196184 };
+		std::array<real, 4> m_weights = { 0.085, 0.24000002, 0.2098289430, 0.183451116 };
 	};
 
 
