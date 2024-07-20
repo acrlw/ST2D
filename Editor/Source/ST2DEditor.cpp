@@ -24,6 +24,14 @@ namespace STEditor
 				[&](const SceneSettings& settings)
 				{
 					return std::make_unique<NarrowphaseScene>(settings);
+				},
+				[&](const SceneSettings& settings)
+				{
+					return std::make_unique<EmptyScene>(settings);
+				},
+				[&](const SceneSettings& settings)
+				{
+					return std::make_unique<SplineScene>(settings);
 				}
 			}
 		};

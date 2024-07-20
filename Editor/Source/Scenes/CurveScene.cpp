@@ -142,6 +142,7 @@ namespace STEditor
 		ImGui::DragInt("Bezier Sample Count", &m_bezierCount, 1, 8, 500);
 		ImGui::DragInt("Circle Segment Count", &m_count, 2, 4, 500);
 		ImGui::DragFloat("Curvature Scale Factor", &m_curvatureScaleFactor, 0.01f, 0.01f, 1.0f);
+		ImGui::DragFloat("Line Thickness", &m_thickness, 0.1f, 0.1f, 50.0f);
 
 		ImGui::SeparatorText("Weights");
 	   
@@ -225,16 +226,16 @@ namespace STEditor
 		{
 			Vector2 point0 = curve[i];
 			Vector2 point1 = curve[i - 1];
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
 			point0.y = -point0.y;
 			point1.y = -point1.y;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
 			point0.x = -point0.x;
 			point1.x = -point1.x;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
 			point0.y = -point0.y;
 			point1.y = -point1.y;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
 		}
 	}
 

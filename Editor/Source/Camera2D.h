@@ -102,7 +102,7 @@ namespace STEditor
 		bool m_centerVisible = false;
 
 		bool m_drawCoordinateScale = true;
-		bool m_smoothZoom = false;
+		bool m_smoothZoom = true;
 
 		real m_defaultMeterToPixel = 80.0f;
 		real m_pixelToMeter = 0.02f;

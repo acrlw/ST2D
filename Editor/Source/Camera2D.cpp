@@ -44,7 +44,7 @@ namespace STEditor
 
 	void Camera2D::onUpdate(float deltaTime)
 	{
-		m_meterToPixelEasing.update(deltaTime);
+		m_meterToPixelEasing.update(1.0f / 60.0f);
 		if (!m_smoothZoom)
 			m_meterToPixelEasing.finish();
 
