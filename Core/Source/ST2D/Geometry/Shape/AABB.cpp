@@ -4,6 +4,7 @@
 #include "Circle.h"
 #include "Edge.h"
 #include "Rectangle.h"
+#include "ST2D/Log.h"
 #include "ST2D/Geometry/Algorithms/Algorithm2D.h"
 #include "ST2D/Geometry/Collision/Narrowphase.h"
 
@@ -122,18 +123,19 @@ namespace ST
 			realEqual(width, other.width) && realEqual(height, other.height);
 	}
 
-	AABB AABB::fromShape(const ShapePrimitive& shape, const real& factor)
+	AABB AABB::fromShape(const Transform& transform, const Shape* shape, const real& factor)
 	{
+		CORE_ASSERT(shape != nullptr, "Shape is nullptr");
 		AABB aabb;
-		switch (shape.shape->type())
+		switch (shape->type())
 		{
 		case ShapeType::Polygon:
 		{
-			const Polygon* polygon = static_cast<Polygon*>(shape.shape);
+			const Polygon* polygon = static_cast<const Polygon*>(shape);
 			real max_x = Constant::NegativeMin, max_y = Constant::NegativeMin, min_x = Constant::Max, min_y = Constant::Max;
 			for (const Vector2& v : polygon->vertices())
 			{
-				const Vector2 vertex = Matrix2x2(shape.transform.rotation).multiply(v);
+				const Vector2 vertex = Matrix2x2(transform.rotation).multiply(v);
 				if (max_x < vertex.x)
 					max_x = vertex.x;
 
@@ -153,27 +155,27 @@ namespace ST
 		}
 		case ShapeType::Ellipse:
 		{
-			const Ellipse* ellipse = static_cast<Ellipse*>(shape.shape);
+			const Ellipse* ellipse = static_cast<const Ellipse*>(shape);
 
 			Vector2 top_dir{ 0, 1 };
 			Vector2 left_dir{ -1, 0 };
 			Vector2 bottom_dir{ 0, -1 };
 			Vector2 right_dir{ 1, 0 };
 
-			top_dir = Matrix2x2(-shape.transform.rotation).multiply(top_dir);
-			left_dir = Matrix2x2(-shape.transform.rotation).multiply(left_dir);
-			bottom_dir = Matrix2x2(-shape.transform.rotation).multiply(bottom_dir);
-			right_dir = Matrix2x2(-shape.transform.rotation).multiply(right_dir);
+			top_dir = Matrix2x2(-transform.rotation).multiply(top_dir);
+			left_dir = Matrix2x2(-transform.rotation).multiply(left_dir);
+			bottom_dir = Matrix2x2(-transform.rotation).multiply(bottom_dir);
+			right_dir = Matrix2x2(-transform.rotation).multiply(right_dir);
 
 			Vector2 top = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), top_dir);
 			Vector2 left = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), left_dir);
 			Vector2 bottom = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), bottom_dir);
 			Vector2 right = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), right_dir);
 
-			top = Matrix2x2(shape.transform.rotation).multiply(top);
-			left = Matrix2x2(shape.transform.rotation).multiply(left);
-			bottom = Matrix2x2(shape.transform.rotation).multiply(bottom);
-			right = Matrix2x2(shape.transform.rotation).multiply(right);
+			top = Matrix2x2(transform.rotation).multiply(top);
+			left = Matrix2x2(transform.rotation).multiply(left);
+			bottom = Matrix2x2(transform.rotation).multiply(bottom);
+			right = Matrix2x2(transform.rotation).multiply(right);
 
 			aabb.height = std::fabs(top.y - bottom.y);
 			aabb.width = std::fabs(right.x - left.x);
@@ -181,14 +183,14 @@ namespace ST
 		}
 		case ShapeType::Circle:
 		{
-			const Circle* circle = static_cast<Circle*>(shape.shape);
+			const Circle* circle = static_cast<const Circle*>(shape);
 			aabb.width = circle->radius() * 2;
 			aabb.height = circle->radius() * 2;
 			break;
 		}
 		case ShapeType::Edge:
 		{
-			const Edge* edge = static_cast<Edge*>(shape.shape);
+			const Edge* edge = static_cast<const Edge*>(shape);
 			aabb.width = std::fabs(edge->startPoint().x - edge->endPoint().x);
 			aabb.height = std::fabs(edge->startPoint().y - edge->endPoint().y);
 			aabb.position.set(edge->startPoint().x + edge->endPoint().x, edge->startPoint().y + edge->endPoint().y);
@@ -198,16 +200,16 @@ namespace ST
 		}
 		case ShapeType::Capsule:
 		{
-			auto [p1, idx1] = Narrowphase::findFurthestPoint(shape, { 1, 0 });
-			auto [p2, idx2] = Narrowphase::findFurthestPoint(shape, { 0, 1 });
-			p1 -= shape.transform.position;
-			p2 -= shape.transform.position;
+			auto [p1, idx1] = Narrowphase::findFurthestPoint(transform, shape, { 1, 0 });
+			auto [p2, idx2] = Narrowphase::findFurthestPoint(transform, shape, { 0, 1 });
+			p1 -= transform.position;
+			p2 -= transform.position;
 			aabb.width = p1.x * 2.0f;
 			aabb.height = p2.y * 2.0f;
 			break;
 		}
 		}
-		aabb.position += shape.transform.position;
+		aabb.position += transform.position;
 		aabb.expand(factor);
 		return aabb;
 	}

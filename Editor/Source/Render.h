@@ -53,22 +53,21 @@ namespace STEditor
 		static void renderLines(sf::RenderWindow& window, Camera2D& camera,
 			const std::vector<std::pair<Vector2, Vector2>>& lines, const sf::Color& color);
 
-		static void renderShape(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color);
-		static void renderPolygon(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color);
-		static void renderEdge(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color);
-		static void renderRectangle(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color);
-		static void renderCircle(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color);
-		static void renderCapsule(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color);
-
-		static void renderEllipse(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color);
-		static void renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
+		static void renderShape(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color);
+		static void renderPolygon(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color);
+		static void renderEdge(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color);
+		static void renderRectangle(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color);
+		static void renderCircle(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color);
+		static void renderCapsule(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color);
+		static void renderEllipse(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color);
+		static void renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
 			const sf::Color& color);
 		
 		static void renderAABB(sf::RenderWindow& window, Camera2D& camera, const AABB& aabb, const sf::Color& color);
@@ -80,6 +79,7 @@ namespace STEditor
 		static void renderArrow(sf::RenderWindow& window, Camera2D& camera, const Vector2& start, const Vector2& end,
 			const sf::Color& color,
 			const real& size = 0.30f, const real& degree = 30);
+
 		static void renderText(sf::RenderWindow& window, Camera2D& camera, const Vector2& position, const sf::Font& font,
 			const std::string& text, const sf::Color& color, const unsigned int& size = 18,
 			const Vector2& screenOffset = { 0, 0 });

@@ -11,7 +11,7 @@ namespace ST
 
 		for (auto&& elem : bodyList)
 		{
-			AABB aabb = AABB::fromShape(*elem);
+			AABB aabb = AABB::fromShape(elem->transform, elem->shape);
 			bodyBoxPairList.emplace_back(std::make_pair(elem, aabb));
 		}
 
@@ -105,7 +105,7 @@ namespace ST
 
 		for (auto&& elem : bodyList)
 		{
-			AABB aabb = AABB::fromShape(*elem);
+			AABB aabb = AABB::fromShape(elem->transform, elem->shape);
 			bodyBoxPairList.emplace_back(elem, aabb);
 		}
 

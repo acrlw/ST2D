@@ -40,7 +40,7 @@ namespace ST
 		/// <param name="shape">shape source</param>
 		/// <param name="factor">AABB scale factor. Default factor 1 means making tight AABB</param>
 		/// <returns></returns>
-		static AABB fromShape(const ShapePrimitive& shape, const real& factor = 0);
+		static AABB fromShape(const Transform& transform, const Shape* shape, const real& factor = 0);
 
 		static AABB fromBox(const Vector2& topLeft, const Vector2& bottomRight);
 		/// <summary>

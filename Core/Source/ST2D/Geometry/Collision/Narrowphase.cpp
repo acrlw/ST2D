@@ -1,5 +1,6 @@
 #include "Narrowphase.h"
 
+#include "ST2D/Log.h"
 #include "ST2D/Geometry/Shape/Capsule.h"
 #include "ST2D/Geometry/Shape/Ellipse.h"
 #include "ST2D/Geometry/Shape/Polygon.h"
@@ -8,20 +9,23 @@
 
 namespace ST
 {
-	Simplex Narrowphase::gjk(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB, const size_t& iteration)
+	Simplex Narrowphase::gjk(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const size_t& iteration)
 	{
+		CORE_ASSERT(shapeA != nullptr && shapeB != nullptr, "Shape is nullptr.");
+
 		Simplex simplex;
 
-		Vector2 direction = shapeB.transform.position - shapeA.transform.position;
+		Vector2 direction = transformB.position - transformA.position;
 
 		if (direction.fuzzyEqual({ 0, 0 }))
 			direction.set(1, 1);
 		//first
-		SimplexVertex vertex = support(shapeA, shapeB, direction);
+		SimplexVertex vertex = support(transformA, shapeA, transformB, shapeB, direction);
 		simplex.addSimplexVertex(vertex);
 		//second
 		direction.negate();
-		vertex = support(shapeA, shapeB, direction);
+		vertex = support(transformA, shapeA, transformB, shapeB, direction);
 		simplex.addSimplexVertex(vertex);
 
 		//check 1d simplex(line segment) across origin
@@ -30,7 +34,7 @@ namespace ST
 		//try to reconfigure simplex to avoid 1d simplex cross origin
 		if (simplex.containsOrigin())
 		{
-			const bool result = perturbSimplex(simplex, shapeA, shapeB, direction);
+			const bool result = perturbSimplex(simplex, transformA, shapeA, transformB, shapeB, direction);
 			if (!result)
 				assert(false && "Cannot reconstruct simplex.");
 		}
@@ -40,7 +44,7 @@ namespace ST
 		{
 			//default closest edge is index 0 and index 1
 			direction = findDirectionByEdge(simplex.vertices[0], simplex.vertices[1], true);
-			vertex = support(shapeA, shapeB, direction);
+			vertex = support(transformA, shapeA, transformB, shapeB, direction);
 
 			//find repeated vertex
 			if (simplex.contains(vertex))
@@ -61,8 +65,8 @@ namespace ST
 		return simplex;
 	}
 
-	CollisionInfo Narrowphase::epa(const Simplex& simplex, const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const size_t& iteration, const real& epsilon)
+	CollisionInfo Narrowphase::epa(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const size_t& iteration, const real& epsilon)
 	{
 		//return 1d simplex with edge closest to origin
 		CollisionInfo info;
@@ -86,7 +90,7 @@ namespace ST
 			//indices of closest edge are set to 0 and 1
 			const Vector2 direction = findDirectionByEdge(info.simplex.vertices[0], info.simplex.vertices[1], false);
 
-			const SimplexVertex vertex = support(shapeA, shapeB, direction);
+			const SimplexVertex vertex = support(transformA, shapeA, transformB, shapeB, direction);
 
 			//cannot find any new vertex
 			if (info.simplex.contains(vertex))
@@ -168,44 +172,44 @@ namespace ST
 		return info;
 	}
 
-	SimplexVertex Narrowphase::support(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Vector2& direction)
+	SimplexVertex Narrowphase::support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Vector2& direction)
 	{
 		SimplexVertex vertex;
-		std::tie(vertex.point[0], vertex.index[0]) = findFurthestPoint(shapeA, direction);
-		std::tie(vertex.point[1], vertex.index[1]) = findFurthestPoint(shapeB, direction.negative());
+		std::tie(vertex.point[0], vertex.index[0]) = findFurthestPoint(transformA, shapeA, direction);
+		std::tie(vertex.point[1], vertex.index[1]) = findFurthestPoint(transformB, shapeB, direction.negative());
 		vertex.result = vertex.point[0] - vertex.point[1];
 		return vertex;
 	}
 
-	std::pair<Vector2, Index> Narrowphase::findFurthestPoint(const ShapePrimitive& shape, const Vector2& direction)
+	std::pair<Vector2, Index> Narrowphase::findFurthestPoint(const Transform& transform, const Shape* shape, const Vector2& direction)
 	{
 		Vector2 target;
-		Matrix2x2 rot(-shape.transform.rotation);
+		Matrix2x2 rot(-transform.rotation);
 		Vector2 rot_dir = rot.multiply(direction);
 		Index finalIndex = UINT32_MAX;
-		switch (shape.shape->type())
+		switch (shape->type())
 		{
 		case ShapeType::Polygon:
 		{
-			auto polygon = static_cast<const Polygon*>(shape.shape);
+			auto polygon = static_cast<const Polygon*>(shape);
 			std::tie(target, finalIndex) = findFurthestPoint(polygon->vertices(), rot_dir);
 			break;
 		}
 		case ShapeType::Circle:
 		{
-			auto circle = static_cast<const Circle*>(shape.shape);
-			return std::make_pair(direction.normal() * circle->radius() + shape.transform.position, finalIndex);
+			auto circle = static_cast<const Circle*>(shape);
+			return std::make_pair(direction.normal() * circle->radius() + transform.position, finalIndex);
 		}
 		case ShapeType::Ellipse:
 		{
-			auto ellipse = static_cast<const Ellipse*>(shape.shape);
+			auto ellipse = static_cast<const Ellipse*>(shape);
 			target = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), rot_dir);
 			break;
 		}
 		case ShapeType::Edge:
 		{
-			auto edge = static_cast<const Edge*>(shape.shape);
+			auto edge = static_cast<const Edge*>(shape);
 			const real dot1 = Vector2::dotProduct(edge->startPoint(), direction);
 			const real dot2 = Vector2::dotProduct(edge->endPoint(), direction);
 			target = dot1 > dot2 ? edge->startPoint() : edge->endPoint();
@@ -213,7 +217,7 @@ namespace ST
 		}
 		case ShapeType::Capsule:
 		{
-			auto capsule = static_cast<const Capsule*>(shape.shape);
+			auto capsule = static_cast<const Capsule*>(shape);
 			target = GeometryAlgorithm2D::calculateCapsuleProjectionPoint(
 				capsule->halfWidth(), capsule->halfHeight(), rot_dir);
 			finalIndex = 0;
@@ -224,9 +228,9 @@ namespace ST
 			break;
 		}
 		}
-		rot.set(shape.transform.rotation);
+		rot.set(transform.rotation);
 		target = rot.multiply(target);
-		target += shape.transform.position;
+		target += transform.position;
 		return std::make_pair(target, finalIndex);
 	}
 
@@ -263,15 +267,15 @@ namespace ST
 		return std::make_pair(target, index);
 	}
 
-	ContactPair Narrowphase::generateContacts(const ShapePrimitive& shapeA,
-		const ShapePrimitive& shapeB, CollisionInfo& info)
+	ContactPair Narrowphase::generateContacts(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, CollisionInfo& info)
 	{
 		ContactPair pair;
-		ShapeType typeA = shapeA.shape->type();
-		ShapeType typeB = shapeB.shape->type();
+		ShapeType typeA = shapeA->type();
+		ShapeType typeB = shapeB->type();
 
-		ShapePrimitive realShapeA = shapeA;
-		ShapePrimitive realShapeB = shapeB;
+		const Shape* realShapeA = shapeA;
+		const Shape* realShapeB = shapeB;
 		Index idxA = 0;
 		Index idxB = 1;
 
@@ -287,8 +291,8 @@ namespace ST
 		}
 
 		//find feature
-		const Feature featureA = findFeatures(info.simplex, info.normal, realShapeA, idxA);
-		const Feature featureB = findFeatures(info.simplex, info.normal, realShapeB, idxB);
+		const Feature featureA = findFeatures(info.simplex, info.normal, transformA, realShapeA, idxA);
+		const Feature featureB = findFeatures(info.simplex, info.normal, transformB, realShapeB, idxB);
 		auto idA = std::pair{ featureA.index[0], featureA.index[1] };
 		pair.ids[0] = reinterpret_cast<uint64_t&>(idA);
 
@@ -300,17 +304,17 @@ namespace ST
 			switch (typeB)
 			{
 			case ShapeType::Polygon:
-				pair = clipPolygonPolygon(realShapeA, realShapeB, featureA, featureB, info);
+				pair = clipPolygonPolygon(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
 			case ShapeType::Edge:
-				pair = clipPolygonEdge(realShapeA, realShapeB, featureA, featureB, info);
+				pair = clipPolygonEdge(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
 			case ShapeType::Capsule:
-				pair = clipPolygonCapsule(realShapeA, realShapeB, featureA, featureB, info);
+				pair = clipPolygonCapsule(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
 			case ShapeType::Circle:
 			case ShapeType::Ellipse:
-				pair = clipPolygonRound(realShapeA, realShapeB, featureA, featureB, info);
+				pair = clipPolygonRound(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
 			}
 		}
@@ -322,11 +326,11 @@ namespace ST
 				assert(false && "Not support edge and edge.");
 				break;
 			case ShapeType::Capsule:
-				pair = clipEdgeCapsule(realShapeA, realShapeB, featureA, featureB, info);
+				pair = clipEdgeCapsule(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
 			case ShapeType::Circle:
 			case ShapeType::Ellipse:
-				pair = clipEdgeRound(realShapeA, realShapeB, featureA, featureB, info);
+				pair = clipEdgeRound(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
 			}
 		}
@@ -335,17 +339,17 @@ namespace ST
 			switch (typeB)
 			{
 			case ShapeType::Capsule:
-				pair = clipCapsuleCapsule(realShapeA, realShapeB, featureA, featureB, info);
+				pair = clipCapsuleCapsule(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
 			case ShapeType::Circle:
 			case ShapeType::Ellipse:
-				pair = clipCapsuleRound(realShapeA, realShapeB, featureA, featureB, info);
+				pair = clipCapsuleRound(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
 			}
 		}
 		else //round round case
 		{
-			pair = clipRoundRound(realShapeA, realShapeB, featureA, featureB, info);
+			pair = clipRoundRound(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 			return pair;
 		}
 
@@ -360,26 +364,26 @@ namespace ST
 		return pair;
 	}
 
-	CollisionInfo Narrowphase::gjkDistance(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const size_t& iteration)
+	CollisionInfo Narrowphase::gjkDistance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const size_t& iteration)
 	{
 		VertexPair result;
 		CollisionInfo info;
 
-		Vector2 direction = shapeB.transform.position - shapeA.transform.position;
+		Vector2 direction = transformB.position - transformA.position;
 
 		if (direction.fuzzyEqual({ 0, 0 }))
 			direction.set(1, 1);
 		//first
-		SimplexVertex vertex = support(shapeA, shapeB, direction);
+		SimplexVertex vertex = support(transformA, shapeA, transformB, shapeB, direction);
 		info.simplex.addSimplexVertex(vertex);
 		//second
 		direction.negate();
-		vertex = support(shapeA, shapeB, direction);
+		vertex = support(transformA, shapeA, transformB, shapeB, direction);
 		info.simplex.addSimplexVertex(vertex);
 		//third
 		direction = direction.perpendicular();
-		vertex = support(shapeA, shapeB, direction);
+		vertex = support(transformA, shapeA, transformB, shapeB, direction);
 		info.simplex.addSimplexVertex(vertex);
 
 		reconstructSimplexByVoronoi(info.simplex);
@@ -414,7 +418,7 @@ namespace ST
 			//indices of closest edge are set to 0 and 1
 			direction = findDirectionByEdge(info.simplex.vertices[0], info.simplex.vertices[1], true);
 
-			vertex = support(shapeA, shapeB, direction);
+			vertex = support(transformA, shapeA, transformB, shapeB, direction);
 
 			//cannot find any new vertex
 			if (info.simplex.contains(vertex))
@@ -627,17 +631,17 @@ namespace ST
 		}
 	}
 
-	bool Narrowphase::perturbSimplex(Simplex& simplex, const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Vector2& dir)
+	bool Narrowphase::perturbSimplex(Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Vector2& dir)
 	{
 		Vector2 direction = dir;
 		for (int i = 0; i < Constant::GJKRetryTimes; ++i)
 		{
 			direction.set(-direction.y + static_cast<real>(i), -direction.x - static_cast<real>(i));
-			SimplexVertex v = support(shapeA, shapeB, direction);
+			SimplexVertex v = support(transformA, shapeA, transformB, shapeB, direction);
 			simplex.vertices[0] = v;
 			direction.set(-direction.y - static_cast<real>(i) - 0.5f, -direction.x + static_cast<real>(i) + 0.5f);
-			v = support(shapeA, shapeB, direction);
+			v = support(transformA, shapeA, transformB, shapeB, direction);
 			simplex.vertices[1] = v;
 
 			if (!simplex.containsOrigin())
@@ -648,21 +652,21 @@ namespace ST
 		return true;
 	}
 
-	Feature Narrowphase::findFeatures(const Simplex& simplex, const Vector2& normal, const ShapePrimitive& shape,
+	Feature Narrowphase::findFeatures(const Simplex& simplex, const Vector2& normal, const Transform& transform, const Shape* shape,
 		const Index& AorB)
 	{
 		Feature feature;
 		feature.index[0] = simplex.vertices[0].index[AorB];
 		feature.index[1] = simplex.vertices[1].index[AorB];
-		if (shape.shape->type() == ShapeType::Polygon)
+		if (shape->type() == ShapeType::Polygon)
 		{
 			if (simplex.vertices[0].point[AorB] == simplex.vertices[1].point[AorB])
 			{
 				//same vertex case
 				//find neighbor index
 
-				auto polygon = static_cast<const Polygon*>(shape.shape);
-				const Vector2 n = shape.transform.inverseRotatePoint(normal);
+				auto polygon = static_cast<const Polygon*>(shape);
+				const Vector2 n = transform.inverseRotatePoint(normal);
 
 				const Index idxCurr = simplex.vertices[0].index[AorB];
 				const size_t realSize = polygon->vertices().size();
@@ -859,48 +863,48 @@ namespace ST
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipPolygonPolygon(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipPolygonPolygon(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
-		auto polygonA = static_cast<const Polygon*>(shapeA.shape);
-		auto polygonB = static_cast<const Polygon*>(shapeB.shape);
+		auto polygonA = static_cast<const Polygon*>(shapeA);
+		auto polygonB = static_cast<const Polygon*>(shapeB);
 
-		const Vector2 va1 = shapeA.transform.translatePoint(polygonA->vertices()[featureA.index[0]]);
-		const Vector2 va2 = shapeA.transform.translatePoint(polygonA->vertices()[featureA.index[1]]);
+		const Vector2 va1 = transformA.translatePoint(polygonA->vertices()[featureA.index[0]]);
+		const Vector2 va2 = transformA.translatePoint(polygonA->vertices()[featureA.index[1]]);
 
-		const Vector2 vb1 = shapeB.transform.translatePoint(polygonB->vertices()[featureB.index[0]]);
-		const Vector2 vb2 = shapeB.transform.translatePoint(polygonB->vertices()[featureB.index[1]]);
+		const Vector2 vb1 = transformB.translatePoint(polygonB->vertices()[featureB.index[0]]);
+		const Vector2 vb2 = transformB.translatePoint(polygonB->vertices()[featureB.index[1]]);
 
 		return clipTwoEdge(va1, va2, vb1, vb2, info);
 	}
 
-	ContactPair Narrowphase::clipPolygonEdge(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipPolygonEdge(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
-		auto polygonA = static_cast<const Polygon*>(shapeA.shape);
-		auto edgeB = static_cast<const Edge*>(shapeB.shape);
+		auto polygonA = static_cast<const Polygon*>(shapeA);
+		auto edgeB = static_cast<const Edge*>(shapeB);
 
-		const Vector2 va1 = shapeA.transform.translatePoint(polygonA->vertices()[featureA.index[0]]);
-		const Vector2 va2 = shapeA.transform.translatePoint(polygonA->vertices()[featureA.index[1]]);
-		const Vector2 vb1 = shapeB.transform.translatePoint(edgeB->startPoint());
-		const Vector2 vb2 = shapeB.transform.translatePoint(edgeB->endPoint());
+		const Vector2 va1 = transformA.translatePoint(polygonA->vertices()[featureA.index[0]]);
+		const Vector2 va2 = transformA.translatePoint(polygonA->vertices()[featureA.index[1]]);
+		const Vector2 vb1 = transformB.translatePoint(edgeB->startPoint());
+		const Vector2 vb2 = transformB.translatePoint(edgeB->endPoint());
 
 		return clipTwoEdge(va1, va2, vb1, vb2, info);
 	}
 
-	ContactPair Narrowphase::clipPolygonCapsule(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipPolygonCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
 		ContactPair pair;
 
-		auto polygonA = static_cast<const Polygon*>(shapeA.shape);
+		auto polygonA = static_cast<const Polygon*>(shapeA);
 
-		const Vector2 va1 = shapeA.transform.translatePoint(polygonA->vertices()[featureA.index[0]]);
-		const Vector2 va2 = shapeA.transform.translatePoint(polygonA->vertices()[featureA.index[1]]);
+		const Vector2 va1 = transformA.translatePoint(polygonA->vertices()[featureA.index[0]]);
+		const Vector2 va2 = transformA.translatePoint(polygonA->vertices()[featureA.index[1]]);
 
-		const Vector2 localB1 = shapeB.transform.inverseTranslatePoint(featureB.vertex[0]);
+		const Vector2 localB1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
 
-		auto capsule = static_cast<const Capsule*>(shapeB.shape);
+		auto capsule = static_cast<const Capsule*>(shapeB);
 		const real halfWidth = capsule->halfWidth();
 		const real halfHeight = capsule->halfHeight();
 
@@ -926,7 +930,7 @@ namespace ST
 			else
 				localB.y = -localB.y;
 
-			Vector2 vb2 = shapeB.transform.translatePoint(localB);
+			Vector2 vb2 = transformB.translatePoint(localB);
 
 			pair = clipTwoEdge(va1, va2, featureB.vertex[0], vb2, info);
 		}
@@ -934,7 +938,7 @@ namespace ST
 		{
 			pair = clipEdgeVertex(va1, va2, featureB.vertex[0], info);
 			//check if another vertex is valid.
-			Vector2 vb1 = shapeB.transform.inverseTranslatePoint(featureB.vertex[0]);
+			Vector2 vb1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
 			Vector2 vb2(halfWidth, halfHeight - halfWidth);
 			if (halfWidth > halfHeight)
 				vb2.set(halfWidth - halfHeight, halfHeight);
@@ -946,7 +950,7 @@ namespace ST
 			else
 				vb2.y = -vb2.y;
 
-			vb2 = shapeB.transform.translatePoint(vb2);
+			vb2 = transformB.translatePoint(vb2);
 
 			Vector2 b = vb2 - va1;
 
@@ -958,29 +962,29 @@ namespace ST
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipPolygonRound(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipPolygonRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
-		auto polygonA = static_cast<const Polygon*>(shapeA.shape);
-		const Vector2 va1 = shapeA.transform.translatePoint(polygonA->vertices()[featureA.index[0]]);
-		const Vector2 va2 = shapeA.transform.translatePoint(polygonA->vertices()[featureA.index[1]]);
+		auto polygonA = static_cast<const Polygon*>(shapeA);
+		const Vector2 va1 = transformA.translatePoint(polygonA->vertices()[featureA.index[0]]);
+		const Vector2 va2 = transformA.translatePoint(polygonA->vertices()[featureA.index[1]]);
 
 		ContactPair pair = clipEdgeVertex(va1, va2, featureB.vertex[0], info);
 
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipEdgeCapsule(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipEdgeCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
 		ContactPair pair;
-		const Vector2 localB1 = shapeB.transform.inverseTranslatePoint(featureB.vertex[0]);
+		const Vector2 localB1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
 
-		auto capsule = static_cast<const Capsule*>(shapeB.shape);
+		auto capsule = static_cast<const Capsule*>(shapeB);
 
-		auto edgeA = static_cast<const Edge*>(shapeA.shape);
-		const Vector2 va1 = shapeA.transform.translatePoint(edgeA->startPoint());
-		const Vector2 va2 = shapeA.transform.translatePoint(edgeA->endPoint());
+		auto edgeA = static_cast<const Edge*>(shapeA);
+		const Vector2 va1 = transformA.translatePoint(edgeA->startPoint());
+		const Vector2 va2 = transformA.translatePoint(edgeA->endPoint());
 
 		const real halfWidth = capsule->halfWidth();
 		const real halfHeight = capsule->halfHeight();
@@ -1006,7 +1010,7 @@ namespace ST
 			else
 				localB.y = -localB.y;
 
-			Vector2 vb2 = shapeB.transform.translatePoint(localB);
+			Vector2 vb2 = transformB.translatePoint(localB);
 
 
 			pair = clipTwoEdge(va1, va2, featureB.vertex[0], vb2, info);
@@ -1015,7 +1019,7 @@ namespace ST
 		{
 			pair = clipEdgeVertex(va1, va2, featureB.vertex[0], info);
 			//check if another vertex is valid.
-			Vector2 vb1 = shapeB.transform.inverseTranslatePoint(featureB.vertex[0]);
+			Vector2 vb1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
 			Vector2 vb2(halfWidth, halfHeight - halfWidth);
 			if (halfWidth > halfHeight)
 				vb2.set(halfWidth - halfHeight, halfHeight);
@@ -1027,7 +1031,7 @@ namespace ST
 			else
 				vb2.y = -vb2.y;
 
-			vb2 = shapeB.transform.translatePoint(vb2);
+			vb2 = transformB.translatePoint(vb2);
 
 			Vector2 b = vb2 - va1;
 
@@ -1039,32 +1043,32 @@ namespace ST
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipEdgeRound(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipEdgeRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
-		auto edgeA = static_cast<const Edge*>(shapeA.shape);
-		const Vector2 va1 = shapeA.transform.translatePoint(edgeA->startPoint());
-		const Vector2 va2 = shapeA.transform.translatePoint(edgeA->endPoint());
+		auto edgeA = static_cast<const Edge*>(shapeA);
+		const Vector2 va1 = transformA.translatePoint(edgeA->startPoint());
+		const Vector2 va2 = transformA.translatePoint(edgeA->endPoint());
 
 		ContactPair pair = clipEdgeVertex(va1, va2, featureB.vertex[1], info);
 
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipCapsuleCapsule(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipCapsuleCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
 		ContactPair pair;
 
-		const Vector2 localA1 = shapeA.transform.inverseTranslatePoint(featureA.vertex[0]);
-		const Vector2 localB1 = shapeB.transform.inverseTranslatePoint(featureB.vertex[0]);
+		const Vector2 localA1 = transformA.inverseTranslatePoint(featureA.vertex[0]);
+		const Vector2 localB1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
 
 		const bool isEdgeA = featureA.index[0] == 1 || featureA.index[1] == 1;
 		const bool isEdgeB = featureB.index[0] == 1 || featureB.index[1] == 1;
 
 
-		auto capsuleA = static_cast<const Capsule*>(shapeA.shape);
-		auto capsuleB = static_cast<const Capsule*>(shapeB.shape);
+		auto capsuleA = static_cast<const Capsule*>(shapeA);
+		auto capsuleB = static_cast<const Capsule*>(shapeB);
 
 		//test for a
 		real halfWidth = capsuleA->halfWidth();
@@ -1139,7 +1143,7 @@ namespace ST
 		switch (oper)
 		{
 		case Oper::ROUND_ROUND:
-			pair = clipRoundRound(shapeA, shapeB, featureA, featureB, info);
+			pair = clipRoundRound(transformA, shapeA, transformB, shapeB, featureA, featureB, info);
 			break;
 		case Oper::ROUND_EDGE:
 			info.normal.negate();
@@ -1168,8 +1172,8 @@ namespace ST
 			else
 				localB.y = -localB.y;
 
-			const Vector2 va2 = shapeA.transform.translatePoint(localA);
-			const Vector2 vb2 = shapeB.transform.translatePoint(localB);
+			const Vector2 va2 = transformA.translatePoint(localA);
+			const Vector2 vb2 = transformB.translatePoint(localB);
 
 			pair = clipTwoEdge(va1, va2, vb1, vb2, info);
 			break;
@@ -1177,13 +1181,13 @@ namespace ST
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipCapsuleRound(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipCapsuleRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
 		ContactPair pair;
-		const Vector2 localA1 = shapeA.transform.inverseTranslatePoint(featureA.vertex[0]);
+		const Vector2 localA1 = transformA.inverseTranslatePoint(featureA.vertex[0]);
 
-		const Vector2 localA2 = shapeA.transform.inverseTranslatePoint(featureA.vertex[1]);
+		const Vector2 localA2 = transformA.inverseTranslatePoint(featureA.vertex[1]);
 
 		const bool isSeperateA = !localA1.isSameQuadrant(localA2);
 
@@ -1195,14 +1199,14 @@ namespace ST
 		}
 		else
 		{
-			pair = clipRoundRound(shapeA, shapeB, featureA, featureB, info);
+			pair = clipRoundRound(transformA, shapeA, transformB, shapeB, featureA, featureB, info);
 		}
 
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipRoundRound(const ShapePrimitive& shapeA, const ShapePrimitive& shapeB,
-		const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipRoundRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
 		//need to fix old info
 		ContactPair pair;

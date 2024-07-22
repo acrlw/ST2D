@@ -70,35 +70,35 @@ namespace STEditor
 			window.draw(&vertices[0], vertices.size(), sf::Lines);
 		}
 
-
-		void RenderSFMLImpl::renderShape(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color)
+		void RenderSFMLImpl::renderShape(sf::RenderWindow& window, Camera2D& camera, const Transform& transform, Shape* shape, const sf::Color& color)
 		{
-			switch (shape.shape->type())
+			CORE_ASSERT(shape != nullptr, "Null reference of shape")
+
+			switch (shape->type())
 			{
 			case ShapeType::Polygon:
 			{
-				renderPolygon(window, camera, shape, color);
+				renderPolygon(window, camera, transform, shape, color);
 				break;
 			}
 			case ShapeType::Ellipse:
 			{
-				renderEllipse(window, camera, shape, color);
+				renderEllipse(window, camera, transform, shape, color);
 				break;
 			}
 			case ShapeType::Circle:
 			{
-				renderCircle(window, camera, shape, color);
+				renderCircle(window, camera, transform, shape, color);
 				break;
 			}
 			case ShapeType::Edge:
 			{
-				renderEdge(window, camera, shape, color);
+				renderEdge(window, camera, transform, shape, color);
 				break;
 			}
 			case ShapeType::Capsule:
 			{
-				renderCapsule(window, camera, shape, color);
+				renderCapsule(window, camera, transform, shape, color);
 				break;
 			}
 			default:
@@ -106,17 +106,18 @@ namespace STEditor
 			}
 		}
 
-		void RenderSFMLImpl::renderPolygon(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color)
+		void RenderSFMLImpl::renderPolygon(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color)
 		{
-			assert(shape.shape != nullptr);
-			assert(shape.shape->type() == ShapeType::Polygon);
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Polygon);
+
 			sf::ConvexShape convex;
-			auto polygon = static_cast<ST::Polygon*>(shape.shape);
+			auto polygon = static_cast<ST::Polygon*>(shape);
 			convex.setPointCount(polygon->vertices().size());
 			for (size_t i = 0; i < polygon->vertices().size(); ++i)
 			{
-				const Vector2 worldPos = shape.transform.translatePoint(
+				const Vector2 worldPos = transform.translatePoint(
 					polygon->vertices()[i] * RenderConstant::ScaleFactor);
 				const Vector2 screenPos = camera.worldToScreen(worldPos);
 				convex.setPoint(i, toVector2f(screenPos));
@@ -129,35 +130,38 @@ namespace STEditor
 			window.draw(convex);
 		}
 
-		void RenderSFMLImpl::renderEdge(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color)
+		void RenderSFMLImpl::renderEdge(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color)
 		{
-			assert(shape.shape->type() == ShapeType::Edge);
-			auto edge = static_cast<Edge*>(shape.shape);
-			renderPoint(window, camera, edge->startPoint() + shape.transform.position, color);
-			renderPoint(window, camera, edge->endPoint() + shape.transform.position, color);
-			renderLine(window, camera, edge->startPoint() + shape.transform.position,
-				edge->endPoint() + shape.transform.position, color);
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Edge);
+			auto edge = static_cast<Edge*>(shape);
+			renderPoint(window, camera, edge->startPoint() + transform.position, color);
+			renderPoint(window, camera, edge->endPoint() + transform.position, color);
+			renderLine(window, camera, edge->startPoint() + transform.position,
+				edge->endPoint() + transform.position, color);
 
 			Vector2 center = (edge->startPoint() + edge->endPoint()) / 2.0f;
-			center += shape.transform.position;
+			center += transform.position;
 			renderLine(window, camera, center, center + 0.1f * edge->normal(), RenderConstant::Yellow);
 		}
 
-		void RenderSFMLImpl::renderRectangle(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color)
+		void RenderSFMLImpl::renderRectangle(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color)
 		{
-			assert(shape.shape != nullptr);
-			assert(shape.shape->type() == ShapeType::Polygon);
-			renderPolygon(window, camera, shape, color);
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Polygon);
+			renderPolygon(window, camera, transform, shape, color);
 		}
 
-		void RenderSFMLImpl::renderCircle(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color)
+		void RenderSFMLImpl::renderCircle(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color)
 		{
-			assert(shape.shape->type() == ShapeType::Circle);
-			const Circle* circle = static_cast<Circle*>(shape.shape);
-			const Vector2 screenPos = camera.worldToScreen(shape.transform.position);
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Circle);
+
+			const Circle* circle = static_cast<Circle*>(shape);
+			const Vector2 screenPos = camera.worldToScreen(transform.position);
 			sf::CircleShape circleShape(circle->radius() * RenderConstant::ScaleFactor * camera.meterToPixel());
 			sf::Color fillColor(color);
 			fillColor.a = RenderConstant::FillAlpha;
@@ -169,14 +173,15 @@ namespace STEditor
 			window.draw(circleShape);
 		}
 
-		void RenderSFMLImpl::renderCapsule(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color)
+		void RenderSFMLImpl::renderCapsule(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color)
 		{
-			assert(shape.shape->type() == ShapeType::Capsule);
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Capsule);
 			std::vector<sf::Vertex> vertices;
 
-			const Capsule* capsule = static_cast<Capsule*>(shape.shape);
-			const Vector2 screenPos = camera.worldToScreen(shape.transform.position);
+			const Capsule* capsule = static_cast<Capsule*>(shape);
+			const Vector2 screenPos = camera.worldToScreen(transform.position);
 			int pointCounts = (RenderConstant::BasicCirclePointCount + camera.meterToPixel()) / 4;
 			sf::Vertex centerVertex = toVector2f(screenPos);
 			sf::Color fillColor(color);
@@ -190,8 +195,8 @@ namespace STEditor
 					{
 						Vector2 point(radius * Math::cosx(radian), radius * Math::sinx(radian));
 						point += center;
-						const Vector2 worldPos = Matrix2x2(shape.transform.rotation).multiply(
-							point * RenderConstant::ScaleFactor) + shape.transform.position;
+						const Vector2 worldPos = Matrix2x2(transform.rotation).multiply(
+							point * RenderConstant::ScaleFactor) + transform.position;
 						const Vector2 screenP = camera.worldToScreen(worldPos);
 						sf::Vertex vertex;
 						vertex.position = toVector2f(screenP);
@@ -222,14 +227,15 @@ namespace STEditor
 			window.draw(&vertices[1], vertices.size() - 1, sf::LinesStrip);
 		}
 
-		void RenderSFMLImpl::renderEllipse(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
-			const sf::Color& color)
+		void RenderSFMLImpl::renderEllipse(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color)
 		{
-			assert(shape.shape->type() == ShapeType::Ellipse);
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Ellipse);
 			std::vector<sf::Vertex> vertices;
 
-			const ST::Ellipse* ellipse = static_cast<ST::Ellipse*>(shape.shape);
-			const Vector2 screenPos = camera.worldToScreen(shape.transform.position);
+			const ST::Ellipse* ellipse = static_cast<ST::Ellipse*>(shape);
+			const Vector2 screenPos = camera.worldToScreen(transform.position);
 			int pointCounts = (RenderConstant::BasicCirclePointCount + camera.meterToPixel()) / 2;
 
 			sf::Vertex centerVertex = toVector2f(screenPos);
@@ -250,7 +256,7 @@ namespace STEditor
 			for (real radian = 0; radian <= Constant::DoublePi; radian += step)
 			{
 				Vector2 point(outerRadius * Math::cosx(radian), innerRadius * Math::sinx(radian));
-				const Vector2 worldPos = shape.transform.translatePoint(point * RenderConstant::ScaleFactor);
+				const Vector2 worldPos = transform.translatePoint(point * RenderConstant::ScaleFactor);
 				const Vector2 screenPos = camera.worldToScreen(worldPos);
 				sf::Vertex vertex;
 				vertex.position = toVector2f(screenPos);
@@ -264,17 +270,18 @@ namespace STEditor
 			window.draw(&vertices[1], vertices.size() - 1, sf::LinesStrip);
 		}
 
-		void RenderSFMLImpl::renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const ShapePrimitive& shape,
+
+		void RenderSFMLImpl::renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
 			const sf::Color& color)
 		{
 			sf::Color colorX(3, 169, 244);
 			sf::Color colorY(244, 67, 54);
 			Vector2 xP(0.15f, 0);
 			Vector2 yP(0, 0.15f);
-			xP = shape.transform.translatePoint(xP);
-			yP = shape.transform.translatePoint(yP);
-			renderLine(window, camera, shape.transform.position, xP, colorX);
-			renderLine(window, camera, shape.transform.position, yP, colorY);
+			xP = transform.translatePoint(xP);
+			yP = transform.translatePoint(yP);
+			renderLine(window, camera, transform.position, xP, colorX);
+			renderLine(window, camera, transform.position, yP, colorY);
 		}
 
 		void RenderSFMLImpl::renderAABB(sf::RenderWindow& window, Camera2D& camera, const AABB& aabb, const sf::Color& color)
@@ -379,13 +386,15 @@ namespace STEditor
 			offset.x *= thickness * 0.5f;
 			offset.y *= thickness * 0.5f;
 			
-			sf::VertexArray lines(sf::Quads, 4);
-			lines[0].position = start - offset;
-			lines[1].position = end - offset;
-			lines[2].position = end + offset;
-			lines[3].position = start + offset;
+			sf::VertexArray lines(sf::Triangles, 6);
+			lines[0].position = start + offset;
+			lines[1].position = end + offset;
+			lines[2].position = end - offset;
+			lines[3].position = end - offset;
+			lines[4].position = start - offset;
+			lines[5].position = start + offset;
 
-			for (int i = 0; i < 4; ++i)
+			for (int i = 0; i < 6; ++i)
 				lines[i].color = color;
 
 			window.draw(lines);

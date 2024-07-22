@@ -39,7 +39,7 @@ namespace ST
 	std::vector<ShapePrimitive*> Tree::query(ShapePrimitive* body)
 	{
 		std::vector<ShapePrimitive*> result;
-		queryNodes(m_rootIndex, AABB::fromShape(*body), result);
+		queryNodes(m_rootIndex, AABB::fromShape(body->transform, body->shape), result);
 		return result;
 	}
 
@@ -69,7 +69,7 @@ namespace ST
 	{
 		int newNodeIndex = allocateNode();
 		m_tree[newNodeIndex].body = body;
-		m_tree[newNodeIndex].aabb = AABB::fromShape(*body);
+		m_tree[newNodeIndex].aabb = AABB::fromShape(body->transform, body->shape);
 		m_tree[newNodeIndex].aabb.expand(m_fatExpansionFactor);
 		m_bodyTable[body] = newNodeIndex;
 		if (m_rootIndex == -1)
@@ -137,7 +137,7 @@ namespace ST
 		if (iter == m_bodyTable.end())
 			return;
 
-		AABB thin = AABB::fromShape(*body);
+		AABB thin = AABB::fromShape(body->transform, body->shape);
 		thin.expand(0.1f);
 		if (!thin.isSubset(m_tree[iter->second].aabb))
 		{
@@ -277,7 +277,8 @@ namespace ST
 
 		if (m_tree[nodeIndex].aabb.raycast(p, d))
 		{
-			AABB aabb = AABB::fromShape(*m_tree[nodeIndex].body);
+			auto primitive = m_tree[nodeIndex].body;
+			AABB aabb = AABB::fromShape(primitive->transform, primitive->shape);
 			if (m_tree[nodeIndex].isLeaf() && aabb.raycast(p, d))
 				result.emplace_back(m_tree[nodeIndex].body);
 			else
@@ -322,7 +323,9 @@ namespace ST
 			if (bitmask1 & bitmask2)
 			{
 				//if AABB of A & B overlap
-				if (AABB::fromShape(*m_tree[leftIndex].body).collide(AABB::fromShape(*m_tree[rightIndex].body)))
+				auto leftBody = m_tree[leftIndex].body;
+				auto rightBody = m_tree[rightIndex].body;
+				if (AABB::fromShape(leftBody->transform, leftBody->shape).collide(AABB::fromShape(rightBody->transform, rightBody->shape)))
 				{
 					std::pair pair = { m_tree[leftIndex].body, m_tree[rightIndex].body };
 					pairs.emplace_back(pair);

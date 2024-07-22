@@ -30,8 +30,8 @@ namespace ST
 		}
 		for (auto&& elem : map)
 		{
-			AABB aabb1 = AABB::fromShape(*elem.second.first);
-			AABB aabb2 = AABB::fromShape(*elem.second.second);
+			AABB aabb1 = AABB::fromShape(elem.second.first->transform, elem.second.first->shape);
+			AABB aabb2 = AABB::fromShape(elem.second.second->transform, elem.second.second->shape);
 			if (aabb1.collide(aabb2))
 				result.emplace_back(elem.second);
 		}
@@ -62,7 +62,7 @@ namespace ST
 		auto iter = m_bodiesToCells.find(body);
 		if (iter != m_bodiesToCells.end())
 			return;
-		AABB aabb = AABB::fromShape(*body);
+		AABB aabb = AABB::fromShape(body->transform, body->shape);
 		auto cells = queryCells(aabb);
 		m_bodiesToCells[body] = cells;
 		for (auto&& elem : cells)
@@ -189,7 +189,7 @@ namespace ST
 		//cell list must be sorted array
 		auto oldCellList = m_bodiesToCells[body];
 
-		AABB aabb = AABB::fromShape(*body);
+		AABB aabb = AABB::fromShape(body->transform, body->shape);
 		auto newCellList = queryCells(aabb);
 
 		std::sort(oldCellList.begin(), oldCellList.end(), std::less<Position>());

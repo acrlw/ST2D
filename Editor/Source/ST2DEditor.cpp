@@ -144,6 +144,7 @@ namespace STEditor
 			m_camera.onRender(*m_window);
 
 			const bool show = m_currentScene != nullptr && m_userDrawVisible;
+
 			if (show)
 				m_currentScene->onRender(*m_window);
 
@@ -344,6 +345,7 @@ namespace STEditor
 	void ST2DEditor::renderGUI(sf::RenderWindow& window, sf::Clock& clock)
 	{
 		ImGui::SFML::Update(window, clock.restart());
+
 		ImGui::SetWindowPos("Panel", ImVec2(0, 0));
 
 		ImGui::Begin("Panel", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
@@ -353,7 +355,7 @@ namespace STEditor
 		style.Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 0.55f);
 
 
-		ImGui::Text("Scenes");
+		ImGui::SeparatorText("Scenes");
 
 		int oldItem = m_currentSceneIndex;
 		ImGui::Combo("Current Scene", &m_currentSceneIndex, m_sceneName.data(), m_sceneName.size());
@@ -363,16 +365,14 @@ namespace STEditor
 
 		ImGui::Columns(1, nullptr);
 
-		ImGui::Separator();
-		ImGui::Text("Visible");
+		ImGui::SeparatorText("Visible");
 		ImGui::Columns(2, nullptr);
 		ImGui::Checkbox("Tree", &m_camera.treeVisible());
 		ImGui::NextColumn();
 		ImGui::Checkbox("Uniform Grid", &m_camera.uniformGridVisible());
 		ImGui::Columns(1, nullptr);
 
-		ImGui::Separator();
-		ImGui::Text("Camera");
+		ImGui::SeparatorText("Camera");
 		ImGui::Columns(2, nullptr);
 
 		ImGui::Checkbox("Grid Lines", &m_camera.gridScaleLineVisible());
@@ -386,8 +386,7 @@ namespace STEditor
 		ImGui::NextColumn();
 		ImGui::Columns(1, nullptr);
 
-		ImGui::Separator();
-		ImGui::Text("Button");
+		ImGui::SeparatorText("Buttons");
 
 		if (ImGui::Button("Restart", ImVec2(-FLT_MIN, 0.0f)))
 			restart();
@@ -434,7 +433,7 @@ namespace STEditor
 			const Vector2 t = normal.perpendicular();
 			Vector2 half(text_rect.width / 2.0f, text_rect.height / 2.0f);
 			half *= m_camera.pixelToMeter();
-			Vector2 offset = t * half.x * 1.2f - normal * half.y * 1.5f;
+			Vector2 offset = t * half.x * 1.5f - normal * half.y * 1.5f;
 			text.setPosition(RenderSFMLImpl::toVector2f(m_camera.worldToScreen(m_mouseArray[1] + offset)));
 			text.rotate(Math::degree(-t.theta()));
 			window.draw(text);

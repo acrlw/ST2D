@@ -10,13 +10,11 @@ namespace STEditor
 	void NarrowphaseScene::onLoad()
 	{
 		rect.set(1.0f, 1.0f);
-		sp1.shape = &rect;
-		sp2.shape = &rect;
 
-		sp1.transform.position.set(1.0f, 1.5f);
-		sp2.transform.position.set(-1.0f, -1.0f);
-		sp1.transform.rotation = ST::Math::radians(45.0f);
-		sp2.transform.rotation = Math::radians(62);
+		tf1.position.set(1.0f, 1.5f);
+		tf2.position.set(-1.0f, -1.0f);
+		tf1.rotation = ST::Math::radians(45.0f);
+		tf2.rotation = Math::radians(62);
 	}
 
 	void NarrowphaseScene::onUnLoad()
@@ -30,11 +28,11 @@ namespace STEditor
 	void NarrowphaseScene::onRender(sf::RenderWindow& window)
 	{
 
-		RenderSFMLImpl::renderShape(window, *m_settings.camera, sp1, RenderConstant::Yellow);
+		RenderSFMLImpl::renderShape(window, *m_settings.camera, tf1, &rect, RenderConstant::Yellow);
 
-		RenderSFMLImpl::renderShape(window, *m_settings.camera, sp2, RenderConstant::Cyan);
+		RenderSFMLImpl::renderShape(window, *m_settings.camera, tf2, &rect, RenderConstant::Cyan);
 
-		auto info = Narrowphase::gjkDistance(sp1, sp2);
+		auto info = Narrowphase::gjkDistance(tf1, &rect, tf2, &rect);
 
 		RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointA, RenderConstant::Yellow);
 		RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointB, RenderConstant::Cyan);

@@ -27,7 +27,7 @@ namespace STEditor
 
 	private:
 		ST::Rectangle rect;
-		ST::ShapePrimitive sp1, sp2;
+		Transform tf1, tf2;
 
 	};
 }
