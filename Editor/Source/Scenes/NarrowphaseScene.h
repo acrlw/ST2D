@@ -27,6 +27,7 @@ namespace STEditor
 
 	private:
 		ST::Rectangle rect;
+		ST::Ellipse ellipse;
 		Transform tf1, tf2;
 
 	};

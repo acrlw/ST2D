@@ -67,8 +67,7 @@ namespace STEditor
 			Shape* shape, const sf::Color& color);
 		static void renderEllipse(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
 			Shape* shape, const sf::Color& color);
-		static void renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
-			const sf::Color& color);
+		static void renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const Transform& transform);
 		
 		static void renderAABB(sf::RenderWindow& window, Camera2D& camera, const AABB& aabb, const sf::Color& color);
 

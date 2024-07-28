@@ -6,6 +6,7 @@ namespace STEditor
 {
 	class SplineScene : public AbstractScene
 	{
+
 	public:
 		explicit SplineScene(const SceneSettings& settings)
 			: AbstractScene(settings, "SplineScene")
@@ -26,5 +27,12 @@ namespace STEditor
 		void onKeyPressed(sf::Event& event) override;
 
 	private:
+		Vector2* m_targetPoint = nullptr;
+		bool m_addPoint = false;
+		bool m_movePoint = false;
+		bool m_snap = false;
+		Vector2 m_mousePoint;
+		std::vector<Vector2> m_points;
+		std::vector<std::vector<Vector2>> m_splineList;
 	};
 }

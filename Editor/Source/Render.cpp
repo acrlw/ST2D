@@ -257,9 +257,9 @@ namespace STEditor
 			{
 				Vector2 point(outerRadius * Math::cosx(radian), innerRadius * Math::sinx(radian));
 				const Vector2 worldPos = transform.translatePoint(point * RenderConstant::ScaleFactor);
-				const Vector2 screenPos = camera.worldToScreen(worldPos);
+				const Vector2 sp = camera.worldToScreen(worldPos);
 				sf::Vertex vertex;
-				vertex.position = toVector2f(screenPos);
+				vertex.position = toVector2f(sp);
 				vertex.color = fillColor;
 				vertices.emplace_back(vertex);
 			}
@@ -271,17 +271,14 @@ namespace STEditor
 		}
 
 
-		void RenderSFMLImpl::renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
-			const sf::Color& color)
+		void RenderSFMLImpl::renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const Transform& transform)
 		{
-			sf::Color colorX(3, 169, 244);
-			sf::Color colorY(244, 67, 54);
 			Vector2 xP(0.15f, 0);
 			Vector2 yP(0, 0.15f);
 			xP = transform.translatePoint(xP);
 			yP = transform.translatePoint(yP);
-			renderLine(window, camera, transform.position, xP, colorX);
-			renderLine(window, camera, transform.position, yP, colorY);
+			renderLine(window, camera, transform.position, xP, RenderConstant::Blue);
+			renderLine(window, camera, transform.position, yP, RenderConstant::Red);
 		}
 
 		void RenderSFMLImpl::renderAABB(sf::RenderWindow& window, Camera2D& camera, const AABB& aabb, const sf::Color& color)
@@ -303,11 +300,12 @@ namespace STEditor
 
 			Vector2 direction = p2 - p1;
 			real length = direction.length();
-			direction /= length;
-			for (real d = 0; d < length; d += dashLength + dashGap)
+			real lengthStep = dashLength / length;
+			real step = (dashLength + dashGap) / length;
+			for(real i = 0;i <= 1; i += step)
 			{
-				Vector2 dashStart = p1 + direction * d;
-				Vector2 dashEnd = p1 + direction * Math::min(d + dashLength, direction.length());
+				Vector2 dashStart = p1 + direction * i;
+				Vector2 dashEnd = p1 + direction * Math::min(i + lengthStep, 1.0f);
 				lines.append(sf::Vertex(toVector2f(camera.worldToScreen(dashStart)), color));
 				lines.append(sf::Vertex(toVector2f(camera.worldToScreen(dashEnd)), color));
 			}

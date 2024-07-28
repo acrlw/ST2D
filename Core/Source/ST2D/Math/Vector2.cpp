@@ -149,6 +149,11 @@ namespace ST
 		return Vector2(-x, -y);
 	}
 
+	real Vector2::distance(const Vector2& rhs) const
+	{
+		return (*this - rhs).length();
+	}
+
 	bool Vector2::equal(const Vector2& rhs) const
 	{
 		return realEqual(x, rhs.x) && realEqual(y, rhs.y);
@@ -177,6 +182,11 @@ namespace ST
 	real Vector2::cross(const Vector2& rhs) const
 	{
 		return x * rhs.y - y * rhs.x;
+	}
+
+	real Vector2::distance(const Vector2& lhs, const Vector2& rhs)
+	{
+		return (lhs - rhs).length();
 	}
 
 	Vector2& Vector2::matchSign(const Vector2& rhs)

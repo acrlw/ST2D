@@ -40,6 +40,7 @@ namespace ST
 		Vector2 normal() const;
 		Vector2 negative() const;
 
+		real distance(const Vector2& rhs) const;
 
 		Vector2& set(const real& _x, const real& _y);
 		Vector2& set(const Vector2& copy);
@@ -54,6 +55,7 @@ namespace ST
 		real dot(const Vector2& rhs) const;
 		real cross(const Vector2& rhs) const;
 
+		static real distance(const Vector2& lhs, const Vector2& rhs);
 
 		static real dotProduct(const Vector2& lhs, const Vector2& rhs);
 		static real crossProduct(const Vector2& lhs, const Vector2& rhs);

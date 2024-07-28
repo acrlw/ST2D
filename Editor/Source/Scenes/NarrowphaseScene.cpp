@@ -10,11 +10,12 @@ namespace STEditor
 	void NarrowphaseScene::onLoad()
 	{
 		rect.set(1.0f, 1.0f);
+		ellipse.set(1.0f, 2.0f);
 
 		tf1.position.set(1.0f, 1.5f);
 		tf2.position.set(-1.0f, -1.0f);
-		tf1.rotation = ST::Math::radians(45.0f);
-		tf2.rotation = Math::radians(62);
+		tf1.rotation = Math::radians(45.0f);
+		tf2.rotation = Math::radians(100.0f);
 	}
 
 	void NarrowphaseScene::onUnLoad()
@@ -30,14 +31,14 @@ namespace STEditor
 
 		RenderSFMLImpl::renderShape(window, *m_settings.camera, tf1, &rect, RenderConstant::Yellow);
 
-		RenderSFMLImpl::renderShape(window, *m_settings.camera, tf2, &rect, RenderConstant::Cyan);
+		RenderSFMLImpl::renderShape(window, *m_settings.camera, tf2, &ellipse, RenderConstant::Cyan);
 
-		auto info = Narrowphase::gjkDistance(tf1, &rect, tf2, &rect);
+		auto info = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
 
 		RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointA, RenderConstant::Yellow);
 		RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointB, RenderConstant::Cyan);
 
-		RenderSFMLImpl::renderLine(window, *m_settings.camera, info.pair.pointA, info.pair.pointB, RenderConstant::Green);
+		RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, info.pair.pointA, info.pair.pointB, RenderConstant::LightGray);
 
 
 	}
