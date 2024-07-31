@@ -11,7 +11,7 @@ namespace STEditor
 	void HelloWorldScene::onLoad()
 	{
 		thetaEasing.setEasingFunction(EasingFunction::smoothStep);
-		matEasing.restart(Complex(Math::radians(179)), Complex(Math::radians(-179)), 3.0f);
+		matEasing.restart(Complex(Math::radians(0)), Complex(Math::radians(-180)), 1.5f);
 	}
 
 	void HelloWorldScene::onUnLoad()
@@ -29,12 +29,12 @@ namespace STEditor
 		{
 			if(!flip)
 			{
-				matEasing.continueTo(Complex(Math::radians(179)), 3.0f);
+				matEasing.continueTo(Complex(Math::radians(0)), 1.5f);
 				flip = true;
 			}
 			else
 			{
-				matEasing.continueTo(Complex(Math::radians(-179)), 3.0f);
+				matEasing.continueTo(Complex(Math::radians(-180)), 1.5f);
 				flip = false;
 			}
 		}
@@ -62,7 +62,7 @@ namespace STEditor
 			color.a = i * step;
 			RenderSFMLImpl::renderPoint(window, *m_settings.camera, pList[i], color, 3.0f);
 		}
-		RenderSFMLImpl::renderArrow(window, *m_settings.camera, Vector2(0.0f, 0.0f), arrow, RenderConstant::Green, 0.1f);
+		RenderSFMLImpl::renderArrow(window, *m_settings.camera, Vector2(0.0f, 0.0f), arrow, RenderConstant::Green, 0.25f);
 	}
 
 	void HelloWorldScene::onRenderUI()

@@ -50,23 +50,47 @@ namespace STEditor
 
 	void NarrowphaseScene::onMousePress(sf::Event& event)
 	{
-		AbstractScene::onMousePress(event);
+		if(event.mouseButton.button == sf::Mouse::Left)
+		{
+			Vector2 mousePos = m_settings.camera->screenToWorld(Vector2(event.mouseButton.x, event.mouseButton.y));
+			Vector2 p1 = tf1.inverseTranslatePoint(mousePos);
+			Vector2 p2 = tf2.inverseTranslatePoint(mousePos);
+			if(rect.contains(p1))
+			{
+				selectedTransform = &tf1;
+				oldTransform = tf1;
+				mouseStart = mousePos;
+			}
+			else if(ellipse.contains(p2))
+			{
+				selectedTransform = &tf2;
+				oldTransform = tf2;
+				mouseStart = mousePos;
+			}
+		}
 	}
 
 	void NarrowphaseScene::onMouseRelease(sf::Event& event)
 	{
-		AbstractScene::onMouseRelease(event);
+		selectedTransform = nullptr;
 	}
 
 	void NarrowphaseScene::onMouseMove(sf::Event& event)
 	{
-		AbstractScene::onMouseMove(event);
+		if (selectedTransform != nullptr)
+		{
+			Vector2 pos(event.mouseMove.x, event.mouseMove.y);
+			Vector2 currentMousePos = m_settings.camera->screenToWorld(pos);
+
+			selectedTransform->position = oldTransform.position + (currentMousePos - mouseStart);
+		}
 	}
 
 	void NarrowphaseScene::onMouseDoubleClick(sf::Event& event)
 	{
 		AbstractScene::onMouseDoubleClick(event);
 	}
+
 
 	void NarrowphaseScene::onKeyRelease(sf::Event& event)
 	{

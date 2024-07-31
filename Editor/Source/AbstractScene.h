@@ -27,6 +27,7 @@ namespace STEditor
 		virtual void onUpdate(float deltaTime) = 0;
 		virtual void onRender(sf::RenderWindow& window) = 0;
 
+
 		virtual void onRenderUI()
 		{
 

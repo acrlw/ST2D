@@ -29,6 +29,8 @@ namespace STEditor
 		ST::Rectangle rect;
 		ST::Ellipse ellipse;
 		Transform tf1, tf2;
-
+		Transform* selectedTransform = nullptr;
+		Transform oldTransform;
+		Vector2 mouseStart;
 	};
 }

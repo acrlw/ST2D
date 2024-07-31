@@ -20,8 +20,8 @@ namespace ST
 				{
 					for (auto iterInner = iterOuter + 1; iterInner != cell.second.end(); ++iterInner)
 					{
-						auto uuid1 = (*iterInner)->userData.uuid;
-						auto uuid2 = (*iterOuter)->userData.uuid;
+						auto uuid1 = (*iterInner)->uuid;
+						auto uuid2 = (*iterOuter)->uuid;
 						map[mixPairUUID(uuid1, uuid2)] = std::make_pair(
 							*iterInner, *iterOuter);
 					}

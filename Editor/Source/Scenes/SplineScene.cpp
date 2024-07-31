@@ -57,7 +57,11 @@ namespace STEditor
 
 	void SplineScene::onRenderUI()
 	{
-		AbstractScene::onRenderUI();
+		ImGui::Begin("Spline");
+
+
+
+		ImGui::End();
 	}
 
 	void SplineScene::onMousePress(sf::Event& event)
@@ -105,6 +109,12 @@ namespace STEditor
 		Vector2 pos(event.mouseMove.x, event.mouseMove.y);
 		m_mousePoint = m_settings.camera->screenToWorld(pos);
 
+		if (m_snap)
+		{
+			//snap to grid, 0.1 is the grid size
+			m_mousePoint.x = std::round(m_mousePoint.x * 10) / 10;
+			m_mousePoint.y = std::round(m_mousePoint.y * 10) / 10;
+		}
 		if(m_movePoint && m_targetPoint != nullptr)
 		{
 			*m_targetPoint = m_mousePoint;

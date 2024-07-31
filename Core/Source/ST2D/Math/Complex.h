@@ -14,7 +14,6 @@ namespace ST
 		Complex& operator=(const Complex& copy);
 		Complex(Complex&& other) = default;
 
-
 		Complex operator+(const Complex& rhs) const;
 		Complex operator-(const Complex& rhs) const;
 		Complex operator-() const;
@@ -44,6 +43,7 @@ namespace ST
 		Complex normal() const;
 		Complex negative() const;
 
+		Complex& set(const real& radians);
 		Complex& set(const real& _re, const real& _im);
 		Complex& set(const Complex& copy);
 		Complex& clear();

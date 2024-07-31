@@ -80,7 +80,7 @@ namespace ST
 		auto yPair = yPairs.begin();
 		while (xPair != xPairs.end() && yPair != yPairs.end())
 		{
-			if (xPair->id == yPair->id && (xPair->bodyA->userData.bitmask & xPair->bodyB->userData.bitmask))
+			if (xPair->id == yPair->id && (xPair->bodyA->bitmask & xPair->bodyB->bitmask))
 			{
 				result.emplace_back(xPair->bodyA, xPair->bodyB);
 				xPair = std::next(xPair);

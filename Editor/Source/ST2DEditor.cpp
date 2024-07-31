@@ -315,6 +315,7 @@ namespace STEditor
 
 		if (m_currentScene != nullptr)
 			m_currentScene->onMouseMove(event);
+		
 	}
 
 	void ST2DEditor::onMousePressed(sf::Event& event)

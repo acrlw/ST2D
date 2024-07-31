@@ -184,6 +184,13 @@ namespace ST
 		return { -re, -im };
 	}
 
+	Complex& Complex::set(const real& radians)
+	{
+		re = std::cos(radians);
+		im = std::sin(radians);
+		return *this;
+	}
+
 	Complex& Complex::set(const real& _re, const real& _im)
 	{
 		re = _re;
@@ -224,7 +231,7 @@ namespace ST
 
 	Complex& Complex::normalize()
 	{
-		const float ls = length();
+		const auto ls = length();
 		assert(!realEqual(ls, 0));
 		re /= ls;
 		im /= ls;
@@ -275,11 +282,11 @@ namespace ST
 
 	Complex Complex::slerp(const Complex& start, const Complex& end, const real& t)
 	{
-		real realT = Math::clamp(t, 0.0f, 1.0f);
+		auto realT = Math::clamp(t, 0.0f, 1.0f);
 		Complex nStart = start.normal();
 		Complex nEnd = end.normal();
-		float rStart = Math::clampRadian(nStart.theta());
-		float rEnd = Math::clampRadian(nEnd.theta());
+		auto rStart = Math::clampRadian(nStart.theta());
+		auto rEnd = Math::clampRadian(nEnd.theta());
 		
 		return { rStart * (1 - realT) + rEnd * realT };
 	}

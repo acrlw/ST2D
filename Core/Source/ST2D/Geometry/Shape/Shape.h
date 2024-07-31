@@ -57,22 +57,19 @@ namespace ST
 		}
 	};
 
-	struct ST_API ExtraData
-	{
-		uint32_t bitmask;
-		uint32_t uuid;
-		void* data = nullptr;
-	};
-
 	/**
 	 * \brief Basic Shape Description Primitive. Including shape and transform.
 	 */
 	struct ST_API ShapePrimitive
 	{
 		ShapePrimitive() = default;
-		ExtraData userData;
+
 		Shape* shape = nullptr;
 		Transform transform;
+		uint32_t bitmask = 0;
+		uint32_t uuid = 0;
+
+		void* data = nullptr;
 
 		bool contains(const Vector2& point, const real& epsilon = Constant::GeometryEpsilon) const
 		{
@@ -107,7 +104,7 @@ namespace ST
 			ShapePair pair;
 			pair.bodyA = A;
 			pair.bodyB = B;
-			pair.id = mixPairUUID(A->userData.uuid, B->userData.uuid);
+			pair.id = mixPairUUID(A->uuid, B->uuid);
 			return pair;
 		}
 

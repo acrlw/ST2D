@@ -318,8 +318,8 @@ namespace ST
 
 		if (m_tree[leftIndex].isLeaf() && m_tree[rightIndex].isLeaf())
 		{
-			auto bitmask1 = m_tree[leftIndex].body->userData.bitmask;
-			auto bitmask2 = m_tree[leftIndex].body->userData.bitmask;
+			auto bitmask1 = m_tree[leftIndex].body->bitmask;
+			auto bitmask2 = m_tree[leftIndex].body->bitmask;
 			if (bitmask1 & bitmask2)
 			{
 				//if AABB of A & B overlap

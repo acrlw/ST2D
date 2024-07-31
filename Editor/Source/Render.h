@@ -77,7 +77,7 @@ namespace STEditor
 		
 		static void renderArrow(sf::RenderWindow& window, Camera2D& camera, const Vector2& start, const Vector2& end,
 			const sf::Color& color,
-			const real& size = 0.30f, const real& degree = 30);
+			const real& size = 0.30f, const real& degree = 20);
 
 		static void renderText(sf::RenderWindow& window, Camera2D& camera, const Vector2& position, const sf::Font& font,
 			const std::string& text, const sf::Color& color, const unsigned int& size = 18,
