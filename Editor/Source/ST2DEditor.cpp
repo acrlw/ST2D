@@ -297,13 +297,16 @@ namespace STEditor
 		Vector2 pos(event.mouseMove.x, event.mouseMove.y);
 		m_screenMousePos = pos;
 
-		Vector2 tf = m_camera.screenToWorld(pos) - m_mousePos;
+		Vector2 cameraPos = m_camera.screenToWorld(pos);
+
+		Vector2 tf = cameraPos - m_mousePos;
 		if (m_cameraViewportMovement)
 		{
 			tf *= m_camera.meterToPixel();
 			m_camera.setTransform(m_camera.transform() + tf);
+			cameraPos = m_camera.screenToWorld(pos);
 		}
-		m_mousePos = m_camera.screenToWorld(pos);
+		m_mousePos = cameraPos;
 
 		if (m_onDistanceCheck)
 		{
@@ -315,7 +318,6 @@ namespace STEditor
 
 		if (m_currentScene != nullptr)
 			m_currentScene->onMouseMove(event);
-		
 	}
 
 	void ST2DEditor::onMousePressed(sf::Event& event)
