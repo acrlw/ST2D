@@ -1,4 +1,5 @@
 #include "SpiralScene.h"
+#include <gsl/gsl_poly.h>
 
 
 namespace STEditor
@@ -24,12 +25,6 @@ namespace STEditor
 		computeG1();
 		computeSpiral();
 
-		Vector2 p0(0, 0);
-		Vector2 p1(m_L * m_weight, 0);
-		Vector2 p2((1.0f - m_weight) * m_L, m_alpha * m_L);
-		Vector2 p3(m_L, m_alpha * m_L);
-
-		m_bezier.setPoints(p0, p1, p2, p3);
 	}
 
 	void SpiralScene::onRender(sf::RenderWindow& window)
@@ -69,8 +64,8 @@ namespace STEditor
 		ImGui::DragInt("Spiral Count", &N, 1, 10, 10000);
 		ImGui::DragFloat("Spiral Length", &L, 0.01f, 0.01f, 100.0f);
 		ImGui::DragFloat("Spiral Alpha", &alpha, 0.01f, 0.01f, 100.0f);
-
-		ImGui::Text("End Offset: (%f, %f)", m_spiral.back().x, m_spiral.back().y);
+		if(!m_spiral.empty())
+			ImGui::Text("End Offset: (%f, %f)", m_spiral.front().x, m_spiral.front().y);
 		ImGui::Text("Radius: %f", m_currentRadius);
 
 		ImGui::SeparatorText("Rounded Params");
@@ -88,8 +83,7 @@ namespace STEditor
 
 
 		ImGui::SeparatorText("Bezier Params");
-		ImGui::DragFloat("Weight", &m_weight, 0.01f, 0.01f, 1.0f);
-		ImGui::DragFloat("Alpha", &m_alpha, 0.01f, 0.01f, 1.0f);
+		ImGui::DragFloat("Weight", &m_weight, 0.01f, 0.35f, 1.0f);
 		ImGui::DragFloat("Bezier Arc Length", &m_L, 0.01f, 0.01f, 100.0f);
 
 		ImGui::SeparatorText("Visibility");
@@ -230,10 +224,20 @@ namespace STEditor
 		//transform += m_p01;
 
 		Vector2 tangent = (m_spiralStartRoundedPos - m_spiralCircleCenter).normal().perpendicular();
-		real Cf = 1.0f / m_currentRadius;
-		real ac = std::acos(tangent.x);
-		L = 2.0f * ac / Cf;
-		alpha = Cf / L;
+		real C_f = 1.0f / m_currentRadius;
+		real a_c = std::acos(tangent.x);
+
+
+		L = 2.0f * a_c / C_f;
+		alpha = C_f / L;
+
+		m_L = L;
+		Vector2 p0(0, 0);
+		Vector2 p1(m_L * m_weight, 0);
+		Vector2 p2((1.0f - m_weight) * m_L, C_f);
+		Vector2 p3(m_L, C_f);
+
+		m_bezier.setPoints(p0, p1, p2, p3);
 
 		m_spiral.clear();
 		m_spiralCurvaturePoints.clear();
@@ -272,7 +276,7 @@ namespace STEditor
 			m_spiral.emplace_back(Vector2(CIntegral, SIntegral));
 
 			Vector2 normal = Vector2(-S, C);
-			real curvature = alpha * s;
+			real curvature = arcLengthCurvature(s);
 
 			Vector2 curvaturePoint = Vector2(CIntegral, SIntegral) - curvature * normal;
 			m_spiralCurvaturePoints.emplace_back(curvaturePoint);
@@ -467,7 +471,48 @@ namespace STEditor
 
 	real SpiralScene::arcLengthCurvature(real s)
 	{
-		return alpha * s;
+		// t^3\left( -x_0+3x_1-3x_2+x_3 \right) +t^2\left( 3x_0-6x_1+3x_2 \right) +t\left( 3x_1-3x_0 \right) +x_0
+
+		auto arr = m_bezier.points();
+
+		real x_1 = arr[1].x;
+		real x_2 = arr[2].x;
+		real x_3 = arr[3].x;
+
+		real y_0 = arr[0].y;
+		real y_1 = arr[1].y;
+		real y_2 = arr[2].y;
+		real y_3 = arr[3].y;
+
+
+		real A = 3.0 * x_1 - 3.0 * x_2 + x_3;
+		real B = - 6.0 * x_1 + 3.0 * x_2;
+		real C = 3.0 * x_1;
+		real D = - s;
+		double coeffs[] = { D, C, B, A };
+
+		//Ax^3 + Bx^2 + Cx + D = 0, find root
+
+		gsl_complex roots[3];
+
+		gsl_poly_complex_workspace* w = gsl_poly_complex_workspace_alloc(4);
+		gsl_poly_complex_solve(coeffs, 4, w, &roots[0].dat[0]);
+		gsl_poly_complex_workspace_free(w);
+		real t = 0.0f;
+		for (int i = 0; i < 3; i++) {
+			double realPart = GSL_REAL(roots[i]);
+			double imagPart = GSL_IMAG(roots[i]);
+			if(imagPart == 0.0)
+				t = realPart;
+		}
+
+		// \left( 1-t \right) ^3y_0+3t\left( 1-t \right) ^2y_1+3t^2\left( 1-t \right) y_2+t^3y_3
+		real y = y_0 * std::pow(1.0f - t, 3) + 3.0f * t * std::pow(1.0f - t, 2) * y_1 + 3.0f * t * t * (1.0f - t) * y_2 + t * t * t * y_3;
+		return y;
+		
+		//return alpha * s;
+
+
 		//if (s < 0.5f)
 		//	return 4.0f * std::pow(s, 3.0f);
 
@@ -476,7 +521,48 @@ namespace STEditor
 
 	real SpiralScene::arcLengthCurvatureInt(real s)
 	{
-		return alpha * s * s / 2.0f;
+		auto arr = m_bezier.points();
+
+		real x_1 = arr[1].x;
+		real x_2 = arr[2].x;
+		real x_3 = arr[3].x;
+
+		real A = 3.0 * x_1 - 3.0 * x_2 + x_3;
+		real B = -6.0 * x_1 + 3.0 * x_2;
+		real C = 3.0 * x_1;
+		real D = -s;
+		double coeffs[] = { D, C, B, A };
+
+		//Ax^3 + Bx^2 + Cx + D = 0, find root
+
+		gsl_complex roots[3];
+
+		gsl_poly_complex_workspace* work = gsl_poly_complex_workspace_alloc(4);
+		gsl_poly_complex_solve(coeffs, 4, work, &roots[0].dat[0]);
+		gsl_poly_complex_workspace_free(work);
+		real t = 0.0f;
+		for (int i = 0; i < 3; i++) {
+			double realPart = GSL_REAL(roots[i]);
+			double imagPart = GSL_IMAG(roots[i]);
+			if (imagPart == 0.0)
+				t = realPart;
+		}
+
+		real C_f = 1.0f / m_currentRadius;
+		real w = m_weight;
+		
+		//-2L(3w-1)C_fT^6+6L(3w-1)C_fT^5-\frac{1}{2}L(30w-9)C_fT^4+3LwC_fT^3
+
+		real integral = -2.0 * m_L * (3.0 * w - 1.0) * C_f * std::pow(t, 6) +
+			6.0 * m_L * (3.0 * w - 1.0) * C_f * std::pow(t, 5) -
+			0.5 * m_L * (30.0 * w - 9.0) * C_f * std::pow(t, 4) +
+			3.0 * m_L * w * C_f * std::pow(t, 3);
+
+		return integral;
+		//return alpha * s * s / 2.0f;
+
+
+
 		//if(s < 0.5f)
 		//	return std::pow(s, 4.0f);
 

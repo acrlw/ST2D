@@ -42,7 +42,7 @@ namespace STEditor
 		bool m_lockCornerStart = false;
 		float m_lockWidthSize = 0.0f;
 		float m_lockHeightSize = 0.0f;
-		bool m_showCurvatureBezier = false;
+		bool m_showCurvatureBezier = true;
 		bool m_connectInner = false;
 		bool m_showRoundedCurvature = false;
 		bool m_showReferenceLine = false;
@@ -87,7 +87,6 @@ namespace STEditor
 		Vector2 m_spiralAxialSymmetryDir;
 
 		float m_L = 1.0f;
-		float m_alpha = 1.0f;
 		float m_weight = 0.5f;
 		CubicBezier m_bezier;
 	};

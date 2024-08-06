@@ -10,7 +10,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 find_package(SFML CONFIG REQUIRED COMPONENTS graphics system window)
 find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
-find_package(Ceres CONFIG REQUIRED)
+ find_package(GSL REQUIRED)
 
 link_directories(${CMAKE_BINARY_DIR}/lib)
 
@@ -40,7 +40,7 @@ target_link_libraries(ST2DEditor PRIVATE
     sfml-system sfml-network sfml-graphics sfml-window
     ImGui-SFML::ImGui-SFML
     Eigen3::Eigen
-    Ceres::ceres
+    GSL::gsl GSL::gslcblas
 )
 
 target_precompile_headers(ST2DEditor PUBLIC ../Core/Source/pch.h)
