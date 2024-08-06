@@ -627,6 +627,13 @@ namespace STEditor
 
 	real SpiralScene::arcLengthCurvature(real s)
 	{
+		// \kappa \left( s \right) =\frac{6C_f}{L^5}s^5-\frac{15C_f}{L^4}s^4+\frac{10C_f}{L^3}s^3
+
+		real C_f = 1.0f / m_currentRadius;
+		return 6.0f * C_f / std::pow(m_L,5) * std::pow(s, 5) -
+			15.0f * C_f / std::pow(m_L, 4) * std::pow(s, 4) +
+			10.0f * C_f / std::pow(m_L, 3) * std::pow(s, 3);
+
 		// t^3\left( -x_0+3x_1-3x_2+x_3 \right) +t^2\left( 3x_0-6x_1+3x_2 \right) +t\left( 3x_1-3x_0 \right) +x_0
 
 		auto arr = m_bezier.points();
@@ -677,6 +684,14 @@ namespace STEditor
 
 	real SpiralScene::arcLengthCurvatureInt(real s)
 	{
+		real C_f = 1.0f / m_currentRadius;
+
+		// \theta \left( s \right) =\frac{C_f}{L^5}s^6-\frac{3C_f}{L^4}s^5+\frac{5C_f}{2L^3}s^4
+
+		return C_f / std::pow(m_L, 5) * std::pow(s, 6) -
+			3.0f * C_f / std::pow(m_L, 4) * std::pow(s, 5) +
+			5.0f * C_f / (2.0f * std::pow(m_L, 3)) * std::pow(s, 4);
+
 		auto arr = m_bezier.points();
 
 		real x_1 = arr[1].x;
@@ -704,7 +719,6 @@ namespace STEditor
 				t = realPart;
 		}
 
-		real C_f = 1.0f / m_currentRadius;
 		real w = m_weight;
 		
 		//-2L(3w-1)C_fT^6+6L(3w-1)C_fT^5-\frac{1}{2}L(30w-9)C_fT^4+3LwC_fT^3
