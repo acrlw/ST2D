@@ -30,11 +30,15 @@ namespace STEditor
 		void computeReference();
 		void computeSpiral();
 		void computeG1();
+		void computeG2();
 		void drawG1(sf::RenderWindow& window);
+		void drawG2(sf::RenderWindow& window);
 		void drawSpiral(sf::RenderWindow& window);
 		void drawReference(sf::RenderWindow& window);
 		void drawCurvature(sf::RenderWindow& window, const std::vector<Vector2>& start,
 			const std::vector<Vector2>& end, const sf::Color& color, bool flip);
+
+		void drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve, const sf::Color& color) const;
 
 		real arcLengthCurvature(real s);
 		real arcLengthCurvatureInt(real s);
@@ -42,12 +46,15 @@ namespace STEditor
 		bool m_lockCornerStart = false;
 		float m_lockWidthSize = 0.0f;
 		float m_lockHeightSize = 0.0f;
-		bool m_showCurvatureBezier = true;
+		bool m_showCurvatureBezier = false;
 		bool m_connectInner = false;
 		bool m_showRoundedCurvature = false;
 		bool m_showReferenceLine = false;
 		bool m_showG1Continuity = false;
-		bool m_showCurvature = false;
+		bool m_showG2Continuity = true;
+		bool m_showSpiral = true;
+		bool m_showSpiralCurvature = false;
+		bool m_showG2Curvature = false;
 		float m_innerWidthFactor = 0.55f;
 		float m_innerHeightFactor = 0.55f;
 		float m_curvatureScaleFactor = 0.1f;
@@ -68,17 +75,26 @@ namespace STEditor
 
 
 		float m_scaleK = 1.0f;
+		float m_thickness = 2.0f;
 
-
-		int N = 200;
+		int N = 100;
 		float L = 1.0f;
 		float alpha = 1.0f;
 
 		std::vector<Vector2> m_spiral, m_spiralSymmetry;
-		std::vector<Vector2> m_spiralCurvaturePoints, m_spiralSymmetryCurvaturePoints;
+		std::vector<Vector2> m_spiralCurvatureStart, m_spiralCurvatureEnd, m_spiralSymmetryCurvatureStart, m_spiralSymmetryCurvatureEnd;
 
 		std::vector<Vector2> m_g1Vertices;
 		std::vector<Vector2> m_roundCurvatureStart, m_roundCurvatureEnd;
+
+		std::vector<Vector2> m_g2Vertices;
+		std::vector<Vector2> m_g2CurvatureStart, m_g2CurvatureEnd;
+
+		std::vector<Vector2> m_cubicBezierPoints1, m_cubicBezierPoints2;
+		std::vector<Vector2> m_cubicBezierCurvatureStart1, m_cubicBezierCurvatureEnd1;
+		std::vector<Vector2> m_cubicBezierCurvatureStart2, m_cubicBezierCurvatureEnd2;
+
+		CubicBezier m_g2CubicBezier1, m_g2CubicBezier2;
 
 		float m_spiralStartRadians = 0.0f;
 		float m_spiralEndRadians = 0.0f;

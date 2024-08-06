@@ -22,9 +22,9 @@ namespace STEditor
 	void SpiralScene::onUpdate(float deltaTime)
 	{
 		computeReference();
-		computeG1();
 		computeSpiral();
-
+		computeG1();
+		computeG2();
 	}
 
 	void SpiralScene::onRender(sf::RenderWindow& window)
@@ -53,6 +53,9 @@ namespace STEditor
 			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), x, RenderConstant::Gray);
 			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), y, RenderConstant::Gray);
 		}
+
+		if(m_showG2Continuity)
+			drawG2(window);
 	}
 
 	void SpiralScene::onRenderUI()
@@ -88,10 +91,20 @@ namespace STEditor
 
 		ImGui::SeparatorText("Visibility");
 		ImGui::Checkbox("Show G1 Continuity", &m_showG1Continuity);
+		ImGui::Checkbox("Show G2 Continuity", &m_showG2Continuity);
+		ImGui::Checkbox("Show Spiral", &m_showSpiral);
 		ImGui::Checkbox("Show Reference Line", &m_showReferenceLine);
 		ImGui::Checkbox("Show Rounded Curvature", &m_showRoundedCurvature);
-		ImGui::Checkbox("Show Spiral Curvature", &m_showCurvature);
+		ImGui::Checkbox("Show G2 Curvature", &m_showG2Curvature);
+		ImGui::Checkbox("Show Spiral Curvature", &m_showSpiralCurvature);
 		ImGui::Checkbox("Show Curvature Bezier", &m_showCurvatureBezier);
+
+		if(ImGui::Button("Fit Inner") && !m_spiral.empty())
+		{
+			Vector2 p = m_spiral.front();
+			m_innerWidthFactor = p.x / (m_halfWidth - m_currentRadius);
+			m_innerHeightFactor = m_innerWidthFactor;
+		}
 
 
 		ImGui::End();
@@ -202,16 +215,13 @@ namespace STEditor
 		u = 1.5f * (std::pow(P32.dot(P32), 1.5f) / (m_currentRadius * std::abs(P32.cross(P02))));
 		m_b2P01 = m_p10 * u + (1.0f - u) * m_b2P10;
 
-		m_spiralCircleCenter.x = m_roundCenter.x;
-		m_spiralCircleCenter.y = m_currentRadius;
+		//m_spiralCircleCenter.x = m_roundCenter.x;
+		//m_spiralCircleCenter.y = m_currentRadius;
 
 		m_spiralStartRadians = Math::radians(-45.0f) - Math::radians(45.0f * m_cornerPercentage);
 		m_spiralEndRadians = Math::radians(-45.0f) + Math::radians(45.0f * m_cornerPercentage);
 		m_spiralStartRoundedPos = m_currentRadius * Vector2(std::cos(m_spiralStartRadians), std::sin(m_spiralStartRadians));
 		m_spiralEndRoundedPos = m_currentRadius * Vector2(std::cos(m_spiralEndRadians), std::sin(m_spiralEndRadians));
-
-		m_spiralStartRoundedPos += m_spiralCircleCenter;
-		m_spiralEndRoundedPos += m_spiralCircleCenter;
 
 		m_spiralAxialSymmetryDir.set(std::cos(Math::radians(-45.0f)), std::sin(Math::radians(-45.0f)));
 		
@@ -223,7 +233,7 @@ namespace STEditor
 
 		//transform += m_p01;
 
-		Vector2 tangent = (m_spiralStartRoundedPos - m_spiralCircleCenter).normal().perpendicular();
+		Vector2 tangent = Vector2(std::cos(m_spiralStartRadians), std::sin(m_spiralStartRadians)).perpendicular();
 		real C_f = 1.0f / m_currentRadius;
 		real a_c = std::acos(tangent.x);
 
@@ -240,7 +250,8 @@ namespace STEditor
 		m_bezier.setPoints(p0, p1, p2, p3);
 
 		m_spiral.clear();
-		m_spiralCurvaturePoints.clear();
+		m_spiralCurvatureStart.clear();
+		m_spiralCurvatureEnd.clear();
 
 		real ds = L / static_cast<real>(N);
 		real lastC = 0.0f;
@@ -259,7 +270,8 @@ namespace STEditor
 				lastC = C;
 				lastS = S;
 				m_spiral.emplace_back(Vector2(0,0));
-				m_spiralCurvaturePoints.emplace_back(Vector2(0,0));
+				m_spiralCurvatureStart.emplace_back(Vector2(0,0));
+				m_spiralCurvatureEnd.emplace_back(Vector2(0,0));
 				continue;
 			}
 			real mid = s - 0.5f * ds;
@@ -272,14 +284,16 @@ namespace STEditor
 
 			//real CIntegral = 0.5f * ds * (lastC + C) + lastCIntegral;
 			//real SIntegral = 0.5f * ds * (lastS + S) + lastSIntegral;
-
-			m_spiral.emplace_back(Vector2(CIntegral, SIntegral));
+			Vector2 p(CIntegral, SIntegral);
+			m_spiral.emplace_back(p);
 
 			Vector2 normal = Vector2(-S, C);
 			real curvature = arcLengthCurvature(s);
 
 			Vector2 curvaturePoint = Vector2(CIntegral, SIntegral) - curvature * normal;
-			m_spiralCurvaturePoints.emplace_back(curvaturePoint);
+
+			m_spiralCurvatureStart.emplace_back(p);
+			m_spiralCurvatureEnd.emplace_back(curvaturePoint);
 
 			lastCIntegral = CIntegral;
 			lastSIntegral = SIntegral;
@@ -288,16 +302,50 @@ namespace STEditor
 			lastS = S;
 		}
 
-		Vector2 offset = m_spiralStartRoundedPos - m_spiral.back();
+		Vector2 back(lastCIntegral, lastSIntegral);
+		Vector2 transform(0, -1.0);
+
+		Vector2 offset = back - m_currentRadius * Vector2(std::cos(m_spiralStartRadians), std::sin(m_spiralStartRadians));
+
+		m_spiralCircleCenter = offset;
+
 		m_spiralSymmetry.clear();
-		m_spiralSymmetryCurvaturePoints.clear();
+		m_spiralSymmetryCurvatureStart.clear();
+		m_spiralSymmetryCurvatureEnd.clear();
+
+		Vector2 end = GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, {0,0});
+		transform += Vector2(1.0 - end.x, 0);
+
+		offset += transform;
+
+		m_spiralCircleCenter = offset;
+		m_spiralStartRoundedPos += offset;
+		m_spiralEndRoundedPos += offset;
 		for (int i = 0; i < N; ++i)
 		{
-			m_spiral[i] += offset;
-			m_spiralCurvaturePoints[i] += offset;
+			m_spiral[i] += transform;
 			m_spiralSymmetry.emplace_back(GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, m_spiral[i]));
-			m_spiralSymmetryCurvaturePoints.emplace_back(GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, m_spiralCurvaturePoints[i]));
+
+			Vector2 p1 = m_spiralCurvatureStart[i] + transform;
+			Vector2 p2 = m_spiralCurvatureEnd[i] + transform;
+
+			m_spiralCurvatureStart[i] = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1);
+			m_spiralCurvatureEnd[i] = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2);
+
+			p1 = GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, p1);
+			p2 = GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, p2);
+
+			//m_spiralCurvaturePoints[i] = GeometryAlgorithm2D::axialSymmetry({ }, { 1.0, 0.0 }, p1);
+			m_spiralSymmetryCurvatureStart.emplace_back(GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1));
+
+
+			//p2 = GeometryAlgorithm2D::axialSymmetry({ }, { 1.0, 0.0 }, p2);
+
+			m_spiralSymmetryCurvatureEnd.emplace_back(GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2));
+
 		}
+
+		
 	}
 
 	void SpiralScene::computeG1()
@@ -355,8 +403,53 @@ namespace STEditor
 			point *= k;
 			point += from;
 
+			from = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, from);
+			point = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, point);
+
 			m_spiralRoundCurvatureStart.push_back(from);
 			m_spiralRoundCurvatureEnd.push_back(point);
+		}
+	}
+
+	void SpiralScene::computeG2()
+	{
+		m_g2Vertices.clear();
+		m_g2Vertices.push_back(m_p00);
+
+		m_g2CubicBezier1.setCount(N);
+		m_g2CubicBezier2.setCount(N);
+
+		m_g2CubicBezier1.setPoints(m_p01, m_b1P01, m_b1P10, m_endRoundedPos);
+		m_g2CubicBezier2.setPoints(m_p10, m_b2P01, m_b2P10, m_startRoundedPos);
+
+		m_cubicBezierPoints1 = m_g2CubicBezier1.curvePoints();
+		m_cubicBezierPoints2 = m_g2CubicBezier2.curvePoints();
+
+		for (auto iter = m_cubicBezierPoints1.begin(); iter != m_cubicBezierPoints1.end() - 1; ++iter)
+			m_g2Vertices.push_back(*iter);
+
+		for (auto iter = m_roundCurvatureStart.rbegin(); iter != m_roundCurvatureStart.rend(); ++iter)
+			m_g2Vertices.push_back(*iter);
+
+		for (auto&& iter = m_cubicBezierPoints2.rbegin() + 1; iter != m_cubicBezierPoints2.rend(); ++iter)
+			m_g2Vertices.push_back(*iter);
+
+
+		m_g2Vertices.push_back(m_p11);
+
+
+		if (m_showG2Curvature)
+		{
+			m_cubicBezierCurvatureStart1.clear();
+			m_cubicBezierCurvatureStart2.clear();
+			m_cubicBezierCurvatureEnd1.clear();
+			m_cubicBezierCurvatureEnd2.clear();
+
+			m_cubicBezierCurvatureStart1 = m_cubicBezierPoints1;
+			m_cubicBezierCurvatureStart2 = m_cubicBezierPoints2;
+
+			m_cubicBezierCurvatureEnd1 = m_g2CubicBezier1.curvaturePoints();
+			m_cubicBezierCurvatureEnd2 = m_g2CubicBezier2.curvaturePoints();
 		}
 	}
 
@@ -372,38 +465,81 @@ namespace STEditor
 			drawCurvature(window, m_roundCurvatureStart, m_roundCurvatureEnd, RenderConstant::Gray, false);
 	}
 
+	void SpiralScene::drawG2(sf::RenderWindow& window)
+	{
+		drawCurve(window, m_g2Vertices, RenderConstant::Green);
+		if(m_showG2Curvature)
+		{
+			drawCurvature(window, m_cubicBezierCurvatureStart1, m_cubicBezierCurvatureEnd1, RenderConstant::Green, false);
+			drawCurvature(window, m_cubicBezierCurvatureStart2, m_cubicBezierCurvatureEnd2, RenderConstant::Green, true);
+			drawCurvature(window, m_roundCurvatureStart, m_roundCurvatureEnd, RenderConstant::Green, false);
+		}
+	}
+
 	void SpiralScene::drawSpiral(sf::RenderWindow& window)
 	{
 		if(m_spiral.size() < 2)
 			return;
 
-		
+		//RenderSFMLImpl::renderLine(window, *m_settings.camera, { 0, -1 }, m_spiral.front(), RenderConstant::Green);
+		//RenderSFMLImpl::renderLine(window, *m_settings.camera, { 1, 0 }, m_spiralSymmetry.front(), RenderConstant::Green);
 
-		RenderSFMLImpl::renderPolyLine(window, *m_settings.camera, m_spiralRoundCurvatureStart, RenderConstant::Green);
-
-		if (m_showRoundedCurvature)
-		{
-			RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_spiralCircleCenter, RenderConstant::Gray);
-
-			//RenderSFMLImpl::renderArrow(window, *m_settings.camera, m_spiralStartRoundedPos, m_spiralStartRoundedPos + (m_spiralStartRoundedPos - m_spiralCircleCenter).normal().perpendicular(), RenderConstant::Red, 0.1);
-			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_spiralCircleCenter, m_spiralStartRoundedPos, RenderConstant::Gray, 0.01, 0.01);
-			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_spiralCircleCenter, m_spiralEndRoundedPos, RenderConstant::Gray, 0.01, 0.01);
-
-			drawCurvature(window, m_spiralRoundCurvatureStart, m_spiralRoundCurvatureEnd, RenderConstant::Gray, false);
-		}
 
 		//Vector2 v = -m_endRoundedPos.perpendicular();
 		//RenderSFMLImpl::renderArrow(window, *m_settings.camera, {}, v, RenderConstant::Red);
 
+		auto color = RenderConstant::Yellow;
 
-		RenderSFMLImpl::renderPolyLine(window, *m_settings.camera, m_spiral, RenderConstant::Green);
-		RenderSFMLImpl::renderPolyLine(window, *m_settings.camera, m_spiralSymmetry, RenderConstant::Green);
-
-
-		if(m_showCurvature)
+		if(m_showSpiral)
 		{
-			drawCurvature(window, m_spiral, m_spiralCurvaturePoints, RenderConstant::Gray, false);
-			drawCurvature(window, m_spiralSymmetry, m_spiralSymmetryCurvaturePoints, RenderConstant::Gray, false);
+
+			Vector2 p0 = m_spiral[0];
+			Vector2 p2 = m_spiralSymmetry[0];
+
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -1 }, p0, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 1, 0 }, p2, color);
+
+			p0.x = -p0.x;
+			p2.x = -p2.x;
+
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -1 }, p0, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -1, 0 }, p2, color);
+
+			p0.y = -p0.y;
+			p2.y = -p2.y;
+
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, 1 }, p0, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -1, 0 }, p2, color);
+
+			p0.x = -p0.x;
+			p2.x = -p2.x;
+
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, 1 }, p0, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 1, 0 }, p2, color);
+
+
+			drawCurve(window, m_spiral, color);
+			drawCurve(window, m_spiralSymmetry, color);
+			drawCurve(window, m_spiralRoundCurvatureStart, color);
+
+		}
+
+
+		if (m_showSpiralCurvature)
+		{
+			drawCurvature(window, m_spiralCurvatureStart, m_spiralCurvatureEnd, color, false);
+			drawCurvature(window, m_spiralSymmetryCurvatureStart, m_spiralSymmetryCurvatureEnd, color, false);
+
+			Vector2 p0 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, m_spiralCircleCenter);
+			Vector2 p1 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, m_spiralStartRoundedPos);
+			Vector2 p2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, m_spiralEndRoundedPos);
+			RenderSFMLImpl::renderPoint(window, *m_settings.camera, p0, RenderConstant::Gray);
+
+			//RenderSFMLImpl::renderArrow(window, *m_settings.camera, m_spiralStartRoundedPos, m_spiralStartRoundedPos + (m_spiralStartRoundedPos - m_spiralCircleCenter).normal().perpendicular(), RenderConstant::Red, 0.1);
+			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, p0, p1, RenderConstant::Gray, 0.01, 0.01);
+			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, p0, p2, RenderConstant::Gray, 0.01, 0.01);
+
+			drawCurvature(window, m_spiralRoundCurvatureStart, m_spiralRoundCurvatureEnd, color, false);
 		}
 	}
 
@@ -466,6 +602,26 @@ namespace STEditor
 			}
 
 			lastEnd = newEnd;
+		}
+	}
+
+	void SpiralScene::drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve,
+		const sf::Color& color) const
+	{
+		for (size_t i = 1; i < curve.size(); ++i)
+		{
+			Vector2 point0 = curve[i];
+			Vector2 point1 = curve[i - 1];
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			point0.y = -point0.y;
+			point1.y = -point1.y;
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			point0.x = -point0.x;
+			point1.x = -point1.x;
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			point0.y = -point0.y;
+			point1.y = -point1.y;
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
 		}
 	}
 
