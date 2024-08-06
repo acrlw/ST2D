@@ -62,7 +62,7 @@ namespace STEditor
 
 		if(m_showG1)
 		{
-			auto color = RenderConstant::Red;
+			auto color = RenderConstant::Green;
 			//color.a = 100;
 			drawCurve(window, g1Vertices, color);
 		}
@@ -91,7 +91,7 @@ namespace STEditor
 			//	//RenderSFMLImpl::renderPoint(window, *m_settings.camera, elem, RenderConstant::Green, 2.0f);
 			//}
 
-			auto color = RenderConstant::Blue;
+			auto color = RenderConstant::Green;
 			//color.a = 100;
 			drawCurve(window, g3Vertices, color);
 
@@ -138,7 +138,7 @@ namespace STEditor
 		ImGui::Checkbox("Lock Corner Start", &m_lockCornerStart);
 		ImGui::DragFloat("Inner Width Percentage", &m_innerWidthFactor, 0.001f, 0.0f, 1.0f);
 		ImGui::DragFloat("Inner Height Percentage", &m_innerHeightFactor, 0.001f, 0.0f, 1.0f);
-		ImGui::DragFloat("Corner Angle Percentage", &m_cornerPercentage, 0.005f, 0.0f, 0.995f);
+		ImGui::DragFloat("Corner Angle Percentage", &m_cornerPercentage, 0.005f, 0.0f, 0.999f);
 		ImGui::DragInt("Bezier Sample Count", &m_bezierCount, 1, 8, 500);
 		ImGui::DragInt("Circle Segment Count", &m_count, 2, 4, 500);
 		ImGui::DragFloat("Curvature Scale Factor", &m_curvatureScaleFactor, 0.01f, 0.01f, 1.0f);
@@ -177,9 +177,9 @@ namespace STEditor
 		ImGui::DragFloat("Optimize Speed", &m_optimizeSpeed, 1e-6f, 1e-7f, 0.1f, "%.7f");
 
 		ImGui::SeparatorText("Visibility");
+		ImGui::Checkbox("Show Reference Line", &m_showReferenceLine);
 		ImGui::Checkbox("Show Rounded Curvature", &m_showRoundedCurvature);
 		ImGui::Checkbox("Show Bezier Curvature", &m_showBezierCurvature);
-		ImGui::Checkbox("Show Reference Line", &m_showReferenceLine);
 		ImGui::Checkbox("Show Quintic Bezier Curve", &m_showQuinticBezier);
 		ImGui::Checkbox("Show Quintic Bezier Curvature", &m_showQuinticBezierCurvature);
 		ImGui::Checkbox("Show G1 Continuity", &m_showG1);

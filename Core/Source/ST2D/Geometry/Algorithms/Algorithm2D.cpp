@@ -69,6 +69,12 @@ namespace ST
 		}
 		return result;
 	}
+
+	Vector2 GeometryAlgorithm2D::axialSymmetry(const Vector2& center, const Vector2& dir, const Vector2& point)
+	{
+		return 2.0 * ((point - center).dot(dir) * dir + center - point) + point;
+	}
+
 	bool GeometryAlgorithm2D::isCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		//triangle area = 0 then collinear

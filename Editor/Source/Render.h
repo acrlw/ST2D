@@ -16,8 +16,8 @@ namespace STEditor
 		constexpr int BorderSize = 1;
 		constexpr int FillAlpha = 38;
 		constexpr int BasicCirclePointCount = 60;
-		constexpr real BasicDashLength = 0.04f;
-		constexpr real BasicDashGap = 0.04f;
+		constexpr real BasicDashLength = 0.02f;
+		constexpr real BasicDashGap = 0.02f;
 		const sf::Color Yellow = sf::Color(255, 235, 59);
 		const sf::Color Red = sf::Color(244, 67, 54);
 		const sf::Color LightRed = sf::Color(255, 205, 210);
@@ -44,6 +44,13 @@ namespace STEditor
 		static sf::Vector2f toVector2f(const Vector2& vector);
 		static void renderPoint(sf::RenderWindow& window, Camera2D& camera, const Vector2& point, const sf::Color& color,
 			real pointSize = RenderConstant::PointSize);
+
+		static void renderPolyLine(sf::RenderWindow& window, Camera2D& camera, const std::vector<Vector2>& points,
+			const sf::Color& color);
+
+		static void renderPolyThickLine(sf::RenderWindow& window, Camera2D& camera, const std::vector<Vector2>& points,
+			const sf::Color& color, const real& thickness = 2.0f);
+
 		static void renderLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1, const Vector2& p2,
 			const sf::Color& color);
 
@@ -70,6 +77,11 @@ namespace STEditor
 		static void renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const Transform& transform);
 		
 		static void renderAABB(sf::RenderWindow& window, Camera2D& camera, const AABB& aabb, const sf::Color& color);
+
+
+		static void renderPolyDashedLine(sf::RenderWindow& window, Camera2D& camera, const std::vector<Vector2>& points,
+			const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
+			const real& dashGap = RenderConstant::BasicDashGap);
 
 		static void renderDashedLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1, const Vector2& p2,
 			const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
@@ -100,6 +112,7 @@ namespace STEditor
 
 		static void renderThickLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1, const Vector2& p2,
 			const sf::Color& color, const real& thickness = 2.0f);
+
 
 		static void renderPolytope(sf::RenderWindow& window, Camera2D& camera, const std::vector<Vector2>& polytope,
 			const sf::Color& color, const sf::Font& font,

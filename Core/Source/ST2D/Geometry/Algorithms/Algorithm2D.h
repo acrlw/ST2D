@@ -21,6 +21,8 @@ namespace ST
 			static std::vector<Vector2> sutherlandHodgmentPolygonClipping(const std::vector<Vector2>& polygon, const std::vector<Vector2>& clipRegion);
 		};
 
+		static Vector2 axialSymmetry(const Vector2& center, const Vector2& dir, const Vector2& point);
+
 		/**
 		 * \brief Check if point a,b,c are collinear using triangle area method
 		 * \param a point a

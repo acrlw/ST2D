@@ -16,8 +16,38 @@ namespace STEditor
 			window.draw(shape);
 		}
 
+		void RenderSFMLImpl::renderPolyLine(sf::RenderWindow& window, Camera2D& camera,
+			const std::vector<Vector2>& points, const sf::Color& color)
+		{
+			if (points.size() < 2)
+				return;
+			std::vector<sf::Vertex> vertices;
+			vertices.reserve(points.size());
+			for (auto& elem : points)
+			{
+				Vector2 screenPos = camera.worldToScreen(elem);
+				sf::Vertex vertex;
+				vertex.position = toVector2f(screenPos);
+				vertex.color = color;
+				vertices.emplace_back(vertex);
+			}
+
+			window.draw(&vertices[0], vertices.size(), sf::LineStrip);
+		}
+
+		void RenderSFMLImpl::renderPolyThickLine(sf::RenderWindow& window, Camera2D& camera,
+			const std::vector<Vector2>& points, const sf::Color& color, const real& thickness)
+		{
+			if (points.size() < 2)
+				return;
+
+			for(size_t i = 1; i < points.size(); ++i)
+				renderThickLine(window, camera, points[i - 1], points[i], color, thickness);
+			
+		}
+
 		void RenderSFMLImpl::renderLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1, const Vector2& p2,
-			const sf::Color& color)
+		                                const sf::Color& color)
 		{
 			sf::Vertex line[] =
 			{
@@ -293,6 +323,15 @@ namespace STEditor
 			window.draw(shape);
 		}
 
+		void RenderSFMLImpl::renderPolyDashedLine(sf::RenderWindow& window, Camera2D& camera, const std::vector<Vector2>& points, const sf::Color& color, const real& dashLength, const real& dashGap)
+		{
+			if(points.size() < 2)
+				return;
+
+			for(int i = 1; i < points.size(); ++i)
+				renderDashedLine(window, camera, points[i - 1], points[i], color, dashLength, dashGap);
+		}
+
 		void RenderSFMLImpl::renderDashedLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1, const Vector2& p2,
 			const sf::Color& color, const real& dashLength, const real& dashGap)
 		{
@@ -369,6 +408,8 @@ namespace STEditor
 				break;
 			}
 		}
+
+
 
 		void RenderSFMLImpl::renderThickLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1,
 			const Vector2& p2, const sf::Color& color, const real& thickness)

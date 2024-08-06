@@ -25,6 +25,9 @@ namespace STEditor
 
 	void SplineScene::onRender(sf::RenderWindow& window)
 	{
+
+
+
 		for(auto& list: m_splineList)
 		{
 			for(size_t i = 0; i < list.size(); i++)
@@ -59,7 +62,10 @@ namespace STEditor
 	{
 		ImGui::Begin("Spline");
 
-
+		if(ImGui::Button("Blend"))
+		{
+			APP_INFO("Start blend two curve")
+		}
 
 		ImGui::End();
 	}

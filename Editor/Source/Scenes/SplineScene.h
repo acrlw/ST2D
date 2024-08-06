@@ -34,5 +34,6 @@ namespace STEditor
 		Vector2 m_mousePoint;
 		std::vector<Vector2> m_points;
 		std::vector<std::vector<Vector2>> m_splineList;
+
 	};
 }

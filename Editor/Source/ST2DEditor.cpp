@@ -32,6 +32,10 @@ namespace STEditor
 				[&](const SceneSettings& settings)
 				{
 					return std::make_unique<SplineScene>(settings);
+				},
+				[&](const SceneSettings& settings)
+				{
+					return std::make_unique<SpiralScene>(settings);
 				}
 			}
 		};
