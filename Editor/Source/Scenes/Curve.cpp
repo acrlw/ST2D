@@ -1,5 +1,5 @@
 #include "Curve.h"
-
+#include <gsl/gsl_poly.h>
 
 namespace STEditor
 {
@@ -61,7 +61,7 @@ namespace STEditor
 				param.w2 * 3.0 * t * t * (1.0 - t) +
 				param.w3 * t * t * t);
 	}
-	float RationalCubicBezierAD::curvatureAt(float T)
+	real RationalCubicBezierAD::curvatureAt(real T)
 	{
 
 		Params param1, param2;
@@ -108,7 +108,7 @@ namespace STEditor
 
 	}
 
-	Vector2 RationalCubicBezierAD::sample(float T)
+	Vector2 RationalCubicBezierAD::sample(real T)
 	{
 		Vector2 result;
 
@@ -143,7 +143,7 @@ namespace STEditor
 		return Vector2(x, y);
 	}
 
-	Vector2 RationalCubicBezierAD::tangent(float T)
+	Vector2 RationalCubicBezierAD::tangent(real T)
 	{
 		Params param1, param2;
 		param1.p0 = m_points[0].x;
@@ -299,7 +299,7 @@ namespace STEditor
 	}
 
 
-	Vector2 CubicBezierAD::sample(float T)
+	Vector2 CubicBezierAD::sample(real T)
 	{
 		Vector2 result;
 		Params param1, param2;
@@ -339,7 +339,7 @@ namespace STEditor
 		return m_points[index];
 	}
 
-	float CubicBezierAD::curvatureAt(float T)
+	real CubicBezierAD::curvatureAt(real T)
 	{
 		var t = T;
 
@@ -529,6 +529,345 @@ namespace STEditor
 		return {};
 	}
 
+	void SpiralShapeBase::setParam(real Cf, real arccosx)
+	{
+		if(m_Cf == Cf && m_arccosx == arccosx)
+			return;
+
+		m_Cf = Cf;
+		m_arccosx = arccosx;
+		m_needUpdate = true;
+	}
+
+
+	void SpiralShapeBase::computePoints(std::vector<Vector2>& curvePoints, std::vector<Vector2>& curvaturePoints, real L,
+		size_t count)
+	{
+		real ds = L / static_cast<real>(count);
+		real lastC = 0.0f;
+		real lastS = 0.0f;
+		real lastCIntegral = 0.0f;
+		real lastSIntegral = 0.0f;
+		for (size_t i = 0; i < count; ++i)
+		{
+			real s = static_cast<real>(i) * ds;
+			real integral = computeCurvatureIntegral(s, L);
+
+			real C = std::cos(integral);
+			real S = std::sin(integral);
+
+			if (i == 0)
+			{
+				lastC = C;
+				lastS = S;
+				curvePoints.emplace_back(0, 0);
+				curvaturePoints.emplace_back(0, 0);
+
+				continue;
+			}
+			real mid = s - 0.5f * ds;
+			integral = computeCurvatureIntegral(mid, L);
+			real midC = std::cos(integral);
+			real midS = std::sin(integral);
+
+			real CIntegral = 1.0f / 6.0f * ds * (lastC + 4.0f * midC + C) + lastCIntegral;
+			real SIntegral = 1.0f / 6.0f * ds * (lastS + 4.0f * midS + S) + lastSIntegral;
+
+
+			Vector2 p(CIntegral, SIntegral);
+			curvePoints.emplace_back(p);
+
+			Vector2 normal = Vector2(-S, C);
+			real curvature = computeCurvature(s, L);
+
+			Vector2 curvaturePoint = p - curvature * normal;
+
+			curvaturePoints.emplace_back(curvaturePoint);
+
+			lastCIntegral = CIntegral;
+			lastSIntegral = SIntegral;
+
+			lastC = C;
+			lastS = S;
+		}
+	}
+
+	bool SpiralShapeBase::needUpdate() const
+	{
+		return m_needUpdate;
+	}
+
+	void SpiralShapeBase::setNeedUpdate(bool needUpdate)
+	{
+		m_needUpdate = needUpdate;
+	}
+
+	void TwoWeightCubicBezierSpiral::setWeights(real w0, real w1)
+	{
+		if(m_w0 == w0 && m_w1 == w1)
+			return;
+
+		m_w0 = w0;
+		m_w1 = w1;
+		m_needUpdate = true;
+	}
+
+	real TwoWeightCubicBezierSpiral::weight0() const
+	{
+		return m_w0;
+	}
+
+	real TwoWeightCubicBezierSpiral::weight1() const
+	{
+		return m_w1;
+	}
+
+	real TwoWeightCubicBezierSpiral::computeArcLength()
+	{
+		return 10.0f * m_arccosx / (m_Cf * (5.0f + 3.0f * (m_w1 - m_w0)));
+	}
+
+	real TwoWeightCubicBezierSpiral::computeCurvature(real s, real L)
+	{
+		real x_1 = m_w0 * L;
+		real x_2 = (1.0 - m_w1) * L;
+		real x_3 = L;
+
+		real y_2 = m_Cf;
+		real y_3 = m_Cf;
+
+		real A = 3.0 * x_1 - 3.0 * x_2 + x_3;
+		real B = -6.0 * x_1 + 3.0 * x_2;
+		real C = 3.0 * x_1;
+		real D = -s;
+		double coeffs[] = { D, C, B, A };
+
+		//Ax^3 + Bx^2 + Cx + D = 0, find root
+
+		gsl_complex roots[3];
+
+		gsl_poly_complex_workspace* w = gsl_poly_complex_workspace_alloc(4);
+		gsl_poly_complex_solve(coeffs, 4, w, &roots[0].dat[0]);
+		gsl_poly_complex_workspace_free(w);
+		real t = 0.0f;
+		for (int i = 0; i < 3; i++) {
+			double realPart = GSL_REAL(roots[i]);
+			double imagPart = GSL_IMAG(roots[i]);
+			if (imagPart == 0.0)
+				t = realPart;
+		}
+
+		// \left( 1-t \right) ^3y_0+3t\left( 1-t \right) ^2y_1+3t^2\left( 1-t \right) y_2+t^3y_3
+		real y = 3.0f * t * t * (1.0f - t) * y_2 + t * t * t * y_3;
+
+		return y;
+	}
+
+	real TwoWeightCubicBezierSpiral::computeCurvatureIntegral(real s, real L)
+	{
+		real x_1 = m_w0 * L;
+		real x_2 = (1.0 - m_w1) * L;
+		real x_3 = L;
+
+		real A = 3.0 * x_1 - 3.0 * x_2 + x_3;
+		real B = -6.0 * x_1 + 3.0 * x_2;
+		real C = 3.0 * x_1;
+		real D = -s;
+		double coeffs[] = { D, C, B, A };
+
+		//Ax^3 + Bx^2 + Cx + D = 0, find root
+
+		gsl_complex roots[3];
+
+		gsl_poly_complex_workspace* w = gsl_poly_complex_workspace_alloc(4);
+		gsl_poly_complex_solve(coeffs, 4, w, &roots[0].dat[0]);
+		gsl_poly_complex_workspace_free(w);
+		real t = 0.0f;
+		for (int i = 0; i < 3; i++) {
+			double realPart = GSL_REAL(roots[i]);
+			double imagPart = GSL_IMAG(roots[i]);
+			if (imagPart == 0.0)
+				t = realPart;
+		}
+		// -\frac{1}{10}LT^6\left( 30w_1+30w_2-20 \right) C_f-\frac{1}{10}LT^5\left( -102w_1-78w_2+60 \right) C_f-\frac{1}{10}LT^4\left( 105w_1+45w_2-45 \right) C_f+3LT^3w_1C_f
+
+		real integral = -1.0 / 10.0 * L * std::pow(t, 6) * (30.0 * m_w0 + 30.0 * m_w1 - 20.0) * m_Cf -
+			1.0 / 10.0 * L * std::pow(t, 5) * (-102.0 * m_w0 - 78.0 * m_w1 + 60.0) * m_Cf -
+			1.0 / 10.0 * L * std::pow(t, 4) * (105.0 * m_w0 + 45.0 * m_w1 - 45.0) * m_Cf +
+			3.0 * L * std::pow(t, 3) * m_w0 * m_Cf;
+
+		return integral;
+	}
+
+	void OneWeightCubicBezierSpiral::setWeight(real w)
+	{
+		if (m_w == w)
+			return;
+
+		m_w = w;
+		m_needUpdate = true;
+	}
+
+	real OneWeightCubicBezierSpiral::weight() const
+	{
+		return m_w;
+	}
+
+	real OneWeightCubicBezierSpiral::computeArcLength()
+	{
+		return 2.0f * m_arccosx / m_Cf;
+	}
+
+	real OneWeightCubicBezierSpiral::computeCurvature(real s, real L)
+	{
+		real x_1 = m_w * L;
+		real x_2 = (1.0 - m_w) * L;
+		real x_3 = L;
+
+		real y_2 = m_Cf;
+		real y_3 = m_Cf;
+
+		real A = 3.0 * x_1 - 3.0 * x_2 + x_3;
+		real B = -6.0 * x_1 + 3.0 * x_2;
+		real C = 3.0 * x_1;
+		real D = -s;
+		double coeffs[] = { D, C, B, A };
+
+		//Ax^3 + Bx^2 + Cx + D = 0, find root
+
+		gsl_complex roots[3];
+
+		gsl_poly_complex_workspace* w = gsl_poly_complex_workspace_alloc(4);
+		gsl_poly_complex_solve(coeffs, 4, w, &roots[0].dat[0]);
+		gsl_poly_complex_workspace_free(w);
+		real t = 0.0f;
+		for (int i = 0; i < 3; i++) {
+			double realPart = GSL_REAL(roots[i]);
+			double imagPart = GSL_IMAG(roots[i]);
+			if (imagPart == 0.0)
+				t = realPart;
+		}
+
+		// \left( 1-t \right) ^3y_0+3t\left( 1-t \right) ^2y_1+3t^2\left( 1-t \right) y_2+t^3y_3
+		real y = 3.0f * t * t * (1.0f - t) * y_2 + t * t * t * y_3;
+		return y;
+	}
+
+	real OneWeightCubicBezierSpiral::computeCurvatureIntegral(real s, real L)
+	{
+		real x_1 = m_w * L;
+		real x_2 = (1.0 - m_w) * L;
+		real x_3 = L;
+
+		real A = 3.0 * x_1 - 3.0 * x_2 + x_3;
+		real B = -6.0 * x_1 + 3.0 * x_2;
+		real C = 3.0 * x_1;
+		real D = -s;
+		double coeffs[] = { D, C, B, A };
+
+		//Ax^3 + Bx^2 + Cx + D = 0, find root
+
+		gsl_complex roots[3];
+
+		gsl_poly_complex_workspace* work = gsl_poly_complex_workspace_alloc(4);
+		gsl_poly_complex_solve(coeffs, 4, work, &roots[0].dat[0]);
+		gsl_poly_complex_workspace_free(work);
+		real t = 0.0f;
+		for (int i = 0; i < 3; i++) {
+			double realPart = GSL_REAL(roots[i]);
+			double imagPart = GSL_IMAG(roots[i]);
+			if (imagPart == 0.0)
+				t = realPart;
+		}
+
+		//-2L(3w-1)C_fT^6+6L(3w-1)C_fT^5-\frac{1}{2}L(30w-9)C_fT^4+3LwC_fT^3
+
+		real integral = -2.0 * L * (3.0 * m_w - 1.0) * m_Cf * std::pow(t, 6) +
+			6.0 * L * (3.0 * m_w - 1.0) * m_Cf * std::pow(t, 5) -
+			0.5 * L * (30.0 * m_w - 9.0) * m_Cf * std::pow(t, 4) +
+			3.0 * L * m_w * m_Cf * std::pow(t, 3);
+
+		return integral;
+	}
+
+	real G4Spiral::computeArcLength()
+	{
+		return 2.0f * m_arccosx / m_Cf;
+	}
+
+	real G4Spiral::computeCurvature(real s, real L)
+	{
+		return 6.0f * m_Cf / std::pow(L, 5) * std::pow(s, 5) -
+			15.0f * m_Cf / std::pow(L, 4) * std::pow(s, 4) +
+			10.0f * m_Cf / std::pow(L, 3) * std::pow(s, 3);
+	}
+
+	real G4Spiral::computeCurvatureIntegral(real s, real L)
+	{
+		return m_Cf / std::pow(L, 5) * std::pow(s, 6) -
+			3.0f * m_Cf / std::pow(L, 4) * std::pow(s, 5) +
+			5.0f * m_Cf / (2.0f * std::pow(L, 3)) * std::pow(s, 4);
+	}
+
+	real Spiral::curvatureAt(real s)
+	{
+		real L = m_spiral->computeArcLength();
+		return m_spiral->computeCurvature(s, L);
+	}
+
+	Vector2 Spiral::sample(real s)
+	{
+		return {};
+	}
+
+	void Spiral::setSpiralShape(SpiralShapeBase* spiral)
+	{
+		if (m_spiral == spiral)
+			return;
+
+		m_needUpdateCurvePoints = true;
+		m_spiral = spiral;
+	}
+
+	SpiralShapeBase* Spiral::spiralShape() const
+	{
+		return m_spiral;
+	}
+
+	void Spiral::sampleCurvePoints()
+	{
+		if (m_spiral == nullptr)
+			return;
+
+		m_curvePoints.clear();
+		m_curvaturePoints.clear();
+
+		real L = m_spiral->computeArcLength();
+
+		m_spiral->computePoints(m_curvePoints, m_curvaturePoints, L, m_count);
+	}
+
+	void Spiral::sampleCurvaturePoints()
+	{
+
+	}
+
+	std::vector<Vector2> Spiral::curvePoints()
+	{
+		if (m_spiral->needUpdate() || m_needUpdateCurvePoints)
+		{
+			sampleCurvePoints();
+			m_spiral->setNeedUpdate(false);
+			m_needUpdateCurvePoints = false;
+		}
+		return m_curvePoints;
+	}
+
+	std::vector<Vector2> Spiral::curvaturePoints()
+	{
+		return m_curvaturePoints;
+	}
+
 	void RationalCubicBezier::setPoints(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3)
 	{
 		if(p0.equal(m_points[0]) && 
@@ -546,7 +885,7 @@ namespace STEditor
 		m_needUpdateCurvePoints = true;
 	}
 
-	void RationalCubicBezier::setWeights(float w0, float w1, float w2, float w3)
+	void RationalCubicBezier::setWeights(real w0, real w1, real w2, real w3)
 	{
 		if( realEqual(w0, m_weights[0]) && realEqual(w1, m_weights[1]) &&
 			realEqual(w2, m_weights[2]) && realEqual(w3, m_weights[3]))
@@ -576,24 +915,24 @@ namespace STEditor
 		return m_points[index];
 	}
 
-	float RationalCubicBezier::weightAt(size_t index) const
+	real RationalCubicBezier::weightAt(size_t index) const
 	{
 		return m_weights[index];
 	}
 
-	Vector2 RationalCubicBezier::sample(float t)
+	Vector2 RationalCubicBezier::sample(real t)
 	{
-		float u0 = m_weights[0] * Math::bernstein(t, 0.0f, 3.0f);
-		float u1 = m_weights[1] * Math::bernstein(t, 1.0f, 3.0f);
-		float u2 = m_weights[2] * Math::bernstein(t, 2.0f, 3.0f);
-		float u3 = m_weights[3] * Math::bernstein(t, 3.0f, 3.0f);
+		real u0 = m_weights[0] * Math::bernstein(t, 0.0f, 3.0f);
+		real u1 = m_weights[1] * Math::bernstein(t, 1.0f, 3.0f);
+		real u2 = m_weights[2] * Math::bernstein(t, 2.0f, 3.0f);
+		real u3 = m_weights[3] * Math::bernstein(t, 3.0f, 3.0f);
 
 		Vector2 result = (m_points[0] * u0 + m_points[1] * u1 + m_points[2] * u2 + m_points[3] * u3) / (u0 + u1 + u2 + u3);
 
 		return result;
 	}
 
-	Vector2 RationalCubicBezier::tangent(float t) const
+	Vector2 RationalCubicBezier::tangent(real t) const
 	{
 		// \left( (t-1)^3w_0-t\left( 3(t-1)^2w_1+t\left( tw_3-3(t-1)w_2 \right) \right) \right) ^2
 		float det = std::pow((std::pow(t - 1.0f, 3.0f) * m_weights[0] -
@@ -626,7 +965,7 @@ namespace STEditor
 	}
 
 
-	float RationalCubicBezier::curvatureAt(float t)
+	real RationalCubicBezier::curvatureAt(real t)
 	{
 		// \left( (t-1)^3w_0-t\left( 3(t-1)^2w_1+t\left( tw_3-3(t-1)w_2 \right) \right) \right) ^2
 		float det = std::pow((std::pow(t - 1.0f, 3.0f) * m_weights[0] -
@@ -819,7 +1158,7 @@ namespace STEditor
 		return bezier;
 	}
 
-	Vector2 CubicBezier::sample(float t)
+	Vector2 CubicBezier::sample(real t)
 	{
 		return Math::bernstein(t, 0, 3) * m_points[0] +
 			Math::bernstein(t, 1, 3) * m_points[1] +
@@ -827,7 +1166,7 @@ namespace STEditor
 			Math::bernstein(t, 3, 3) * m_points[3];
 	}
 
-	float CubicBezier::curvatureAt(float t)
+	real CubicBezier::curvatureAt(real t)
 	{
 		//Vector2 dp = Math::dBernstein(t, 0, 3) * m_points[0] +
 		//	Math::dBernstein(t, 1, 3) * m_points[1] +
@@ -958,4 +1297,5 @@ namespace STEditor
 		if (m_curvaturePoints.size() != m_curvePoints.size())
 			__debugbreak();
 	}
+
 }

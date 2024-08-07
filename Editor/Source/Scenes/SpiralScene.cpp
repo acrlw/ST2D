@@ -11,7 +11,7 @@ namespace STEditor
 
 	void SpiralScene::onLoad()
 	{
-
+		m_spiralCurve.setSpiralShape(&m_oneWeight);
 	}
 
 	void SpiralScene::onUnLoad()
@@ -25,6 +25,7 @@ namespace STEditor
 		computeSpiral();
 		computeG1();
 		computeG2();
+
 	}
 
 	void SpiralScene::onRender(sf::RenderWindow& window)
@@ -63,17 +64,37 @@ namespace STEditor
 		ImGui::Begin("Spiral");
 
 		ImGui::SeparatorText("Spiral Params");
+		
+		ImGui::Combo("Spiral Shape", &m_currentShapeIndex, "G4\0One Weight Bezier\0Two Weight Bezier\0");
+
+		if(m_currentShapeIndex == 0)
+		{
+			m_spiralCurve.setSpiralShape(&m_g4Spiral);
+		}
+		else if(m_currentShapeIndex == 1)
+		{
+			m_spiralCurve.setSpiralShape(&m_oneWeight);
+			real L = m_oneWeight.computeArcLength();
+			real Cf = 1.0f / m_currentRadius;
+			m_bezier.setPoints({}, { m_weight * L, 0 }, { (1.0 - m_weight) * L, Cf }, { L, Cf });
+		}
+		else if(m_currentShapeIndex == 2)
+		{
+			m_spiralCurve.setSpiralShape(&m_twoWeight);
+			real L = m_twoWeight.computeArcLength();
+			real Cf = 1.0f / m_currentRadius;
+			m_bezier.setPoints({}, { m_weight1 * L, 0 }, { (1.0 - m_weight2) * L, Cf }, { L, Cf });
+		}
 
 		ImGui::DragInt("Spiral Count", &N, 1, 10, 10000);
-		ImGui::DragFloat("Spiral Length", &L, 0.01f, 0.01f, 100.0f);
-		ImGui::DragFloat("Spiral Alpha", &alpha, 0.01f, 0.01f, 100.0f);
+
 		if(!m_spiral.empty())
 			ImGui::Text("End Offset: (%f, %f)", m_spiral.front().x, m_spiral.front().y);
 		ImGui::Text("Radius: %f", m_currentRadius);
 
 		ImGui::SeparatorText("Rounded Params");
-		ImGui::DragFloat("Half Width", &m_halfWidth, 0.01f, 0.5f, 50.0f);
-		ImGui::DragFloat("Half Height", &m_halfHeight, 0.01f, 0.5f, 50.0f);
+		ImGui::DragFloat("Half Width", &m_halfWidth, 0.01f, 1.0f, 50.0f);
+		ImGui::DragFloat("Half Height", &m_halfHeight, 0.01f, 1.0f, 50.0f);
 		ImGui::DragFloat("Rounded Radius Percentage", &m_percentage, 0.005f, 0.005f, 1.0f);
 		ImGui::Checkbox("Connect Inner", &m_connectInner);
 		ImGui::SameLine();
@@ -85,9 +106,16 @@ namespace STEditor
 		ImGui::DragFloat("Curvature Scale Factor", &m_curvatureScaleFactor, 0.01f, 0.01f, 1.0f);
 
 
-		ImGui::SeparatorText("Bezier Params");
+		ImGui::SeparatorText("One Weight Bezier");
 		ImGui::DragFloat("Weight", &m_weight, 0.01f, 0.35f, 1.0f);
-		ImGui::DragFloat("Bezier Arc Length", &m_L, 0.01f, 0.01f, 100.0f);
+		ImGui::SeparatorText("Two Weight Bezier");
+		ImGui::DragFloat("Weight1", &m_weight1, 0.001f, 0.01f, 1.0f - m_weight2);
+		ImGui::DragFloat("Weight2", &m_weight2, 0.001f, 0.01f, 1.0f - m_weight1);
+
+		m_oneWeight.setWeight(m_weight);
+		m_twoWeight.setWeights(m_weight1, m_weight2);
+
+		ImGui::Text("Spiral Arc Length: %f", m_L);
 
 		ImGui::SeparatorText("Visibility");
 		ImGui::Checkbox("Show G1 Continuity", &m_showG1Continuity);
@@ -237,73 +265,15 @@ namespace STEditor
 		real C_f = 1.0f / m_currentRadius;
 		real a_c = std::acos(tangent.x);
 
+		m_spiralCurve.spiralShape()->setParam(C_f, a_c);
+		m_spiralCurve.setCount(N);
+		
+		m_spiral = m_spiralCurve.curvePoints();
+		m_spiralCurvatureStart = m_spiral;
+		m_spiralCurvatureEnd = m_spiralCurve.curvaturePoints();
 
-		L = 2.0f * a_c / C_f;
-		alpha = C_f / L;
-
-		m_L = L;
-		Vector2 p0(0, 0);
-		Vector2 p1(m_L * m_weight, 0);
-		Vector2 p2((1.0f - m_weight) * m_L, C_f);
-		Vector2 p3(m_L, C_f);
-
-		m_bezier.setPoints(p0, p1, p2, p3);
-
-		m_spiral.clear();
-		m_spiralCurvatureStart.clear();
-		m_spiralCurvatureEnd.clear();
-
-		real ds = L / static_cast<real>(N);
-		real lastC = 0.0f;
-		real lastS = 0.0f;
-		real lastCIntegral = 0.0f;
-		real lastSIntegral = 0.0f;
-		for(int i = 0;i < N; ++i)
-		{
-			real s = static_cast<real>(i) * ds; 
-			real C = std::cos(arcLengthCurvatureInt(s));
-			real S = std::sin(arcLengthCurvatureInt(s));
-			//real C = std::cos(alpha * s * s / 2.0f);
-			//real S = std::sin(alpha * s * s / 2.0f);
-			if(i == 0)
-			{
-				lastC = C;
-				lastS = S;
-				m_spiral.emplace_back(Vector2(0,0));
-				m_spiralCurvatureStart.emplace_back(Vector2(0,0));
-				m_spiralCurvatureEnd.emplace_back(Vector2(0,0));
-				continue;
-			}
-			real mid = s - 0.5f * ds;
-			real midC = std::cos(arcLengthCurvatureInt(mid));
-			real midS = std::sin(arcLengthCurvatureInt(mid));
-			//real midC = std::cos(alpha * mid * mid / 2.0f);
-			//real midS = std::sin(alpha * mid * mid / 2.0f);
-			real CIntegral = 1.0f / 6.0f * ds * (lastC + 4.0f * midC + C) + lastCIntegral;
-			real SIntegral = 1.0f / 6.0f * ds * (lastS + 4.0f * midS + S) + lastSIntegral;
-
-			//real CIntegral = 0.5f * ds * (lastC + C) + lastCIntegral;
-			//real SIntegral = 0.5f * ds * (lastS + S) + lastSIntegral;
-			Vector2 p(CIntegral, SIntegral);
-			m_spiral.emplace_back(p);
-
-			Vector2 normal = Vector2(-S, C);
-			real curvature = arcLengthCurvature(s);
-
-			Vector2 curvaturePoint = Vector2(CIntegral, SIntegral) - curvature * normal;
-
-			m_spiralCurvatureStart.emplace_back(p);
-			m_spiralCurvatureEnd.emplace_back(curvaturePoint);
-
-			lastCIntegral = CIntegral;
-			lastSIntegral = SIntegral;
-
-			lastC = C;
-			lastS = S;
-		}
-
-		Vector2 back(lastCIntegral, lastSIntegral);
-		Vector2 transform(0, -1.0);
+		Vector2 back = m_spiral.back();
+		Vector2 transform(0, -m_halfHeight);
 
 		Vector2 offset = back - m_currentRadius * Vector2(std::cos(m_spiralStartRadians), std::sin(m_spiralStartRadians));
 
@@ -314,7 +284,7 @@ namespace STEditor
 		m_spiralSymmetryCurvatureEnd.clear();
 
 		Vector2 end = GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, {0,0});
-		transform += Vector2(1.0 - end.x, 0);
+		transform += Vector2(m_halfWidth - end.x, 0);
 
 		offset += transform;
 
@@ -329,19 +299,20 @@ namespace STEditor
 			Vector2 p1 = m_spiralCurvatureStart[i] + transform;
 			Vector2 p2 = m_spiralCurvatureEnd[i] + transform;
 
-			m_spiralCurvatureStart[i] = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1);
-			m_spiralCurvatureEnd[i] = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2);
+			Vector2 np1 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1);
+			Vector2 np2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2);
+
+			m_spiralCurvatureStart[i] = np1;
+			m_spiralCurvatureEnd[i] = np2;
 
 			p1 = GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, p1);
 			p2 = GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, p2);
 
-			//m_spiralCurvaturePoints[i] = GeometryAlgorithm2D::axialSymmetry({ }, { 1.0, 0.0 }, p1);
-			m_spiralSymmetryCurvatureStart.emplace_back(GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1));
+			p1 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1);
+			p2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2);
 
-
-			//p2 = GeometryAlgorithm2D::axialSymmetry({ }, { 1.0, 0.0 }, p2);
-
-			m_spiralSymmetryCurvatureEnd.emplace_back(GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2));
+			m_spiralSymmetryCurvatureStart.emplace_back(p1);
+			m_spiralSymmetryCurvatureEnd.emplace_back(p2);
 
 		}
 
@@ -496,26 +467,26 @@ namespace STEditor
 			Vector2 p0 = m_spiral[0];
 			Vector2 p2 = m_spiralSymmetry[0];
 
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -1 }, p0, color);
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 1, 0 }, p2, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color);
 
 			p0.x = -p0.x;
 			p2.x = -p2.x;
 
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -1 }, p0, color);
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -1, 0 }, p2, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color);
 
 			p0.y = -p0.y;
 			p2.y = -p2.y;
 
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, 1 }, p0, color);
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -1, 0 }, p2, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color);
 
 			p0.x = -p0.x;
 			p2.x = -p2.x;
 
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, 1 }, p0, color);
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 1, 0 }, p2, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color);
 
 
 			drawCurve(window, m_spiral, color);
@@ -623,121 +594,6 @@ namespace STEditor
 			point1.y = -point1.y;
 			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
 		}
-	}
-
-	real SpiralScene::arcLengthCurvature(real s)
-	{
-		// \kappa \left( s \right) =\frac{6C_f}{L^5}s^5-\frac{15C_f}{L^4}s^4+\frac{10C_f}{L^3}s^3
-
-		real C_f = 1.0f / m_currentRadius;
-		return 6.0f * C_f / std::pow(m_L,5) * std::pow(s, 5) -
-			15.0f * C_f / std::pow(m_L, 4) * std::pow(s, 4) +
-			10.0f * C_f / std::pow(m_L, 3) * std::pow(s, 3);
-
-		// t^3\left( -x_0+3x_1-3x_2+x_3 \right) +t^2\left( 3x_0-6x_1+3x_2 \right) +t\left( 3x_1-3x_0 \right) +x_0
-
-		auto arr = m_bezier.points();
-
-		real x_1 = arr[1].x;
-		real x_2 = arr[2].x;
-		real x_3 = arr[3].x;
-
-		real y_0 = arr[0].y;
-		real y_1 = arr[1].y;
-		real y_2 = arr[2].y;
-		real y_3 = arr[3].y;
-
-
-		real A = 3.0 * x_1 - 3.0 * x_2 + x_3;
-		real B = - 6.0 * x_1 + 3.0 * x_2;
-		real C = 3.0 * x_1;
-		real D = - s;
-		double coeffs[] = { D, C, B, A };
-
-		//Ax^3 + Bx^2 + Cx + D = 0, find root
-
-		gsl_complex roots[3];
-
-		gsl_poly_complex_workspace* w = gsl_poly_complex_workspace_alloc(4);
-		gsl_poly_complex_solve(coeffs, 4, w, &roots[0].dat[0]);
-		gsl_poly_complex_workspace_free(w);
-		real t = 0.0f;
-		for (int i = 0; i < 3; i++) {
-			double realPart = GSL_REAL(roots[i]);
-			double imagPart = GSL_IMAG(roots[i]);
-			if(imagPart == 0.0)
-				t = realPart;
-		}
-
-		// \left( 1-t \right) ^3y_0+3t\left( 1-t \right) ^2y_1+3t^2\left( 1-t \right) y_2+t^3y_3
-		real y = y_0 * std::pow(1.0f - t, 3) + 3.0f * t * std::pow(1.0f - t, 2) * y_1 + 3.0f * t * t * (1.0f - t) * y_2 + t * t * t * y_3;
-		return y;
-		
-		//return alpha * s;
-
-
-		//if (s < 0.5f)
-		//	return 4.0f * std::pow(s, 3.0f);
-
-		//return 1.0f - 4.0f * std::pow(1.0f - s, 3.0f);
-	}
-
-	real SpiralScene::arcLengthCurvatureInt(real s)
-	{
-		real C_f = 1.0f / m_currentRadius;
-
-		// \theta \left( s \right) =\frac{C_f}{L^5}s^6-\frac{3C_f}{L^4}s^5+\frac{5C_f}{2L^3}s^4
-
-		return C_f / std::pow(m_L, 5) * std::pow(s, 6) -
-			3.0f * C_f / std::pow(m_L, 4) * std::pow(s, 5) +
-			5.0f * C_f / (2.0f * std::pow(m_L, 3)) * std::pow(s, 4);
-
-		auto arr = m_bezier.points();
-
-		real x_1 = arr[1].x;
-		real x_2 = arr[2].x;
-		real x_3 = arr[3].x;
-
-		real A = 3.0 * x_1 - 3.0 * x_2 + x_3;
-		real B = -6.0 * x_1 + 3.0 * x_2;
-		real C = 3.0 * x_1;
-		real D = -s;
-		double coeffs[] = { D, C, B, A };
-
-		//Ax^3 + Bx^2 + Cx + D = 0, find root
-
-		gsl_complex roots[3];
-
-		gsl_poly_complex_workspace* work = gsl_poly_complex_workspace_alloc(4);
-		gsl_poly_complex_solve(coeffs, 4, work, &roots[0].dat[0]);
-		gsl_poly_complex_workspace_free(work);
-		real t = 0.0f;
-		for (int i = 0; i < 3; i++) {
-			double realPart = GSL_REAL(roots[i]);
-			double imagPart = GSL_IMAG(roots[i]);
-			if (imagPart == 0.0)
-				t = realPart;
-		}
-
-		real w = m_weight;
-		
-		//-2L(3w-1)C_fT^6+6L(3w-1)C_fT^5-\frac{1}{2}L(30w-9)C_fT^4+3LwC_fT^3
-
-		real integral = -2.0 * m_L * (3.0 * w - 1.0) * C_f * std::pow(t, 6) +
-			6.0 * m_L * (3.0 * w - 1.0) * C_f * std::pow(t, 5) -
-			0.5 * m_L * (30.0 * w - 9.0) * C_f * std::pow(t, 4) +
-			3.0 * m_L * w * C_f * std::pow(t, 3);
-
-		return integral;
-		//return alpha * s * s / 2.0f;
-
-
-
-		//if(s < 0.5f)
-		//	return std::pow(s, 4.0f);
-
-		//return std::pow(0.5, 4.0f) +
-		//	s + std::pow(1.0f - s, 4.0f) - (0.5 + std::pow(1.0f - 0.5, 4.0f));
 	}
 }
 

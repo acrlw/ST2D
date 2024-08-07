@@ -25,12 +25,12 @@ namespace STEditor
 		m_knots.push_back(knot);
 	}
 
-	float BSpline::curvatureAt(float t)
+	real BSpline::curvatureAt(real t)
 	{
 		return 0;
 	}
 
-	Vector2 BSpline::sample(float t)
+	Vector2 BSpline::sample(real t)
 	{
 		return {};
 	}

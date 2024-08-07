@@ -16,8 +16,8 @@ namespace STEditor
 		void addControlPoint(const Vector2& point);
 		void addKnot(real knot);
 
-		float curvatureAt(float t) override;
-		Vector2 sample(float t) override;
+		real curvatureAt(real t) override;
+		Vector2 sample(real t) override;
 
 	protected:
 		void sampleCurvePoints() override;

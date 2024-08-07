@@ -11,9 +11,9 @@ namespace STEditor
 
 		virtual ~AbstractCurve() = default;
 
-		virtual float curvatureAt(float t) = 0;
+		virtual real curvatureAt(real t) = 0;
 
-		virtual Vector2 sample(float t) = 0;
+		virtual Vector2 sample(real t) = 0;
 
 		void setCount(size_t count)
 		{
