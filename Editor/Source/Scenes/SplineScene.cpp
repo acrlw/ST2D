@@ -56,6 +56,16 @@ namespace STEditor
 
 			RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_mousePoint, RenderConstant::Green, 4);
 		}
+
+		if(m_points.size() > 3)
+		{
+			std::vector<real> knotVector;
+			std::vector<real> weights;
+
+			for(size_t i = 0; i < m_points.size(); i++)
+				weights.push_back(1);
+			
+		}
 	}
 
 	void SplineScene::onRenderUI()

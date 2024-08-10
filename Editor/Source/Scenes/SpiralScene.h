@@ -40,7 +40,9 @@ namespace STEditor
 
 		void drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve, const sf::Color& color) const;
 
+		bool m_lockRadius = false;
 		bool m_lockCornerStart = false;
+		bool m_drawSpiralConnector = true;
 		float m_lockWidthSize = 0.0f;
 		float m_lockHeightSize = 0.0f;
 		bool m_showCurvatureBezier = false;
@@ -52,14 +54,15 @@ namespace STEditor
 		bool m_showSpiral = true;
 		bool m_showSpiralCurvature = false;
 		bool m_showG2Curvature = false;
+		bool m_curvatureFlip = true;
 
 		float m_innerWidthFactor = 0.55f;
 		float m_innerHeightFactor = 0.55f;
 		float m_curvatureScaleFactor = 0.1f;
 		float m_halfWidth = 1.0f;
 		float m_halfHeight = 1.0f;
-		float m_percentage = 0.681f;
-		float m_cornerPercentage = 0.382f;
+		float m_percentage = 0.65f;
+		float m_cornerPercentage = 0.407f;
 
 		int m_circleSegment = 100;
 
@@ -75,7 +78,7 @@ namespace STEditor
 		float m_scaleK = 1.0f;
 		float m_thickness = 2.0f;
 
-		int N = 100;
+		int N = 600;
 
 		std::vector<Vector2> m_spiral, m_spiralSymmetry;
 		std::vector<Vector2> m_spiralCurvatureStart, m_spiralCurvatureEnd, m_spiralSymmetryCurvatureStart, m_spiralSymmetryCurvatureEnd;
@@ -100,8 +103,8 @@ namespace STEditor
 
 		float m_L = 1.0f;
 		float m_weight = 0.5f;
-		float m_weight1 = 0.5f;
-		float m_weight2 = 0.5f;
+		float m_weight1 = 0.3f;
+		float m_weight2 = 0.7f;
 		CubicBezier m_bezier;
 
 		Spiral m_spiralCurve;
@@ -109,6 +112,6 @@ namespace STEditor
 		OneWeightCubicBezierSpiral m_oneWeight;
 		G4Spiral m_g4Spiral;
 
-		int m_currentShapeIndex = 1;
+		int m_currentShapeIndex = 0;
 	};
 }

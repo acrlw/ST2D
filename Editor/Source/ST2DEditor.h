@@ -49,7 +49,8 @@ namespace STEditor
 		bool m_cameraViewportMovement = false;
 		bool m_onDistanceCheck = false;
 
-		int m_currentSceneIndex = 5;
+
+		int m_currentSceneIndex = 4;
 
 		Camera2D m_camera;
 
@@ -58,7 +59,7 @@ namespace STEditor
 		std::array<std::function<std::unique_ptr<AbstractScene> (const SceneSettings& settings)>, 6> m_sceneList;
 		std::unique_ptr<sf::RenderWindow> m_window;
 
-		float m_zoomFactor = 0.5f;
+		float m_zoomFactor = 0.3f;
 		bool m_enableDistanceCheck = true;
 
 		Vector2 m_mousePos;
