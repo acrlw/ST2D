@@ -33,6 +33,8 @@ namespace ST
         ST_API float easeOutQuint(float t);
 
         ST_API float easeOutQuad(float t);
+
+        ST_API float linear(float t);
     }
 
     template<typename T>

@@ -110,8 +110,13 @@ namespace STEditor
 		Spiral m_spiralCurve;
 		TwoWeightCubicBezierSpiral m_twoWeight;
 		OneWeightCubicBezierSpiral m_oneWeight;
+		G2Spiral m_g2Spiral;
+		G3Spiral m_g3Spiral;
 		G4Spiral m_g4Spiral;
+		G5Spiral m_g5Spiral;
+		G6Spiral m_g6Spiral;
+		G7Spiral m_g7Spiral;
 
-		int m_currentShapeIndex = 0;
+		int m_currentShapeIndex = 2;
 	};
 }

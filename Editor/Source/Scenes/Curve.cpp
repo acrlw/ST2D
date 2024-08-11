@@ -790,6 +790,38 @@ namespace STEditor
 		return integral;
 	}
 
+	real G2Spiral::computeArcLength()
+	{
+		return 2.0f * m_arccosx / m_Cf;
+	}
+
+	real G2Spiral::computeCurvature(real s, real L)
+	{
+		return m_Cf / L * s;
+	}
+
+	real G2Spiral::computeCurvatureIntegral(real s, real L)
+	{
+		return 0.5f * m_Cf / L * s * s;
+	}
+
+	real G3Spiral::computeArcLength()
+	{
+		return 2.0f * m_arccosx / m_Cf;
+	}
+
+	real G3Spiral::computeCurvature(real s, real L)
+	{
+		return -2.0f * m_Cf / std::pow(L, 3) * std::pow(s, 3) +
+			3.0f * m_Cf / std::pow(L, 2) * std::pow(s, 2);
+	}
+
+	real G3Spiral::computeCurvatureIntegral(real s, real L)
+	{
+		return -0.5 * m_Cf / std::pow(L, 3) * std::pow(s, 4) +
+			m_Cf / std::pow(L, 2) * std::pow(s, 3);
+	}
+
 	real G4Spiral::computeArcLength()
 	{
 		return 2.0f * m_arccosx / m_Cf;
@@ -807,6 +839,85 @@ namespace STEditor
 		return m_Cf / std::pow(L, 5) * std::pow(s, 6) -
 			3.0f * m_Cf / std::pow(L, 4) * std::pow(s, 5) +
 			5.0f * m_Cf / (2.0f * std::pow(L, 3)) * std::pow(s, 4);
+	}
+
+	real G5Spiral::computeArcLength()
+	{
+		return 2.0f * m_arccosx / m_Cf;
+	}
+
+	real G5Spiral::computeCurvature(real s, real L)
+	{
+		//\kappa \left( s \right) =-\frac{20C_f}{L^7}s^7+\frac{70C_f}{L^6}s^6-\frac{84C_f}{L^5}s^5+\frac{35C_f}{L^4}s^4
+		return -20.0f * m_Cf / std::pow(L, 7) * std::pow(s, 7) +
+			70.0f * m_Cf / std::pow(L, 6) * std::pow(s, 6) -
+			84.0f * m_Cf / std::pow(L, 5) * std::pow(s, 5) +
+			35.0f * m_Cf / std::pow(L, 4) * std::pow(s, 4);
+	}
+
+	real G5Spiral::computeCurvatureIntegral(real s, real L)
+	{
+		//\theta \left( s \right) =-\frac{5C_f}{2L^7}s^8+\frac{10C_f}{L^6}s^7-\frac{42C_f}{3L^5}s^6+\frac{7C_f}{L^4}s^5
+		return -5.0f * m_Cf / (2.0f * std::pow(L, 7)) * std::pow(s, 8) +
+			10.0f * m_Cf / std::pow(L, 6) * std::pow(s, 7) -
+			42.0f * m_Cf / (3.0f * std::pow(L, 5)) * std::pow(s, 6) +
+			7.0f * m_Cf / std::pow(L, 4) * std::pow(s, 5);
+	}
+
+	real G6Spiral::computeArcLength()
+	{
+		return 2.0f * m_arccosx / m_Cf;
+	}
+
+	real G6Spiral::computeCurvature(real s, real L)
+	{
+		// \kappa \left( s \right) =\frac{70\!\:C_f}{L^9}s^9-\frac{315\!\:C_f}{L^8}s^8+\frac{540\!\:C_f}{L^7}s^7-\frac{420\!\:C_f}{L^6}s^6+\frac{126\!\:C_f}{L^5}s^5
+
+		return 70.0f * m_Cf / std::pow(L, 9) * std::pow(s, 9) -
+			315.0f * m_Cf / std::pow(L, 8) * std::pow(s, 8) +
+			540.0f * m_Cf / std::pow(L, 7) * std::pow(s, 7) -
+			420.0f * m_Cf / std::pow(L, 6) * std::pow(s, 6) +
+			126.0f * m_Cf / std::pow(L, 5) * std::pow(s, 5);
+	}
+
+	real G6Spiral::computeCurvatureIntegral(real s, real L)
+	{
+		// \theta \left( s \right) =\frac{70\!\:C_f}{10L^9}s^{10}-\frac{315\!\:C_f}{9L^8}s^9+\frac{540\!\:C_f}{8L^7}s^8-\frac{420\!\:C_f}{7L^6}s^7+\frac{126\!\:C_f}{6L^5}s^6
+
+		return 70.0f * m_Cf / (10.0f * std::pow(L, 9)) * std::pow(s, 10) -
+			315.0f * m_Cf / (9.0f * std::pow(L, 8)) * std::pow(s, 9) +
+			540.0f * m_Cf / (8.0f * std::pow(L, 7)) * std::pow(s, 8) -
+			420.0f * m_Cf / (7.0f * std::pow(L, 6)) * std::pow(s, 7) +
+			126.0f * m_Cf / (6.0f * std::pow(L, 5)) * std::pow(s, 6);
+	}
+
+	real G7Spiral::computeArcLength()
+	{
+		return 2.0f * m_arccosx / m_Cf;
+	}
+
+	real G7Spiral::computeCurvature(real s, real L)
+	{
+		//\kappa \left( s \right) =-\frac{252\!\:C_f}{L^{11}}s^{11}+\frac{1386\!\:C_f}{L^{10}}s^{10}-\frac{3080\!\:C_f}{L^9}s^9+\frac{3465\!\:C_f}{L^8}s^8-\frac{1980\!\:C_f}{L^7}s^7+\frac{462\!\:C_f}{L^6}s^6
+
+		return -252.0f * m_Cf / std::pow(L, 11) * std::pow(s, 11) +
+			1386.0f * m_Cf / std::pow(L, 10) * std::pow(s, 10) -
+			3080.0f * m_Cf / std::pow(L, 9) * std::pow(s, 9) +
+			3465.0f * m_Cf / std::pow(L, 8) * std::pow(s, 8) -
+			1980.0f * m_Cf / std::pow(L, 7) * std::pow(s, 7) +
+			462.0f * m_Cf / std::pow(L, 6) * std::pow(s, 6);
+	}
+
+	real G7Spiral::computeCurvatureIntegral(real s, real L)
+	{
+		//\theta \left( s \right) =-\frac{252\!\:C_f}{12L^{11}}s^{12}+\frac{1386\!\:C_f}{11L^{10}}s^{11}-\frac{3080\!\:C_f}{10L^9}s^{10}+\frac{3465\!\:C_f}{9L^8}s^9-\frac{1980\!\:C_f}{8L^7}s^8+\frac{462\!\:C_f}{7L^6}s^7
+
+		return -252.0f * m_Cf / (12.0f * std::pow(L, 11)) * std::pow(s, 12) +
+			1386.0f * m_Cf / (11.0f * std::pow(L, 10)) * std::pow(s, 11) -
+			3080.0f * m_Cf / (10.0f * std::pow(L, 9)) * std::pow(s, 10) +
+			3465.0f * m_Cf / (9.0f * std::pow(L, 8)) * std::pow(s, 9) -
+			1980.0f * m_Cf / (8.0f * std::pow(L, 7)) * std::pow(s, 8) +
+			462.0f * m_Cf / (7.0f * std::pow(L, 6)) * std::pow(s, 7);
 	}
 
 	real Spiral::curvatureAt(real s)

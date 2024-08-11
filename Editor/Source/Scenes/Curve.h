@@ -138,6 +138,24 @@ namespace STEditor
 		real m_w = 0.5;
 	};
 
+	class G2Spiral : public SpiralShapeBase
+	{
+	public:
+		real computeArcLength() override;
+		real computeCurvature(real s, real L) override;
+		real computeCurvatureIntegral(real s, real L) override;
+	};
+
+	class G3Spiral : public SpiralShapeBase
+	{
+	public:
+		real computeArcLength() override;
+		real computeCurvature(real s, real L) override;
+		real computeCurvatureIntegral(real s, real L) override;
+
+	private:
+	};
+
 	class G4Spiral : public SpiralShapeBase
 	{
 	public:
@@ -147,6 +165,33 @@ namespace STEditor
 
 	private:
 	};
+
+	class G5Spiral: public SpiralShapeBase
+	{
+	public:
+		real computeArcLength() override;
+		real computeCurvature(real s, real L) override;
+		real computeCurvatureIntegral(real s, real L) override;
+	};
+
+	class G6Spiral : public SpiralShapeBase
+	{
+
+	public:
+		real computeArcLength() override;
+		real computeCurvature(real s, real L) override;
+		real computeCurvatureIntegral(real s, real L) override;
+	};
+
+	class G7Spiral : public SpiralShapeBase
+	{
+
+	public:
+		real computeArcLength() override;
+		real computeCurvature(real s, real L) override;
+		real computeCurvatureIntegral(real s, real L) override;
+	};
+
 	
 
 	class Spiral : public AbstractCurve

@@ -29,7 +29,7 @@ namespace STEditor
 
 		Vector2 position;
 		float theta = 0.0f;
-		float r = 1.5f;
+		float r = 1.0f;
 		EasingObject<float> thetaEasing = EasingObject(0.0f);
 		std::deque<Vector2> pList;
 		bool flip = false;

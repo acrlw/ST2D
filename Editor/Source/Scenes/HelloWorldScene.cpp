@@ -10,7 +10,7 @@ namespace STEditor
 
 	void HelloWorldScene::onLoad()
 	{
-		thetaEasing.setEasingFunction(EasingFunction::smoothStep);
+		thetaEasing.setEasingFunction(EasingFunction::easeInOutSine);
 		matEasing.restart(Complex(Math::radians(0)), Complex(Math::radians(-180)), 1.5f);
 	}
 
@@ -42,11 +42,11 @@ namespace STEditor
 		theta = thetaEasing.value();
 		Matrix2x2 mat(theta);
 		Vector2 p = mat.multiply(Vector2(1.0f, 0.0f));
-		p *= 2.0f * r * (1.0f - Math::sinx(theta));
+		p *= r * (1.0f + Math::cosx(3.0f * theta) + 1.5f * Math::sinx(3.0f * theta) * Math::sinx(3.0f * theta));
 
 		arrow = matEasing.value().multiply(Vector2(2.0f, 0.0f));
 
-		if (pList.size() > 250)
+		if (pList.size() > 500)
 			pList.pop_front();
 
 		pList.push_back(p);
@@ -60,7 +60,8 @@ namespace STEditor
 		for(int i = 1;i < pList.size(); ++i)
 		{
 			color.a = i * step;
-			RenderSFMLImpl::renderPoint(window, *m_settings.camera, pList[i], color, 3.0f);
+			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, pList[i - 1], pList[i], color);
+			/*RenderSFMLImpl::renderPoint(window, *m_settings.camera, pList[i], color, 3.0f);*/
 		}
 		RenderSFMLImpl::renderArrow(window, *m_settings.camera, Vector2(0.0f, 0.0f), arrow, RenderConstant::Green, 0.25f);
 	}

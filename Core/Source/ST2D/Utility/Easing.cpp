@@ -68,6 +68,11 @@ namespace ST
         return t * (2.0f - t);
     }
 
+    float EasingFunction::linear(float t)
+    {
+	    return t;
+    }
+
     float EasingFunction::easeInOutQuint(float t)
     {
         t = std::clamp(t, 0.0f, 1.0f);

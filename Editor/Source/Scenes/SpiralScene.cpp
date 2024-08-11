@@ -64,21 +64,43 @@ namespace STEditor
 		ImGui::Begin("Spiral");
 
 		ImGui::SeparatorText("Spiral Params");
-		
-		ImGui::Combo("Spiral Shape", &m_currentShapeIndex, "G4\0One Weight Bezier\0Two Weight Bezier\0");
+
+		ImGui::DragInt("Sample Count", &N, 1, 10, 10000);
+
+		ImGui::Combo("Continuity", &m_currentShapeIndex, "G2\0G3\0G4\0G5\0G6\0G7\0G3 - One Weight Bezier\0G3 - Two Weights Bezier\0");
 
 		if(m_currentShapeIndex == 0)
 		{
-			m_spiralCurve.setSpiralShape(&m_g4Spiral);
+			m_spiralCurve.setSpiralShape(&m_g2Spiral);
 		}
 		else if(m_currentShapeIndex == 1)
+		{
+			m_spiralCurve.setSpiralShape(&m_g3Spiral);
+		}
+		else if (m_currentShapeIndex == 2)
+		{
+			m_spiralCurve.setSpiralShape(&m_g4Spiral);
+		}
+		else if (m_currentShapeIndex == 3)
+		{
+			m_spiralCurve.setSpiralShape(&m_g5Spiral);
+		}
+		else if (m_currentShapeIndex == 4)
+		{
+			m_spiralCurve.setSpiralShape(&m_g6Spiral);
+		}
+		else if (m_currentShapeIndex == 5)
+		{
+			m_spiralCurve.setSpiralShape(&m_g7Spiral);
+		}
+		else if(m_currentShapeIndex == 6)
 		{
 			m_spiralCurve.setSpiralShape(&m_oneWeight);
 			real L = m_oneWeight.computeArcLength();
 			real Cf = 1.0f / m_currentRadius;
 			m_bezier.setPoints({}, { m_weight * L, 0 }, { (1.0 - m_weight) * L, Cf }, { L, Cf });
 		}
-		else if(m_currentShapeIndex == 2)
+		else if(m_currentShapeIndex == 7)
 		{
 			m_spiralCurve.setSpiralShape(&m_twoWeight);
 			real L = m_twoWeight.computeArcLength();
@@ -86,7 +108,12 @@ namespace STEditor
 			m_bezier.setPoints({}, { m_weight1 * L, 0 }, { (1.0 - m_weight2) * L, Cf }, { L, Cf });
 		}
 
-		ImGui::DragInt("Spiral Count", &N, 1, 10, 10000);
+		ImGui::SeparatorText("One Weight Bezier");
+		ImGui::DragFloat("Weight", &m_weight, 0.01f, 0.35f, 1.0f);
+		ImGui::SeparatorText("Two Weights Bezier");
+		ImGui::DragFloat("Weight1", &m_weight1, 0.001f, 0.01f, 1.0f);
+		ImGui::DragFloat("Weight2", &m_weight2, 0.001f, 0.01f, 1.0f);
+
 
 		if(!m_spiral.empty())
 			ImGui::Text("End Offset: (%f, %f)", m_spiral.front().x, m_spiral.front().y);
@@ -109,11 +136,6 @@ namespace STEditor
 		ImGui::DragFloat("Curvature Scale Factor", &m_curvatureScaleFactor, 0.01f, 0.01f, 1.0f);
 
 
-		ImGui::SeparatorText("One Weight Bezier");
-		ImGui::DragFloat("Weight", &m_weight, 0.01f, 0.35f, 1.0f);
-		ImGui::SeparatorText("Two Weight Bezier");
-		ImGui::DragFloat("Weight1", &m_weight1, 0.001f, 0.01f, 1.0f);
-		ImGui::DragFloat("Weight2", &m_weight2, 0.001f, 0.01f, 1.0f);
 
 		m_oneWeight.setWeight(m_weight);
 		m_twoWeight.setWeights(m_weight1, m_weight2);
