@@ -72,7 +72,7 @@ namespace ST
 		case 3:
 			return GeometryAlgorithm2D::triangleContainsOrigin(simplex.vertices[0].result, simplex.vertices[1].result, simplex.vertices[2].result);
 		default:
-			assert(false, "Simplex count is more than 3");
+			assert(false && "Simplex count is more than 3");
 			return false;
 		}
 	}

@@ -60,6 +60,7 @@ namespace STEditor
 				weights.push_back(1);
 
 
+
 		}
 	}
 
@@ -67,10 +68,7 @@ namespace STEditor
 	{
 		ImGui::Begin("Spline");
 
-		if(ImGui::Button("Blend"))
-		{
-			APP_INFO("Start blend two curve")
-		}
+		ImGui::DragInt("Degree", &m_degree, 1, 3, 10);
 
 		ImGui::End();
 	}

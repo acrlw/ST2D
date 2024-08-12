@@ -1,6 +1,4 @@
-﻿#pragma once
-
-#include "ST2DEditor.h"
+﻿#include "ST2DEditor.h"
 
 #include "imgui.h"
 #include "imgui-SFML.h"

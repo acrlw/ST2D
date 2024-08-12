@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(ST2DEditor)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--stack,10000000")
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -10,7 +10,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 find_package(SFML CONFIG REQUIRED COMPONENTS graphics system window)
 find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
- find_package(GSL REQUIRED)
+find_package(GSL REQUIRED)
 
 link_directories(${CMAKE_BINARY_DIR}/lib)
 

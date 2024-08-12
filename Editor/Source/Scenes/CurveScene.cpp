@@ -62,7 +62,7 @@ namespace STEditor
 
 		if(m_showG1)
 		{
-			auto color = RenderConstant::Green;
+			auto color = RenderConstant::Orange;
 			//color.a = 100;
 			drawCurve(window, g1Vertices, color);
 		}
@@ -79,6 +79,7 @@ namespace STEditor
 			auto color = RenderConstant::Green;
 			//color.a = 100;
 			drawCurve(window, g2Vertices, color);
+			
 		}
 
 		if (m_showG3)
@@ -91,7 +92,7 @@ namespace STEditor
 			//	//RenderSFMLImpl::renderPoint(window, *m_settings.camera, elem, RenderConstant::Green, 2.0f);
 			//}
 
-			auto color = RenderConstant::Green;
+			auto color = RenderConstant::LightBlue;
 			//color.a = 100;
 			drawCurve(window, g3Vertices, color);
 
@@ -222,6 +223,7 @@ namespace STEditor
 
 	void CurveScene::drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve, const sf::Color& color) const
 	{
+		//RenderSFMLImpl::renderPolyDashedThickLine(window, *m_settings.camera, curve, color, m_thickness, 0.05f, 0.05f);
 		for (size_t i = 1; i < curve.size(); ++i)
 		{
 			Vector2 point0 = curve[i];
