@@ -30,13 +30,10 @@ namespace STEditor
 
 		for(auto& list: m_splineList)
 		{
+			RenderSFMLImpl::renderPolyDashedLine(window, *m_settings.camera, list, RenderConstant::Cyan);
 			for(size_t i = 0; i < list.size(); i++)
 			{
 				RenderSFMLImpl::renderPoint(window, *m_settings.camera, list[i], RenderConstant::Cyan, 4);
-				if(i == 0)
-					continue;
-
-				RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, list[i - 1], list[i], RenderConstant::Cyan);
 
 			}
 		}
@@ -44,13 +41,10 @@ namespace STEditor
 
 		if(m_addPoint)
 		{
+			RenderSFMLImpl::renderPolyDashedLine(window, *m_settings.camera, m_points, RenderConstant::Gray);
 			for (size_t i = 0; i < m_points.size(); i++)
 			{
 				RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_points[i], RenderConstant::Gray, 4);
-				if (i == 0)
-					continue;
-
-				RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_points[i - 1], m_points[i], RenderConstant::Gray);
 
 			}
 
@@ -64,7 +58,8 @@ namespace STEditor
 
 			for(size_t i = 0; i < m_points.size(); i++)
 				weights.push_back(1);
-			
+
+
 		}
 	}
 

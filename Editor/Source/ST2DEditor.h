@@ -50,7 +50,7 @@ namespace STEditor
 		bool m_onDistanceCheck = false;
 
 
-		int m_currentSceneIndex = 4;
+		int m_currentSceneIndex = 5;
 
 		Camera2D m_camera;
 

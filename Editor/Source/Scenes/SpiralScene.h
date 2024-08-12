@@ -52,7 +52,7 @@ namespace STEditor
 		bool m_showG1Continuity = false;
 		bool m_showG2Continuity = false;
 		bool m_showSpiral = true;
-		bool m_showSpiralCurvature = false;
+		bool m_showSpiralCurvature = true;
 		bool m_showG2Curvature = false;
 		bool m_curvatureFlip = true;
 

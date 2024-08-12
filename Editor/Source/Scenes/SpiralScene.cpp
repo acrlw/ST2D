@@ -33,6 +33,7 @@ namespace STEditor
 		drawReference(window);
 		if(m_showG1Continuity)
 			drawG1(window);
+
 		drawSpiral(window);
 
 		if(m_showCurvatureBezier)
@@ -534,6 +535,20 @@ namespace STEditor
 				RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color, m_thickness);
 			}
 
+			//std::vector<Vector2> curve;
+			//curve.reserve(m_spiral.size() + m_spiralSymmetry.size() + m_spiralRoundCurvatureStart.size() );
+			//for(auto&& p : m_spiral)
+			//	curve.push_back(p);
+
+			//for (auto&& p : m_spiralRoundCurvatureStart)
+			//	curve.push_back(p);
+
+			//for(auto iter = m_spiralSymmetry.rbegin(); iter != m_spiralSymmetry.rend(); ++iter)
+			//	curve.push_back(*iter);
+
+			//RenderSFMLImpl::renderPolyDashedThickLine(window, *m_settings.camera, curve, color, m_thickness, 0.01f, 0.02f);
+
+
 
 			drawCurve(window, m_spiral, color);
 			drawCurve(window, m_spiralSymmetry, color);
@@ -606,7 +621,7 @@ namespace STEditor
 	{
 		if (start.size() != end.size())
 			return;
-
+		std::vector<Vector2> scaleEnd;
 		Vector2 lastEnd;
 		for (size_t i = 0; i < start.size(); ++i)
 		{
@@ -625,9 +640,11 @@ namespace STEditor
 				RenderSFMLImpl::renderLine(window, *m_settings.camera, lastEnd
 				                           , newEnd, color);
 			}
+			scaleEnd.push_back(newEnd);
 
 			lastEnd = newEnd;
 		}
+
 	}
 
 	void SpiralScene::drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve,

@@ -328,12 +328,205 @@ namespace STEditor
 			if(points.size() < 2)
 				return;
 
-			for(int i = 1; i < points.size(); ++i)
-				renderDashedLine(window, camera, points[i - 1], points[i], color, dashLength, dashGap);
+			sf::VertexArray lines(sf::Lines);
+			real dashResidual = 0.0f;
+			real gapResidual = 0.0f;
+			real dashedAndGap = dashLength + dashGap;
+			for(size_t i = 1; i < points.size(); ++i)
+			{
+				Vector2 p1 = points[i - 1];
+				Vector2 p2 = points[i];
+				Vector2 direction = p2 - p1;
+				real length = direction.length();
+				if(realEqual(length, 0.0f))
+					continue;
+
+				direction /= length;
+
+				Vector2 start = p1;
+
+				if(dashResidual > 0.0f)
+				{
+					if(dashResidual > length)
+					{
+						dashResidual -= length;
+						lines.append(sf::Vertex(toVector2f(camera.worldToScreen(p1)), color));
+						lines.append(sf::Vertex(toVector2f(camera.worldToScreen(p2)), color));
+						continue;
+					}
+
+					Vector2 end = start + direction * dashResidual;
+					lines.append(sf::Vertex(toVector2f(camera.worldToScreen(start)), color));
+					lines.append(sf::Vertex(toVector2f(camera.worldToScreen(end)), color));
+					length -= dashResidual;
+					dashResidual = 0.0f;
+
+					if(length > dashGap)
+					{
+						length -= dashGap;
+						start = end + direction * dashGap;
+					}
+					else
+					{
+						gapResidual = dashGap - length;
+						continue;
+					}
+				}
+				
+				if(gapResidual > 0.0f)
+				{
+					if(gapResidual > length)
+					{
+						gapResidual -= length;
+						continue;
+					}
+					start += direction * gapResidual;
+					length -= gapResidual;
+					gapResidual = 0.0f;
+				}
+
+
+				bool finished = false;
+
+				while(!finished)
+				{
+					if(length < dashLength)
+					{
+						lines.append(sf::Vertex(toVector2f(camera.worldToScreen(start)), color));
+						lines.append(sf::Vertex(toVector2f(camera.worldToScreen(p2)), color));
+						dashResidual = dashLength - length;
+						gapResidual = 0.0f;
+						finished = true;
+					}
+					else if(length >= dashLength && length < dashedAndGap)
+					{
+						Vector2 end = start + direction * dashLength;
+						lines.append(sf::Vertex(toVector2f(camera.worldToScreen(start)), color));
+						lines.append(sf::Vertex(toVector2f(camera.worldToScreen(end)), color));
+						dashResidual = 0.0f;
+						gapResidual = dashedAndGap - length;
+						finished = true;
+					}
+					else
+					{
+						Vector2 end = start + direction * dashLength;
+						lines.append(sf::Vertex(toVector2f(camera.worldToScreen(start)), color));
+						lines.append(sf::Vertex(toVector2f(camera.worldToScreen(end)), color));
+						start = end + direction * dashGap;
+						dashResidual = 0.0f;
+						gapResidual = 0.0f;
+						length -= dashedAndGap;
+					}
+
+				}
+
+
+			}
+
+			window.draw(lines);
+
+		}
+
+		void RenderSFMLImpl::renderPolyDashedThickLine(sf::RenderWindow& window, Camera2D& camera,
+			const std::vector<Vector2>& points, const sf::Color& color, const real& thickness, const real& dashLength,
+			const real& dashGap)
+		{
+			if (points.size() < 2)
+				return;
+
+			real dashResidual = 0.0f;
+			real gapResidual = 0.0f;
+			real dashedAndGap = dashLength + dashGap;
+			for (size_t i = 1; i < points.size(); ++i)
+			{
+				Vector2 p1 = points[i - 1];
+				Vector2 p2 = points[i];
+				Vector2 direction = p2 - p1;
+				real length = direction.length();
+				if (realEqual(length, 0.0f))
+					continue;
+
+				direction /= length;
+
+				Vector2 start = p1;
+
+				if (dashResidual > 0.0f)
+				{
+					if (dashResidual > length)
+					{
+						dashResidual -= length;
+						renderThickLine(window, camera, p1, p2, color, thickness);
+						continue;
+					}
+
+					Vector2 end = start + direction * dashResidual;
+					renderThickLine(window, camera, start, end, color, thickness);
+					length -= dashResidual;
+					dashResidual = 0.0f;
+
+					if (length > dashGap)
+					{
+						length -= dashGap;
+						start = end + direction * dashGap;
+					}
+					else
+					{
+						gapResidual = dashGap - length;
+						continue;
+					}
+				}
+
+				if (gapResidual > 0.0f)
+				{
+					if (gapResidual > length)
+					{
+						gapResidual -= length;
+						continue;
+					}
+					start += direction * gapResidual;
+					length -= gapResidual;
+					gapResidual = 0.0f;
+				}
+
+
+				bool finished = false;
+
+				while (!finished)
+				{
+					if (length < dashLength)
+					{
+						renderThickLine(window, camera, start, p2, color, thickness);
+						dashResidual = dashLength - length;
+						gapResidual = 0.0f;
+						finished = true;
+					}
+					else if (length >= dashLength && length < dashedAndGap)
+					{
+						Vector2 end = start + direction * dashLength;
+						renderThickLine(window, camera, start, end, color, thickness);
+						dashResidual = 0.0f;
+						gapResidual = dashedAndGap - length;
+						finished = true;
+					}
+					else
+					{
+						Vector2 end = start + direction * dashLength;
+						renderThickLine(window, camera, start, end, color, thickness);
+						start = end + direction * dashGap;
+						dashResidual = 0.0f;
+						gapResidual = 0.0f;
+						length -= dashedAndGap;
+					}
+
+				}
+
+
+			}
+
 		}
 
 		void RenderSFMLImpl::renderDashedLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1, const Vector2& p2,
-			const sf::Color& color, const real& dashLength, const real& dashGap)
+		                                      const sf::Color& color, const real& dashLength, const real& dashGap)
 		{
 			sf::VertexArray lines(sf::Lines);
 
@@ -442,7 +635,6 @@ namespace STEditor
 		void RenderSFMLImpl::renderArrow(sf::RenderWindow& window, Camera2D& camera, const Vector2& start, const Vector2& end,
 		                                 const sf::Color& color, const real& size, const real& degree)
 		{
-			renderLine(window, camera, start, end, color);
 			Vector2 tf = start - end;
 			real length = tf.length();
 			real scale = size;
@@ -450,26 +642,44 @@ namespace STEditor
 				scale = length * size;
 			if (realEqual(length, 0))
 				return;
-			Vector2 normal = tf / length * scale;
-			Matrix2x2 mat(Math::radians(degree));
-			Vector2 p1 = mat.multiply(normal) + end;
-			mat.set(Math::radians(-degree));
-			Vector2 p2 = mat.multiply(normal) + end;
 
-			Vector2 v1 = camera.worldToScreen(end);
-			Vector2 v2 = camera.worldToScreen(p1);
-			Vector2 v3 = camera.worldToScreen(p2);
+			Vector2 n = tf.normal();
+			Vector2 normal = n * scale;
+			Complex c(Math::radians(degree * 0.5f));
+			Vector2 d1 = c.multiply(normal);
+			Vector2 d2 = c.set(-Math::radians(degree * 0.5f)).multiply(normal);
 
-			sf::ConvexShape convex;
-			convex.setPointCount(3);
-			convex.setPoint(0, toVector2f(v1));
-			convex.setPoint(1, toVector2f(v2));
-			convex.setPoint(2, toVector2f(v3));
+			Vector2 p1 = d1 + end;
+			Vector2 p2 = d2 + end;
+			real p = d1.dot(n);
+			real l = (d1 - p * n).length();
+			real x = l / Math::tanx(Math::radians(degree));
+			real f = p - x;
+			Vector2 p3 = f * n + end;
 
-			convex.setFillColor(color);
-			convex.setOutlineThickness(RenderConstant::BorderSize);
-			convex.setOutlineColor(color);
-			window.draw(convex);
+			Vector2 v0 = camera.worldToScreen(end);
+			Vector2 v1 = camera.worldToScreen(p1);
+			Vector2 v2 = camera.worldToScreen(p2);
+			Vector2 v3 = camera.worldToScreen(p3);
+
+			renderLine(window, camera, start, p3, color);
+
+			sf::ConvexShape convex1, convex2;
+			convex1.setPointCount(3);
+			convex1.setPoint(0, toVector2f(v0));
+			convex1.setPoint(1, toVector2f(v1));
+			convex1.setPoint(2, toVector2f(v3));
+
+			convex2.setPointCount(3);
+			convex2.setPoint(0, toVector2f(v0));
+			convex2.setPoint(1, toVector2f(v2));
+			convex2.setPoint(2, toVector2f(v3));
+
+			convex1.setFillColor(color);
+			convex2.setFillColor(color);
+
+			window.draw(convex1);
+			window.draw(convex2);
 		}
 
 		void RenderSFMLImpl::renderText(sf::RenderWindow& window, Camera2D& camera, const Vector2& position,

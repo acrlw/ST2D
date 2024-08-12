@@ -83,13 +83,17 @@ namespace STEditor
 			const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
 			const real& dashGap = RenderConstant::BasicDashGap);
 
+		static void renderPolyDashedThickLine(sf::RenderWindow& window, Camera2D& camera, const std::vector<Vector2>& points,
+			const sf::Color& color, const real& thickness = 2.0f, const real& dashLength = RenderConstant::BasicDashLength,
+			const real& dashGap = RenderConstant::BasicDashGap);
+
 		static void renderDashedLine(sf::RenderWindow& window, Camera2D& camera, const Vector2& p1, const Vector2& p2,
 			const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
 			const real& dashGap = RenderConstant::BasicDashGap);
 		
 		static void renderArrow(sf::RenderWindow& window, Camera2D& camera, const Vector2& start, const Vector2& end,
 			const sf::Color& color,
-			const real& size = 0.30f, const real& degree = 20);
+			const real& size = 0.2f, const real& degree = 45);
 
 		static void renderText(sf::RenderWindow& window, Camera2D& camera, const Vector2& position, const sf::Font& font,
 			const std::string& text, const sf::Color& color, const unsigned int& size = 18,
