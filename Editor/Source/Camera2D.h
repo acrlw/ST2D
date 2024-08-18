@@ -44,14 +44,9 @@ namespace STEditor
 
 		bool& gridScaleLineVisible();
 		bool& visible();
-		bool& treeVisible();
-
-
-		bool& uniformGridVisible();
 
 		bool& coordinateScale();
 		bool& smoothZoom();
-		
 
 		int axisPointCount() const;
 		void setAxisPointCount(int count);
@@ -70,12 +65,6 @@ namespace STEditor
 
 		Vector2 worldToScreen(const Vector2& pos) const;
 		Vector2 screenToWorld(const Vector2& pos) const;
-
-		Tree* tree() const;
-		void setTree(Tree* tree);
-
-		UniformGrid* uniformGrid() const;
-		void setUniformGrid(UniformGrid* grid);
 
 		real defaultMeterToPixel()const;
 		void setDefaultMeterToPixel(const real& number);
@@ -96,8 +85,6 @@ namespace STEditor
 
 		bool m_visible = true;
 
-		bool m_treeVisible = false;
-		bool m_uniformGridVisible = false;
 		bool m_gridScaleLineVisible = true;
 		bool m_centerVisible = false;
 
@@ -111,9 +98,6 @@ namespace STEditor
 		Vector2 m_transform;
 		Vector2 m_origin;
 		Viewport m_viewport;
-
-		Tree* m_tree = nullptr;
-		UniformGrid* m_grid = nullptr;
 		
 		int m_axisPointCount = 100;
 

@@ -5,8 +5,8 @@
 #include "Edge.h"
 #include "Rectangle.h"
 #include "ST2D/Log.h"
-#include "ST2D/Geometry/Algorithms/Algorithm2D.h"
-#include "ST2D/Geometry/Collision/Narrowphase.h"
+#include "ST2D/Algorithms/Algorithm2D.h"
+#include "ST2D/Collision/Narrowphase.h"
 
 namespace ST
 {
@@ -98,7 +98,7 @@ namespace ST
 
 	AABB& AABB::unite(const AABB& other)
 	{
-		*this = unite(*this, other);
+		*this = combine(*this, other);
 		return *this;
 	}
 
@@ -125,7 +125,6 @@ namespace ST
 
 	AABB AABB::fromShape(const Transform& transform, const Shape* shape, const real& factor)
 	{
-		CORE_ASSERT(shape != nullptr, "Shape is nullptr");
 		AABB aabb;
 		switch (shape->type())
 		{
@@ -133,9 +132,10 @@ namespace ST
 		{
 			const Polygon* polygon = static_cast<const Polygon*>(shape);
 			real max_x = Constant::NegativeMin, max_y = Constant::NegativeMin, min_x = Constant::Max, min_y = Constant::Max;
+			Complex rot(transform.rotation);
 			for (const Vector2& v : polygon->vertices())
 			{
-				const Vector2 vertex = Matrix2x2(transform.rotation).multiply(v);
+				const Vector2 vertex = rot.multiply(v);
 				if (max_x < vertex.x)
 					max_x = vertex.x;
 
@@ -161,21 +161,24 @@ namespace ST
 			Vector2 left_dir{ -1, 0 };
 			Vector2 bottom_dir{ 0, -1 };
 			Vector2 right_dir{ 1, 0 };
+			Complex rot(-transform.rotation);
 
-			top_dir = Matrix2x2(-transform.rotation).multiply(top_dir);
-			left_dir = Matrix2x2(-transform.rotation).multiply(left_dir);
-			bottom_dir = Matrix2x2(-transform.rotation).multiply(bottom_dir);
-			right_dir = Matrix2x2(-transform.rotation).multiply(right_dir);
+			top_dir = rot.multiply(top_dir);
+			left_dir = rot.multiply(left_dir);
+			bottom_dir = rot.multiply(bottom_dir);
+			right_dir = rot.multiply(right_dir);
 
 			Vector2 top = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), top_dir);
 			Vector2 left = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), left_dir);
 			Vector2 bottom = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), bottom_dir);
 			Vector2 right = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), right_dir);
 
-			top = Matrix2x2(transform.rotation).multiply(top);
-			left = Matrix2x2(transform.rotation).multiply(left);
-			bottom = Matrix2x2(transform.rotation).multiply(bottom);
-			right = Matrix2x2(transform.rotation).multiply(right);
+			rot.conjugate();
+
+			top = rot.multiply(top);
+			left = rot.multiply(left);
+			bottom = rot.multiply(bottom);
+			right = rot.multiply(right);
 
 			aabb.height = std::fabs(top.y - bottom.y);
 			aabb.width = std::fabs(right.x - left.x);
@@ -235,7 +238,7 @@ namespace ST
 		return !(srcBottomRight.x < targetTopLeft.x || targetBottomRight.x < srcTopLeft.x || srcTopLeft.y < targetBottomRight.y || targetTopLeft.y < srcBottomRight.y);
 	}
 
-	AABB AABB::unite(const AABB& src, const AABB& target, const real& factor)
+	AABB AABB::combine(const AABB& src, const AABB& target, const real& factor)
 	{
 		if (src.isEmpty())
 			return target;

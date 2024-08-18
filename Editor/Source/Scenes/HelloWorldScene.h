@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AbstractScene.h"
+#include <deque>
 
 namespace STEditor
 {

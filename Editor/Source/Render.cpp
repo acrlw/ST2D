@@ -225,7 +225,7 @@ namespace STEditor
 					{
 						Vector2 point(radius * Math::cosx(radian), radius * Math::sinx(radian));
 						point += center;
-						const Vector2 worldPos = Matrix2x2(transform.rotation).multiply(
+						const Vector2 worldPos = Complex(transform.rotation).multiply(
 							point * RenderConstant::ScaleFactor) + transform.position;
 						const Vector2 screenP = camera.worldToScreen(worldPos);
 						sf::Vertex vertex;
@@ -321,6 +321,239 @@ namespace STEditor
 			shape.setOutlineThickness(RenderConstant::BorderSize);
 			shape.setOutlineColor(color);
 			window.draw(shape);
+		}
+
+		void RenderSFMLImpl::renderDashedAABB(sf::RenderWindow& window, Camera2D& camera, const AABB& aabb,
+			const sf::Color& color, const real& dashLength, const real& dashGap)
+		{
+			std::vector<Vector2> points;
+			points.emplace_back(aabb.topLeft());
+			points.emplace_back(aabb.topRight());
+			points.emplace_back(aabb.bottomRight());
+			points.emplace_back(aabb.bottomLeft());
+			points.emplace_back(aabb.topLeft());
+			renderPolyDashedLine(window, camera, points, color, dashLength, dashGap);
+		}
+
+		void RenderSFMLImpl::renderDashedShape(sf::RenderWindow& window, Camera2D& camera, const Transform& transform, Shape* shape, const sf::Color& color, const real& dashLength, const real& dashGap)
+		{
+			CORE_ASSERT(shape != nullptr, "Null reference of shape")
+
+				switch (shape->type())
+				{
+				case ShapeType::Polygon:
+				{
+					renderDashedPolygon(window, camera, transform, shape, color, dashLength, dashGap);
+					break;
+				}
+				case ShapeType::Ellipse:
+				{
+					renderDashedEllipse(window, camera, transform, shape, color, dashLength, dashGap);
+					break;
+				}
+				case ShapeType::Circle:
+				{
+					renderDashedCircle(window, camera, transform, shape, color, dashLength, dashGap);
+					break;
+				}
+				case ShapeType::Edge:
+				{
+					renderDashedEdge(window, camera, transform, shape, color, dashLength, dashGap);
+					break;
+				}
+				case ShapeType::Capsule:
+				{
+					renderDashedCapsule(window, camera, transform, shape, color, dashLength, dashGap);
+					break;
+				}
+				default:
+					break;
+				}
+		}
+
+		void RenderSFMLImpl::renderDashedPolygon(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength, const real& dashGap)
+		{
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Polygon);
+
+
+			sf::ConvexShape convex;
+			auto polygon = static_cast<ST::Polygon*>(shape);
+			convex.setPointCount(polygon->vertices().size());
+			std::vector<Vector2> points;
+			points.reserve(polygon->vertices().size());
+			for (size_t i = 0; i < polygon->vertices().size(); ++i)
+			{
+				const Vector2 worldPos = transform.translatePoint(
+					polygon->vertices()[i] * RenderConstant::ScaleFactor);
+				const Vector2 screenPos = camera.worldToScreen(worldPos);
+				points.emplace_back(worldPos);
+				convex.setPoint(i, toVector2f(screenPos));
+			}
+			sf::Color fillColor(color);
+			fillColor.a = RenderConstant::FillAlpha;
+			convex.setFillColor(fillColor);
+			window.draw(convex);
+
+			points.emplace_back(points[0]);
+			renderPolyDashedLine(window, camera, points, color, dashLength, dashGap);
+		}
+
+		void RenderSFMLImpl::renderDashedEdge(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength, const real& dashGap)
+		{
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Edge);
+
+			auto edge = static_cast<Edge*>(shape);
+			renderPoint(window, camera, edge->startPoint() + transform.position, color);
+			renderPoint(window, camera, edge->endPoint() + transform.position, color);
+			renderDashedLine(window, camera, edge->startPoint() + transform.position,
+				edge->endPoint() + transform.position, color, dashLength, dashGap);
+
+			Vector2 center = (edge->startPoint() + edge->endPoint()) / 2.0f;
+			center += transform.position;
+			renderLine(window, camera, center, center + 0.1f * edge->normal(), RenderConstant::Yellow);
+		}
+
+		void RenderSFMLImpl::renderDashedRectangle(sf::RenderWindow& window, Camera2D& camera,
+			const Transform& transform, Shape* shape, const sf::Color& color, const real& dashLength,
+			const real& dashGap)
+		{
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Polygon);
+
+			renderDashedPolygon(window, camera, transform, shape, color, dashLength, dashGap);
+		}
+
+		void RenderSFMLImpl::renderDashedCircle(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength, const real& dashGap)
+		{
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Circle);
+			size_t count = RenderConstant::BasicCirclePointCount + static_cast<size_t>(camera.meterToPixel());
+
+			const Circle* circle = static_cast<Circle*>(shape);
+			const Vector2 screenPos = camera.worldToScreen(transform.position);
+			sf::CircleShape circleShape(circle->radius() * RenderConstant::ScaleFactor * camera.meterToPixel());
+			sf::Color fillColor(color);
+			fillColor.a = RenderConstant::FillAlpha;
+			circleShape.move(toVector2f(screenPos) - sf::Vector2f(circleShape.getRadius(), circleShape.getRadius()));
+			circleShape.setFillColor(fillColor);
+			circleShape.setPointCount(count);
+			window.draw(circleShape);
+
+			std::vector<Vector2> points;
+			for (int i = 0; i <= count; ++i)
+			{
+				real radian = Math::radians(360.0f / static_cast<real>(count) * static_cast<real>(i));
+				Vector2 point(circle->radius() * Math::cosx(radian), circle->radius() * Math::sinx(radian));
+				points.emplace_back(transform.translatePoint(point));
+			}
+			renderPolyDashedLine(window, camera, points, color, dashLength, dashGap);
+		}
+
+		void RenderSFMLImpl::renderDashedCapsule(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength, const real& dashGap)
+		{
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Capsule);
+			std::vector<sf::Vertex> vertices;
+			std::vector<Vector2> points;
+
+			const Capsule* capsule = static_cast<Capsule*>(shape);
+			const Vector2 screenPos = camera.worldToScreen(transform.position);
+			int pointCounts = (RenderConstant::BasicCirclePointCount + camera.meterToPixel()) / 4;
+			sf::Vertex centerVertex = toVector2f(screenPos);
+			sf::Color fillColor(color);
+			fillColor.a = RenderConstant::FillAlpha;
+			centerVertex.color = fillColor;
+			vertices.emplace_back(centerVertex);
+			auto sampling = [&](const Vector2& center, const real& radius, const real& startRadians, const real& endRadians)
+				{
+					real step = (endRadians - startRadians) / static_cast<float>(pointCounts);
+					for (real radian = startRadians; radian <= endRadians; radian += step)
+					{
+						Vector2 point(radius * Math::cosx(radian), radius * Math::sinx(radian));
+						point += center;
+						const Vector2 worldPos = Complex(transform.rotation).multiply(
+							point * RenderConstant::ScaleFactor) + transform.position;
+						const Vector2 screenP = camera.worldToScreen(worldPos);
+						sf::Vertex vertex;
+						vertex.position = toVector2f(screenP);
+						vertex.color = fillColor;
+						vertices.emplace_back(vertex);
+						points.emplace_back(worldPos);
+					}
+				};
+			if (capsule->halfWidth() > capsule->halfHeight())
+			{
+				real radius = capsule->halfHeight();
+				sampling((capsule->bottomLeft() + capsule->topLeft()) / 2.0f, radius, Math::radians(90),
+					Math::radians(270));
+				sampling((capsule->topRight() + capsule->bottomRight()) / 2.0f, radius, Math::radians(270),
+					Math::radians(450));
+			}
+			else
+			{
+				real radius = capsule->halfWidth();
+				sampling((capsule->topLeft() + capsule->topRight()) / 2.0f, radius, Math::radians(0),
+					Math::radians(180));
+				sampling((capsule->bottomLeft() + capsule->bottomRight()) / 2.0f, radius, Math::radians(180),
+					Math::radians(360));
+			}
+			vertices.emplace_back(vertices[1]);
+			window.draw(&vertices[0], vertices.size(), sf::TriangleFan);
+
+			points.emplace_back(points[0]);
+			renderPolyDashedLine(window, camera, points, color, dashLength, dashGap);
+
+		}
+
+		void RenderSFMLImpl::renderDashedEllipse(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength, const real& dashGap)
+		{
+			assert(shape != nullptr);
+			assert(shape->type() == ShapeType::Ellipse);
+			std::vector<sf::Vertex> vertices;
+			std::vector<Vector2> points;
+
+			const ST::Ellipse* ellipse = static_cast<ST::Ellipse*>(shape);
+			const Vector2 screenPos = camera.worldToScreen(transform.position);
+			int pointCounts = (RenderConstant::BasicCirclePointCount + camera.meterToPixel()) / 2;
+
+			sf::Vertex centerVertex = toVector2f(screenPos);
+			sf::Color fillColor(color);
+			fillColor.a = RenderConstant::FillAlpha;
+			centerVertex.color = fillColor;
+			vertices.emplace_back(centerVertex);
+
+			real step = Constant::DoublePi / static_cast<float>(pointCounts);
+			real innerRadius, outerRadius;
+			innerRadius = ellipse->A();
+			outerRadius = ellipse->B();
+			if (ellipse->A() > ellipse->B())
+			{
+				innerRadius = ellipse->B();
+				outerRadius = ellipse->A();
+			}
+			for (real radian = 0; radian <= Constant::DoublePi; radian += step)
+			{
+				Vector2 point(outerRadius * Math::cosx(radian), innerRadius * Math::sinx(radian));
+				const Vector2 worldPos = transform.translatePoint(point * RenderConstant::ScaleFactor);
+				const Vector2 sp = camera.worldToScreen(worldPos);
+				sf::Vertex vertex;
+				vertex.position = toVector2f(sp);
+				vertex.color = fillColor;
+				vertices.emplace_back(vertex);
+				points.emplace_back(worldPos);
+			}
+			vertices.emplace_back(vertices[1]);
+			window.draw(&vertices[0], vertices.size(), sf::TriangleFan);
+
+			points.emplace_back(points[0]);
+			renderPolyDashedLine(window, camera, points, color, dashLength, dashGap);
 		}
 
 		void RenderSFMLImpl::renderPolyDashedLine(sf::RenderWindow& window, Camera2D& camera, const std::vector<Vector2>& points, const sf::Color& color, const real& dashLength, const real& dashGap)

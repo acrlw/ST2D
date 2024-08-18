@@ -1,9 +1,15 @@
 #pragma once
 
-#include "ST2D/Geometry/Algorithms/Algorithm2D.h"
+#include "ST2D/Algorithms/Algorithm2D.h"
 
 namespace ST
 {
+	struct ST_API VertexIndexPair
+	{
+		Vector2 vertex;
+		Index index;
+	};
+
 	struct ST_API SimplexVertex
 	{
 		SimplexVertex() = default;
@@ -61,24 +67,6 @@ namespace ST
 		//index[0] : indexA
 		//index[1] : indexB
 		Index index[2];
-	};
-
-	/**
-	 * \brief Simplex Vertex Array for gjk/epa test
-	 * bottleneck: frequently insert operation
-	 */
-	struct ST_API SimplexVertexArray
-	{
-		std::vector<SimplexVertex> vertices;
-		bool isContainOrigin = false;
-		bool containOrigin(bool strict = false);
-		static bool containOrigin(const SimplexVertexArray& simplex, bool strict = false);
-
-		void insert(const size_t& pos, const SimplexVertex& vertex);
-		bool contains(const SimplexVertex& vertex);
-		bool fuzzyContains(const SimplexVertex& vertex, const real& epsilon = 0.0001);
-
-		Vector2 lastVertex() const;
 	};
 
 	/**

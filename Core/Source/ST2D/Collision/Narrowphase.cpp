@@ -1,11 +1,11 @@
 #include "Narrowphase.h"
 
 #include "ST2D/Log.h"
-#include "ST2D/Geometry/Shape/Capsule.h"
-#include "ST2D/Geometry/Shape/Ellipse.h"
-#include "ST2D/Geometry/Shape/Polygon.h"
-#include "ST2D/Geometry/Shape/Circle.h"
-#include "ST2D/Geometry/Shape/Edge.h"
+#include "ST2D/Shape/Capsule.h"
+#include "ST2D/Shape/Ellipse.h"
+#include "ST2D/Shape/Polygon.h"
+#include "ST2D/Shape/Circle.h"
+#include "ST2D/Shape/Edge.h"
 
 namespace ST
 {
@@ -176,16 +176,21 @@ namespace ST
 		const Shape* shapeB, const Vector2& direction)
 	{
 		SimplexVertex vertex;
-		std::tie(vertex.point[0], vertex.index[0]) = findFurthestPoint(transformA, shapeA, direction);
-		std::tie(vertex.point[1], vertex.index[1]) = findFurthestPoint(transformB, shapeB, direction.negative());
+		VertexIndexPair pair1 = findFurthestPoint(transformA, shapeA, direction);
+		VertexIndexPair pair2 = findFurthestPoint(transformB, shapeB, direction.negative());
+		vertex.point[0] = pair1.vertex;
+		vertex.point[1] = pair2.vertex;
+		vertex.index[0] = pair1.index;
+		vertex.index[1] = pair2.index;
 		vertex.result = vertex.point[0] - vertex.point[1];
 		return vertex;
 	}
 
-	std::pair<Vector2, Index> Narrowphase::findFurthestPoint(const Transform& transform, const Shape* shape, const Vector2& direction)
+	VertexIndexPair Narrowphase::findFurthestPoint(const Transform& transform, const Shape* shape, const Vector2& direction)
 	{
+		VertexIndexPair pair;
 		Vector2 target;
-		Matrix2x2 rot(-transform.rotation);
+		Complex rot(-transform.rotation);
 		Vector2 rot_dir = rot.multiply(direction);
 		Index finalIndex = UINT32_MAX;
 		switch (shape->type())
@@ -193,13 +198,17 @@ namespace ST
 		case ShapeType::Polygon:
 		{
 			auto polygon = static_cast<const Polygon*>(shape);
-			std::tie(target, finalIndex) = findFurthestPoint(polygon->vertices(), rot_dir);
+			VertexIndexPair result = findFurthestPoint(polygon->vertices(), rot_dir);
+			target = result.vertex;
+			finalIndex = result.index;
 			break;
 		}
 		case ShapeType::Circle:
 		{
 			auto circle = static_cast<const Circle*>(shape);
-			return std::make_pair(direction.normal() * circle->radius() + transform.position, finalIndex);
+			pair.vertex = direction.normal() * circle->radius() + transform.position;
+			pair.index = finalIndex;
+			return pair;
 		}
 		case ShapeType::Ellipse:
 		{
@@ -228,10 +237,12 @@ namespace ST
 			break;
 		}
 		}
-		rot.set(transform.rotation);
+		rot.conjugate();
 		target = rot.multiply(target);
 		target += transform.position;
-		return std::make_pair(target, finalIndex);
+		pair.vertex = target;
+		pair.index = finalIndex;
+		return pair;
 	}
 
 	Vector2 Narrowphase::findDirectionByEdge(const SimplexVertex& v1, const SimplexVertex& v2, bool pointToOrigin)
@@ -248,7 +259,7 @@ namespace ST
 		return perpendicularOfAB;
 	}
 
-	std::pair<Vector2, Index> Narrowphase::findFurthestPoint(const std::vector<Vector2>& vertices,
+	VertexIndexPair Narrowphase::findFurthestPoint(const std::vector<Vector2>& vertices,
 		const Vector2& direction)
 	{
 		real max = Constant::NegativeMin;
@@ -264,7 +275,7 @@ namespace ST
 				index = i;
 			}
 		}
-		return std::make_pair(target, index);
+		return VertexIndexPair{ target, index };
 	}
 
 	ContactPair Narrowphase::generateContacts(const Transform& transformA, const Shape* shapeA, const Transform& transformB,

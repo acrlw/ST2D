@@ -270,6 +270,12 @@ namespace ST
 		return { re, -im };
 	}
 
+	Complex& Complex::conjugate()
+	{
+		im = -im;
+		return *this;
+	}
+
 	Vector2 Complex::dotProduct(const Complex& lhs, const Vector2& rhs)
 	{
 		return { lhs.re * rhs.x - lhs.im * rhs.y, lhs.im * rhs.x + lhs.re * rhs.y };

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ST2D/Geometry/Algorithms/Algorithm2D.h"
-#include "ST2D/Geometry/Shape/Shape.h"
+#include "ST2D/Algorithms/Algorithm2D.h"
+#include "ST2D/Shape/Shape.h"
 #include "Simplex.h"
 
 
@@ -80,31 +80,33 @@ namespace ST
 		std::list<SimplexVertexWithOriginDistance> polytope;
 	};
 
+
+
 	class ST_API Narrowphase
 	{
 	public:
 
 		static Simplex gjk(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 30);
+			const Shape* shapeB, const size_t& iteration = 20);
 
 		static CollisionInfo epa(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 30, const real& epsilon = Constant::GeometryEpsilon);
+			const Shape* shapeB, const size_t& iteration = 20, const real& epsilon = Constant::GeometryEpsilon);
 
 		static SimplexVertex support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const Vector2& direction);
 
-		static std::pair<Vector2, Index> findFurthestPoint(const Transform& transform, const Shape* shape, const Vector2& direction);
+		static VertexIndexPair findFurthestPoint(const Transform& transform, const Shape* shape, const Vector2& direction);
 
 		static Vector2 findDirectionByEdge(const SimplexVertex& v1, const SimplexVertex& v2, bool pointToOrigin);
 
-		static std::pair<Vector2, Index> findFurthestPoint(const std::vector<Vector2>& vertices,
+		static VertexIndexPair findFurthestPoint(const std::vector<Vector2>& vertices,
 			const Vector2& direction);
 
 		static ContactPair generateContacts(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, CollisionInfo& info);
 
 		static CollisionInfo gjkDistance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 10);
+			const Shape* shapeB, const size_t& iteration = 20);
 
 	private:
 		static void reconstructSimplexByVoronoi(Simplex& simplex);

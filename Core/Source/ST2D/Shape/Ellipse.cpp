@@ -47,7 +47,7 @@ namespace ST
 
 	Vector2 Ellipse::center() const
 	{
-		return Vector2();
+		return {};
 	}
 
 	real Ellipse::width() const

@@ -11,6 +11,7 @@
 #include <mutex>
 #include <chrono>
 
+#include <stack>
 #include <deque>
 #include <queue>
 #include <list>

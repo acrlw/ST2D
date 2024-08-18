@@ -61,8 +61,8 @@ namespace STEditor
 		float m_curvatureScaleFactor = 0.1f;
 		float m_halfWidth = 1.0f;
 		float m_halfHeight = 1.0f;
-		float m_percentage = 0.65f;
-		float m_cornerPercentage = 0.407f;
+		float m_percentage = 0.638f;
+		float m_cornerPercentage = 0.301f;
 
 		int m_circleSegment = 100;
 
@@ -103,8 +103,8 @@ namespace STEditor
 
 		float m_L = 1.0f;
 		float m_weight = 0.5f;
-		float m_weight1 = 0.3f;
-		float m_weight2 = 0.7f;
+		float m_weight1 = 0.392f;
+		float m_weight2 = 0.339f;
 		CubicBezier m_bezier;
 
 		Spiral m_spiralCurve;
@@ -117,6 +117,6 @@ namespace STEditor
 		G6Spiral m_g6Spiral;
 		G7Spiral m_g7Spiral;
 
-		int m_currentShapeIndex = 2;
+		int m_currentShapeIndex = 1;
 	};
 }

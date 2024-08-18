@@ -1,5 +1,5 @@
 #include "Edge.h"
-#include "ST2D/Geometry/Algorithms/Algorithm2D.h"
+#include "ST2D/Algorithms/Algorithm2D.h"
 
 namespace ST
 {

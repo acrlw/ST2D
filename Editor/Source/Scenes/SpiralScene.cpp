@@ -123,7 +123,7 @@ namespace STEditor
 		ImGui::SeparatorText("Rounded Params");
 		ImGui::DragFloat("Half Width", &m_halfWidth, 0.01f, 1.0f, 50.0f);
 		ImGui::DragFloat("Half Height", &m_halfHeight, 0.01f, 1.0f, 50.0f);
-		ImGui::DragFloat("Rounded Radius Percentage", &m_percentage, 0.005f, 0.005f, 1.0f);
+		ImGui::DragFloat("Rounded Radius Percentage", &m_percentage, 0.001f, 0.001f, 1.0f);
 		ImGui::Checkbox("Connect Inner", &m_connectInner);
 		ImGui::SameLine();
 		ImGui::Checkbox("Lock Corner Start", &m_lockCornerStart);
@@ -132,7 +132,7 @@ namespace STEditor
 
 		ImGui::DragFloat("Inner Width Percentage", &m_innerWidthFactor, 0.001f, 0.0f, 1.0f);
 		ImGui::DragFloat("Inner Height Percentage", &m_innerHeightFactor, 0.001f, 0.0f, 1.0f);
-		ImGui::DragFloat("Corner Angle Percentage", &m_cornerPercentage, 0.005f, 0.0f, 0.999f);
+		ImGui::DragFloat("Corner Angle Percentage", &m_cornerPercentage, 0.001f, 0.0f, 0.999f);
 		ImGui::DragInt("Circle Segment Count", &m_circleSegment, 2, 4, 500);
 		ImGui::DragFloat("Curvature Scale Factor", &m_curvatureScaleFactor, 0.01f, 0.01f, 1.0f);
 

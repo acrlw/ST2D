@@ -16,8 +16,8 @@ namespace STEditor
 		constexpr int BorderSize = 1;
 		constexpr int FillAlpha = 38;
 		constexpr int BasicCirclePointCount = 60;
-		constexpr real BasicDashLength = 0.02f;
-		constexpr real BasicDashGap = 0.02f;
+		constexpr real BasicDashLength = 0.1f;
+		constexpr real BasicDashGap = 0.1f;
 		const sf::Color Yellow = sf::Color(255, 235, 59);
 		const sf::Color Red = sf::Color(244, 67, 54);
 		const sf::Color LightRed = sf::Color(255, 205, 210);
@@ -77,6 +77,36 @@ namespace STEditor
 		static void renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const Transform& transform);
 		
 		static void renderAABB(sf::RenderWindow& window, Camera2D& camera, const AABB& aabb, const sf::Color& color);
+		static void renderDashedAABB(sf::RenderWindow& window, Camera2D& camera, const AABB& aabb, const sf::Color& color,
+			const real& dashLength = RenderConstant::BasicDashLength, const real& dashGap = RenderConstant::BasicDashGap);
+
+		static void renderDashedShape(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
+			const real& dashGap = RenderConstant::BasicDashGap);
+
+		static void renderDashedPolygon(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
+			const real& dashGap = RenderConstant::BasicDashGap);
+
+		static void renderDashedEdge(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
+			const real& dashGap = RenderConstant::BasicDashGap);
+
+		static void renderDashedRectangle(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
+			const real& dashGap = RenderConstant::BasicDashGap);
+
+		static void renderDashedCircle(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
+			const real& dashGap = RenderConstant::BasicDashGap);
+
+		static void renderDashedCapsule(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
+			const real& dashGap = RenderConstant::BasicDashGap);
+
+		static void renderDashedEllipse(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
+			Shape* shape, const sf::Color& color, const real& dashLength = RenderConstant::BasicDashLength,
+			const real& dashGap = RenderConstant::BasicDashGap);
 
 
 		static void renderPolyDashedLine(sf::RenderWindow& window, Camera2D& camera, const std::vector<Vector2>& points,

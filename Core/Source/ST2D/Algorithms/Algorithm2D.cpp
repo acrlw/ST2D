@@ -1,4 +1,6 @@
 #include "Algorithm2D.h"
+
+#include "ST2D/Math/Complex.h"
 #include "ST2D/Math/Matrix2x2.h"
 
 namespace ST
@@ -68,6 +70,36 @@ namespace ST
 			result = newPolygon;
 		}
 		return result;
+	}
+
+	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastCircle(const Vector2& p, const Vector2& dir,
+		const Vector2& center, const real& radius)
+	{
+		return {};
+	}
+
+	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastEllipse(const Vector2& p, const Vector2& dir,
+		const Vector2& center, const real& a, const real& b)
+	{
+		return {};
+	}
+
+	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastCapsule(const Vector2& p, const Vector2& dir,
+		const Vector2& center, const real& halfWidth, const real& halfHeight)
+	{
+		return {};
+	}
+
+	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastSegment(const Vector2& p, const Vector2& dir,
+		const Vector2& a, const Vector2& b)
+	{
+		return {};
+	}
+
+	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastPolygon(const Vector2& p, const Vector2& dir,
+		const std::vector<Vector2>& vertices)
+	{
+		return {};
 	}
 
 	Vector2 GeometryAlgorithm2D::axialSymmetry(const Vector2& center, const Vector2& dir, const Vector2& point)
@@ -578,9 +610,9 @@ namespace ST
 			Math::isInRange(p.y, bottomRight.y, topLeft.y);
 	}
 
-	Vector2 GeometryAlgorithm2D::rotate(const Vector2& p, const Vector2& center, const real& angle)
+	Vector2 GeometryAlgorithm2D::rotateAround(const Vector2& p, const Vector2& center, const real& radians)
 	{
-		return Matrix2x2(angle).multiply(p - center) + center;
+		return Complex(radians).multiply(p - center) + center;
 	}
 
 	Vector2 GeometryAlgorithm2D::calculateEllipseProjectionPoint(const real& a, const real& b, const Vector2& direction)

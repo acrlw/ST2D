@@ -21,6 +21,10 @@ namespace STEditor
 				},
 				[&](const SceneSettings& settings)
 				{
+					return std::make_unique<BroadphaseScene>(settings);
+				},
+				[&](const SceneSettings& settings)
+				{
 					return std::make_unique<NarrowphaseScene>(settings);
 				},
 				[&](const SceneSettings& settings)
@@ -366,16 +370,6 @@ namespace STEditor
 		ImGui::Combo("Current Scene", &m_currentSceneIndex, m_sceneName.data(), m_sceneName.size());
 		if (oldItem != m_currentSceneIndex)
 			switchScene(m_currentSceneIndex);
-
-
-		ImGui::Columns(1, nullptr);
-
-		ImGui::SeparatorText("Visible");
-		ImGui::Columns(2, nullptr);
-		ImGui::Checkbox("Tree", &m_camera.treeVisible());
-		ImGui::NextColumn();
-		ImGui::Checkbox("Uniform Grid", &m_camera.uniformGridVisible());
-		ImGui::Columns(1, nullptr);
 
 		ImGui::SeparatorText("Camera");
 		ImGui::Columns(2, nullptr);

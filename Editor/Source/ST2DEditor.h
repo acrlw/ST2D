@@ -3,6 +3,7 @@
 
 #include "Scenes/CurveScene.h"
 #include "Scenes/NarrowphaseScene.h"
+#include "Scenes/BroadphaseScene.h"
 #include "Scenes/SpiralScene.h"
 #include "Scenes/HelloWorldScene.h"
 #include "Scenes/EmptyScene.h"
@@ -50,13 +51,13 @@ namespace STEditor
 		bool m_onDistanceCheck = false;
 
 
-		int m_currentSceneIndex = 4;
+		int m_currentSceneIndex = 2;
 
 		Camera2D m_camera;
 
-		std::array<const char*, 6> m_sceneName = { "HelloWorld", "Curve", "Narrowphase", "Empty", "Spline", "Spiral" };
+		std::array<const char*, 7> m_sceneName = { "HelloWorld", "Curve", "Broadphase", "Narrowphase", "Empty", "Spline", "Spiral" };
 
-		std::array<std::function<std::unique_ptr<AbstractScene> (const SceneSettings& settings)>, 6> m_sceneList;
+		std::array<std::function<std::unique_ptr<AbstractScene> (const SceneSettings& settings)>, 7> m_sceneList;
 		std::unique_ptr<sf::RenderWindow> m_window;
 
 		float m_zoomFactor = 0.3f;

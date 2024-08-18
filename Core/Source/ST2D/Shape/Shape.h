@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ST2D/Math/Complex.h"
 #include "ST2D/Math/Matrix2x2.h"
 
 namespace ST
@@ -43,17 +44,17 @@ namespace ST
 
 		Vector2 translatePoint(const Vector2& source) const
 		{
-			return Matrix2x2(rotation).multiply(source) * scale + position;
+			return Complex(rotation).multiply(source) * scale + position;
 		}
 
 		Vector2 inverseTranslatePoint(const Vector2& source) const
 		{
-			return Matrix2x2(-rotation).multiply(source - position) / scale;
+			return Complex(-rotation).multiply(source - position) / scale;
 		}
 
 		Vector2 inverseRotatePoint(const Vector2& point) const
 		{
-			return Matrix2x2(-rotation).multiply(point);
+			return Complex(-rotation).multiply(point);
 		}
 	};
 

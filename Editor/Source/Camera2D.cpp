@@ -67,24 +67,6 @@ namespace STEditor
 	{
 		if (m_visible)
 		{
-			
-			if (m_treeVisible)
-			{
-				if(m_tree != nullptr)
-					drawTree(m_tree->rootIndex(), window);
-			}
-			if (m_uniformGridVisible && m_grid != nullptr)
-			{
-				for (auto&& elem : m_grid->m_cellsToBodies)
-				{
-					Vector2 topLeft(static_cast<real>(elem.first.x) * m_grid->cellWidth() - m_grid->width() * 0.5f,
-						static_cast<real>(elem.first.y) * m_grid->cellHeight() - m_grid->height() * 0.5f);
-					AABB cell(topLeft, m_grid->cellWidth(), m_grid->cellHeight());
-					//cell.expand(-0.05f);
-
-					RenderSFMLImpl::renderAABB(window, *this, cell, sf::Color::Cyan);
-				}
-			}
 			if (m_gridScaleLineVisible)
 			{
 				//draw axis
@@ -124,15 +106,6 @@ namespace STEditor
 		return m_visible;
 	}
 
-	bool& Camera2D::treeVisible()
-	{
-		return m_treeVisible;
-	}
-
-	bool& Camera2D::uniformGridVisible()
-	{
-		return m_uniformGridVisible;
-	}
 
 	bool& Camera2D::coordinateScale()
 	{
@@ -206,25 +179,6 @@ namespace STEditor
 		return result;
 	}
 
-	Tree* Camera2D::tree() const
-	{
-		return m_tree;
-	}
-
-	void Camera2D::setTree(Tree* tree)
-	{
-		m_tree = tree;
-	}
-
-	UniformGrid* Camera2D::uniformGrid() const
-	{
-		return m_grid;
-	}
-
-	void Camera2D::setUniformGrid(UniformGrid* grid)
-	{
-		m_grid = grid;
-	}
 
 	real Camera2D::defaultMeterToPixel() const
 	{
@@ -354,19 +308,5 @@ namespace STEditor
 			}
 			RenderSFMLImpl::renderLines(window, *this, lines, thin);
 		}
-	}
-
-	void Camera2D::drawTree(int nodeIndex, sf::RenderWindow& window)
-	{
-		if (nodeIndex == -1)
-			return;
-		//std::cout << "tree size:" << m_tree->tree().size() << std::endl;
-		drawTree(m_tree->tree()[nodeIndex].leftIndex, window);
-		drawTree(m_tree->tree()[nodeIndex].rightIndex, window);
-
-		AABB aabb = m_tree->tree()[nodeIndex].aabb;
-		//aabb.expand(0.5);
-		if (!m_tree->tree()[nodeIndex].isLeaf())
-			RenderSFMLImpl::renderAABB(window, *this, aabb, sf::Color::Cyan);
 	}
 }

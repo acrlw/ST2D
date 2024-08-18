@@ -21,6 +21,24 @@ namespace ST
 			static std::vector<Vector2> sutherlandHodgmentPolygonClipping(const std::vector<Vector2>& polygon, const std::vector<Vector2>& clipRegion);
 		};
 
+		struct ST_API RaycastHit
+		{
+			Vector2 point;
+			Vector2 normal;
+			real distance;
+			bool hit;
+		};
+
+		static RaycastHit raycastCircle(const Vector2& p, const Vector2& dir, const Vector2& center, const real& radius);
+
+		static RaycastHit raycastEllipse(const Vector2& p, const Vector2& dir, const Vector2& center, const real& a, const real& b);
+
+		static RaycastHit raycastCapsule(const Vector2& p, const Vector2& dir, const Vector2& center, const real& halfWidth, const real& halfHeight);
+
+		static RaycastHit raycastSegment(const Vector2& p, const Vector2& dir, const Vector2& a, const Vector2& b);
+
+		static RaycastHit raycastPolygon(const Vector2& p, const Vector2& dir, const std::vector<Vector2>& vertices);
+
 		static Vector2 axialSymmetry(const Vector2& center, const Vector2& dir, const Vector2& point);
 
 		/**
@@ -167,13 +185,14 @@ namespace ST
 		inline static bool isPointInsideAABB(const Vector2& pos, const Vector2& topLeft, const Vector2& bottomRight);
 		static bool isPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight);
 		/**
-		 * \brief Rotate point 'p' around point 'center' by 'angle' degrees
+		 * \brief Rotate point 'p' around point 'center' by 'radians' radians
 		 * \param p
 		 * \param center
 		 * \param angle
 		 * \return
 		 */
-		static Vector2 rotate(const Vector2& p, const Vector2& center, const real& angle);
+		static Vector2 rotateAround(const Vector2& p, const Vector2& center, const real& radians);
+
 		/**
 		 * \brief Calculate the projection axis of ellipse in user-define direction.
 		 * \param a

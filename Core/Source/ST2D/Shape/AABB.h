@@ -56,7 +56,7 @@ namespace ST
 		/// <param name="src"></param>
 		/// <param name="target"></param>
 		/// <returns></returns>
-		static AABB unite(const AABB& src, const AABB& target, const real& factor = 0);
+		static AABB combine(const AABB& src, const AABB& target, const real& factor = 0);
 		/// <summary>
 		/// Check if b is subset of a
 		/// </summary>

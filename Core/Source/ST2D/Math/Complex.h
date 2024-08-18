@@ -58,6 +58,7 @@ namespace ST
 
 		Complex& dot(const Complex& rhs);
 		Complex conjugate() const;
+		Complex& conjugate();
 
 		static Vector2 dotProduct(const Complex& lhs, const Vector2& rhs);
 		static Complex dotProduct(const Complex& lhs, const Complex& rhs);
