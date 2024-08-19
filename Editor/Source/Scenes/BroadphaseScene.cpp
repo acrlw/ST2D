@@ -79,23 +79,22 @@ namespace STEditor
 					if (index == -1)
 						continue;
 
-					if (!m_dbvt.m_nodes[index].isLeaf())
+					AABB aabb = m_dbvt.m_nodes[index].aabb;
+					aabb.expand(m_expandRatio * static_cast<real>(1 + m_dbvt.m_nodes[index].height));
+
+					if (m_dbvt.m_nodes[index].height <= m_currentHeight)
 					{
-						AABB aabb = m_dbvt.m_nodes[index].aabb;
-						aabb.expand(m_expandRatio * static_cast<real>(1 + m_dbvt.m_nodes[index].height));
-
-						if (m_dbvt.m_nodes[index].height <= m_currentHeight)
-						{
-							if (index == m_dbvt.m_rootIndex)
-								RenderSFMLImpl::renderDashedAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
-							else
-								RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
-						}
-						
-
-						queue.push_back(m_dbvt.m_nodes[index].left);
-						queue.push_back(m_dbvt.m_nodes[index].right);
+						if (index == m_dbvt.m_rootIndex)
+							RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
+						else if (m_dbvt.m_nodes[index].isLeaf())
+							RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
+						else
+							RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
 					}
+
+
+					queue.push_back(m_dbvt.m_nodes[index].left);
+					queue.push_back(m_dbvt.m_nodes[index].right);
 
 				}
 
@@ -123,9 +122,14 @@ namespace STEditor
 		ImGui::Checkbox("Show Transform", &m_showTransform);
 		ImGui::Checkbox("Show Object Id", &m_showObjectId);
 
-		ImGui::SliderInt("Render BVH Height", &m_currentHeight, 1, m_maxHeight);
+		ImGui::SliderInt("Render BVH Height", &m_currentHeight, 0, m_maxHeight);
 		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.1f, 0.0f, 1.0f);
 		m_maxHeight = std::max(0, m_dbvt.m_nodes[m_dbvt.m_rootIndex].height);
+
+		if(ImGui::Button("Check Height"))
+		{
+			m_dbvt.checkHeight();
+		}
 
 		ImGui::End();
 	}
@@ -176,13 +180,22 @@ namespace STEditor
 		std::uniform_int_distribution<> dist2(0, m_shapesArray.size() - 1);
 		std::uniform_real_distribution<> dist3(-Constant::Pi, Constant::Pi);
 
+		real rotation = 0.0f;
+		Vector2 position(-4.0f, 4.0f);
+		Vector2 dir(-1.0f, -1.0f);
+
 		for (int i = 0; i < m_count; ++i)
 		{
 			Transform t;
-			t.position = Vector2(dist1(gen), dist1(gen));
-			t.rotation = dist3(gen);
+			//t.position = Vector2(dist1(gen), dist1(gen));
+			//t.rotation = dist3(gen);
 
-			int shapeIndex = dist2(gen);
+			//int shapeIndex = dist2(gen);
+
+			t.position = position;
+			t.rotation = rotation;
+			int shapeIndex = 0;
+
 			m_transforms.push_back(t);
 			m_shapes.push_back(m_shapesArray[shapeIndex]);
 			m_bitmasks.push_back(1);
@@ -194,6 +207,8 @@ namespace STEditor
 			binding.bitmask = 0;
 			binding.objectId = m_objectIds[i];
 			m_dbvt.addObject(binding);
+
+			position += dir * 2.0f;
 		}
 
 	}

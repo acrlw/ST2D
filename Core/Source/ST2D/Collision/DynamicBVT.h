@@ -55,9 +55,14 @@ namespace ST
 
 		//private:
 
+		void checkHeight();
+
 		void rotateNode(int nodeIndex);
 
-		void recomputeHeightAndAABB(int nodeIndex);
+		void updateHeightAndAABB(int nodeIndex);
+
+		void updateHeight(int nodeIndex);
+		void updateAABB(int nodeIndex);
 
 		void insertLeaf(const BVTNodeBinding& leaf);
 		void removeLeaf(int objectId);
