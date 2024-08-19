@@ -115,8 +115,9 @@ namespace ST
 			(m_nodes[parentIndex].left == targetIndex ? m_nodes[parentIndex].left : m_nodes[parentIndex].right) = mergeIndex;
 
 			m_nodes[mergeIndex].parent = parentIndex;
+			m_nodes[parentIndex].height = 1 + std::max(m_nodes[m_nodes[parentIndex].left].height, m_nodes[m_nodes[parentIndex].right].height);
 
-
+			rotateNode(newNodeIndex);
 
 			recomputeHeightAndAABB(newNodeIndex);
 		}
@@ -175,7 +176,18 @@ namespace ST
 
 	void DynamicBVT::updateLeaf(int objectId, const AABB& aabb)
 	{
-
+		int nodeIndex = -1;
+		for(int i = 0; i < m_leaves.size(); ++i)
+		{
+			if(m_leaves[i].binding.objectId == objectId)
+			{
+				nodeIndex = m_leaves[i].nodeIndex;
+				m_leaves[i].binding.aabb = aabb;
+				break;
+			}
+		}
+		m_nodes[nodeIndex].aabb = aabb;
+		recomputeHeightAndAABB(nodeIndex);
 	}
 
 	int DynamicBVT::findBestNode(int nodeIndex) const
@@ -298,9 +310,138 @@ namespace ST
 
 	void DynamicBVT::rotateNode(int nodeIndex)
 	{
-		if (m_nodes[nodeIndex].height < 2)
+		int F = nodeIndex;
+		int D = m_nodes[nodeIndex].parent;
+		int B = m_nodes[D].parent;
+
+		if(B == m_rootIndex)
 			return;
-		
+
+		int A = m_nodes[B].parent;
+		int G = m_nodes[D].right;
+
+		CORE_ASSERT(F != G, "Invalid Index");
+
+		bool isLeft1 = m_nodes[A].left == B;
+		bool isLeft2 = m_nodes[B].left == D;
+
+		int C = isLeft1 ? m_nodes[A].right : m_nodes[A].left;
+		int E = isLeft2 ? m_nodes[B].right : m_nodes[B].left;
+
+
+		bool unbalanced = std::abs(m_nodes[B].height - m_nodes[C].height) > 1;
+
+		if(!unbalanced)
+			return;
+
+		bool minimalTree = A == m_rootIndex;
+
+		int parentA = -1;
+		bool isLeftA = false;
+
+		if(!minimalTree)
+		{
+			parentA = m_nodes[A].parent;
+			isLeftA = m_nodes[parentA].left == A;
+		}
+
+		if(isLeft1 && isLeft2)
+		{
+			//LL
+			m_nodes[B].right = A;
+			m_nodes[A].parent = B;
+
+			m_nodes[A].left = E;
+			m_nodes[E].parent = A;
+
+			m_nodes[A].height = 1;
+			m_nodes[B].height = 2;
+
+			m_nodes[A].aabb = AABB::combine(m_nodes[E].aabb, m_nodes[C].aabb);
+			m_nodes[B].aabb = AABB::combine(m_nodes[A].aabb, m_nodes[D].aabb);
+
+			if (minimalTree)
+			{
+				m_nodes[B].parent = -1;
+				m_rootIndex = B;
+			}
+			else
+			{
+				(isLeftA ? m_nodes[parentA].left : m_nodes[parentA].right) = B;
+				m_nodes[B].parent = parentA;
+				m_nodes[parentA].height = 1 + std::max(m_nodes[m_nodes[parentA].left].height, m_nodes[m_nodes[parentA].right].height);
+				m_nodes[parentA].aabb = AABB::combine(m_nodes[m_nodes[parentA].left].aabb, m_nodes[m_nodes[parentA].right].aabb);
+			}
+		}
+		else if(isLeft1 && !isLeft2)
+		{
+			//LR
+			m_nodes[D].right = A;
+			m_nodes[A].parent = D;
+
+			m_nodes[D].left = B;
+			m_nodes[B].parent = D;
+
+			m_nodes[B].right = F;
+			m_nodes[F].parent = B;
+
+			m_nodes[A].left = G;
+			m_nodes[G].parent = A;
+
+			m_nodes[B].height = 1;
+			m_nodes[A].height = 1;
+			m_nodes[D].height = 2;
+
+			m_nodes[A].aabb = AABB::combine(m_nodes[G].aabb, m_nodes[C].aabb);
+			m_nodes[B].aabb = AABB::combine(m_nodes[F].aabb, m_nodes[E].aabb);
+			m_nodes[D].aabb = AABB::combine(m_nodes[B].aabb, m_nodes[A].aabb);
+
+
+			if (minimalTree)
+			{
+				m_nodes[D].parent = -1;
+				m_rootIndex = D;
+			}
+			else
+			{
+				(isLeftA ? m_nodes[parentA].left : m_nodes[parentA].right) = D;
+				m_nodes[D].parent = parentA;
+				m_nodes[parentA].height = 1 + std::max(m_nodes[m_nodes[parentA].left].height, m_nodes[m_nodes[parentA].right].height);
+			}
+		}
+		else if(!isLeft1 && isLeft2)
+		{
+			//RL
+			m_nodes[D].left = A;
+			m_nodes[A].parent = D;
+
+			m_nodes[D].right = B;
+			m_nodes[B].parent = D;
+
+			m_nodes[A].right = F;
+			m_nodes[F].parent = A;
+
+			m_nodes[B].left = G;
+			m_nodes[G].parent = B;
+
+			m_nodes[A].height = 1;
+			m_nodes[B].height = 1;
+			m_nodes[D].height = 2;
+
+			m_nodes[A].aabb = AABB::combine(m_nodes[C].aabb, m_nodes[F].aabb);
+			m_nodes[B].aabb = AABB::combine(m_nodes[E].aabb, m_nodes[G].aabb);
+			m_nodes[D].aabb = AABB::combine(m_nodes[A].aabb, m_nodes[B].aabb);
+
+			if(minimalTree)
+			{
+				
+			}
+		}
+		else
+		{
+			//RR
+
+		}
 
 	}
 }
