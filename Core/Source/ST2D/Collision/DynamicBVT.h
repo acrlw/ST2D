@@ -34,6 +34,10 @@ namespace ST
 		{
 			return nodeIndex != -1;
 		}
+		void reset()
+		{
+			*this = BVTNodeBinding();
+		}
 	};
 
 	class ST_API DynamicBVT : public AbstractBroadphase
@@ -47,7 +51,13 @@ namespace ST
 		std::vector<int> queryAABB(const AABB& aabb) override;
 		std::vector<int> queryRay(const Vector2& origin, const Vector2& direction, float maxDistance) override;
 
+		void rebuildTree();
+
 		//private:
+
+		void rotateNode(int nodeIndex);
+
+		void recomputeHeightAndAABB(int nodeIndex);
 
 		void insertLeaf(const BVTNodeBinding& leaf);
 		void removeLeaf(int objectId);
@@ -64,8 +74,6 @@ namespace ST
 		void freeLeafNode(int nodeIndex);
 
 		int mergeTwoNodes(int nodeIndexA, int nodeIndexB);
-
-		void rotateNode(int nodeIndex);
 
 		std::vector<BVTNode> m_nodes;
 		std::vector<BVTNodeBinding> m_leaves;

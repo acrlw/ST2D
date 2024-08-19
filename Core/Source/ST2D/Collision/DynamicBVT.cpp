@@ -1,5 +1,7 @@
 #include "DynamicBVT.h"
 
+#include <deque>
+
 #include "ST2D/Log.h"
 
 namespace ST
@@ -60,6 +62,29 @@ namespace ST
 		return result;
 	}
 
+	void DynamicBVT::rebuildTree()
+	{
+		m_rootIndex = -1;
+		m_nodes.clear();
+		m_freeNodes.clear();
+
+	}
+
+	void DynamicBVT::recomputeHeightAndAABB(int nodeIndex)
+	{
+		CORE_ASSERT(nodeIndex >= 0, "Invalid node index");
+
+		int currentIndex = m_nodes[nodeIndex].parent;
+		while (currentIndex != -1)
+		{
+			int leftIndex = m_nodes[currentIndex].left;
+			int rightIndex = m_nodes[currentIndex].right;
+			m_nodes[currentIndex].height = 1 + std::max(m_nodes[leftIndex].height, m_nodes[rightIndex].height);
+			m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
+			currentIndex = m_nodes[currentIndex].parent;
+		}
+	}
+
 	void DynamicBVT::insertLeaf(const BVTNodeBinding& leaf)
 	{
 		int leafIndex = getNewLeafNode();
@@ -86,19 +111,66 @@ namespace ST
 			int targetIndex = findBestNode(newNodeIndex);
 			int parentIndex = m_nodes[targetIndex].parent;
 			int mergeIndex = mergeTwoNodes(newNodeIndex, targetIndex);
-			if (m_nodes[parentIndex].left == targetIndex)
-				m_nodes[parentIndex].left = mergeIndex;
-			else
-				m_nodes[parentIndex].right = mergeIndex;
+
+			(m_nodes[parentIndex].left == targetIndex ? m_nodes[parentIndex].left : m_nodes[parentIndex].right) = mergeIndex;
+
 			m_nodes[mergeIndex].parent = parentIndex;
 
 
+
+			recomputeHeightAndAABB(newNodeIndex);
 		}
 	}
 
 	void DynamicBVT::removeLeaf(int objectId)
 	{
+		int leafIndex = -1;
+		int leafNodeIndex = -1;
+		for (int i = 0; i < m_leaves.size(); ++i)
+		{
+			if (m_leaves[i].binding.objectId == objectId)
+			{
+				leafIndex = i;
+				leafNodeIndex = m_leaves[i].nodeIndex;
+				break;
+			}
+		}
 
+		if (leafNodeIndex == -1)
+			return;
+
+		if (leafNodeIndex == m_rootIndex)
+		{
+			//root is the leaf
+			m_rootIndex = -1;
+			freeNode(leafNodeIndex);
+			freeLeafNode(leafIndex);
+			return;
+		}
+
+		int parentIndex = m_nodes[leafNodeIndex].parent;
+		int siblingIndex = m_nodes[parentIndex].left == leafNodeIndex ? m_nodes[parentIndex].right : m_nodes[parentIndex].left;
+
+		if (parentIndex == m_rootIndex)
+		{
+			//root is the parent of the leaf
+			m_rootIndex = siblingIndex;
+			freeNode(leafNodeIndex);
+			freeNode(parentIndex);
+			freeLeafNode(leafIndex);
+			return;
+		}
+
+		int grandParentIndex = m_nodes[parentIndex].parent;
+
+		(m_nodes[grandParentIndex].left == parentIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = siblingIndex;
+
+		m_nodes[siblingIndex].parent = grandParentIndex;
+
+		recomputeHeightAndAABB(siblingIndex);
+
+		freeNode(leafNodeIndex);
+		freeLeafNode(leafIndex);
 	}
 
 	void DynamicBVT::updateLeaf(int objectId, const AABB& aabb)
@@ -108,7 +180,7 @@ namespace ST
 
 	int DynamicBVT::findBestNode(int nodeIndex) const
 	{
-		return greedyFindBestNode(nodeIndex);
+		return fullFindBestNode(nodeIndex);
 	}
 
 	int DynamicBVT::greedyFindBestNode(int nodeIndex) const
@@ -118,6 +190,7 @@ namespace ST
 		{
 			real leftCost = AABB::combine(m_nodes[m_nodes[currentIndex].left].aabb, m_nodes[nodeIndex].aabb).surfaceArea();
 			real rightCost = AABB::combine(m_nodes[m_nodes[currentIndex].right].aabb, m_nodes[nodeIndex].aabb).surfaceArea();
+
 			if (leftCost < rightCost)
 				currentIndex = m_nodes[currentIndex].left;
 			else if (leftCost > rightCost)
@@ -131,6 +204,7 @@ namespace ST
 				else
 					currentIndex = m_nodes[currentIndex].right;
 			}
+
 		}
 		return currentIndex;
 	}
@@ -154,8 +228,7 @@ namespace ST
 				real combineArea = AABB::combine(m_nodes[currentIndex].aabb, m_nodes[nodeIndex].aabb).surfaceArea();
 				cost += combineArea - currentArea;
 
-				bool reachTop = currentIndex == m_rootIndex;
-				if (reachTop)
+				if (currentIndex == m_rootIndex)
 					break;
 
 				currentIndex = m_nodes[currentIndex].parent;
@@ -188,7 +261,7 @@ namespace ST
 
 	void DynamicBVT::freeNode(int nodeIndex)
 	{
-		m_nodes[nodeIndex].valid = false;
+		m_nodes[nodeIndex].reset();
 		m_freeNodes.push_back(nodeIndex);
 	}
 
@@ -207,7 +280,7 @@ namespace ST
 
 	void DynamicBVT::freeLeafNode(int nodeIndex)
 	{
-		m_leaves[nodeIndex].nodeIndex = -1;
+		m_leaves[nodeIndex].reset();
 		m_freeLeaves.push_back(nodeIndex);
 	}
 

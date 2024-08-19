@@ -76,16 +76,20 @@ namespace STEditor
 					int index = queue.front();
 					queue.pop_front();
 
+					if (index == -1)
+						continue;
+
 					if (!m_dbvt.m_nodes[index].isLeaf())
 					{
-						if (index == m_dbvt.m_rootIndex)
-							RenderSFMLImpl::renderDashedAABB(window, *m_settings.camera, m_dbvt.m_nodes[index].aabb, RenderConstant::Red);
-						else
-						{
-							AABB aabb = m_dbvt.m_nodes[index].aabb;
-							aabb.expand(m_expandRatio);
+						AABB aabb = m_dbvt.m_nodes[index].aabb;
+						aabb.expand(m_expandRatio * static_cast<real>(1 + m_dbvt.m_nodes[index].height));
 
-							RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
+						if (m_dbvt.m_nodes[index].height <= m_currentHeight)
+						{
+							if (index == m_dbvt.m_rootIndex)
+								RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
+							else
+								RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
 						}
 						
 
@@ -119,7 +123,7 @@ namespace STEditor
 		ImGui::Checkbox("Show Transform", &m_showTransform);
 		ImGui::Checkbox("Show Object Id", &m_showObjectId);
 
-		ImGui::DragInt("Render BVH Height", &m_currentHeight, 1, 0, m_maxHeight);
+		ImGui::SliderInt("Render BVH Height", &m_currentHeight, 1, m_maxHeight);
 		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.01f, 0.1f, 1.0f);
 		m_maxHeight = std::max(0, m_dbvt.m_nodes[m_dbvt.m_rootIndex].height);
 
