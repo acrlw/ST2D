@@ -13,6 +13,7 @@ find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
+find_package(Tracy CONFIG REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR}/Core/Source)
 
@@ -43,6 +44,7 @@ target_link_libraries(ST2DCore PUBLIC
         glm::glm-header-only
         spdlog::spdlog_header_only
         ${Stb_INCLUDE_DIR}
+        Tracy::TracyClient
 )
 
 target_precompile_headers(ST2DCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Source/pch.h)

@@ -87,6 +87,7 @@ namespace ST
 
 	void DynamicBVT::insertLeaf(const BVTNodeBinding& leaf)
 	{
+
 		int leafIndex = getNewLeafNode();
 		m_leaves[leafIndex] = leaf;
 		int newNodeIndex = getNewNode();
@@ -119,7 +120,7 @@ namespace ST
 
 			rotateNode(newNodeIndex);
 
-			recomputeHeightAndAABB(newNodeIndex);
+			//recomputeHeightAndAABB(newNodeIndex);
 		}
 	}
 
@@ -192,7 +193,7 @@ namespace ST
 
 	int DynamicBVT::findBestNode(int nodeIndex) const
 	{
-		return fullFindBestNode(nodeIndex);
+		return greedyFindBestNode(nodeIndex);
 	}
 
 	int DynamicBVT::greedyFindBestNode(int nodeIndex) const
@@ -200,8 +201,10 @@ namespace ST
 		int currentIndex = m_rootIndex;
 		while(m_nodes[currentIndex].height > 0)
 		{
-			real leftCost = AABB::combine(m_nodes[m_nodes[currentIndex].left].aabb, m_nodes[nodeIndex].aabb).surfaceArea();
-			real rightCost = AABB::combine(m_nodes[m_nodes[currentIndex].right].aabb, m_nodes[nodeIndex].aabb).surfaceArea();
+			real leftCost = AABB::combine(m_nodes[m_nodes[currentIndex].left].aabb, m_nodes[nodeIndex].aabb).surfaceArea()
+				- m_nodes[m_nodes[currentIndex].left].aabb.surfaceArea();
+			real rightCost = AABB::combine(m_nodes[m_nodes[currentIndex].right].aabb, m_nodes[nodeIndex].aabb).surfaceArea()
+				- m_nodes[m_nodes[currentIndex].right].aabb.surfaceArea();
 
 			if (leftCost < rightCost)
 				currentIndex = m_nodes[currentIndex].left;
@@ -308,6 +311,29 @@ namespace ST
 		return newIndex;
 	}
 
+
+	//       A             A              A              A  
+	//      / \		      / \		     / \		        / \	
+ 	//     B   C		     B   C		    C   B		   C   B
+	//    / \		    / \			       / \	          / \	
+	//   D   E		   E   D			      D   E	         E   D	
+	//  / \			      / \			 / \	                / \	
+	// F   G			     F   G		    F   G		       F   G		
+	//       LL             LR            RL             RR
+
+	//                           | 
+	//                           | to
+	//                           v 
+
+	//       B		  	  D                D                B
+	//      / \          / \              / \              / \	
+	//     D   A		    B   A		     A   B		      A   D
+	//    / \ / \      / \ / \          / \ / \          / \ / \
+	//   F  G E  C    E  F G  C        C  F G  E        C  E F  G
+	
+	
+	// F is new added leaf, default is left child of D
+
 	void DynamicBVT::rotateNode(int nodeIndex)
 	{
 		int F = nodeIndex;
@@ -315,7 +341,11 @@ namespace ST
 		int B = m_nodes[D].parent;
 
 		if(B == m_rootIndex)
+		{
+			m_nodes[B].height = 2;
+			m_nodes[B].aabb = AABB::combine(m_nodes[m_nodes[B].left].aabb, m_nodes[m_nodes[B].right].aabb);
 			return;
+		}
 
 		int A = m_nodes[B].parent;
 		int G = m_nodes[D].right;
@@ -332,7 +362,10 @@ namespace ST
 		bool unbalanced = std::abs(m_nodes[B].height - m_nodes[C].height) > 1;
 
 		if(!unbalanced)
+		{
+			recomputeHeightAndAABB(D);
 			return;
+		}
 
 		bool minimalTree = A == m_rootIndex;
 
@@ -369,8 +402,7 @@ namespace ST
 			{
 				(isLeftA ? m_nodes[parentA].left : m_nodes[parentA].right) = B;
 				m_nodes[B].parent = parentA;
-				m_nodes[parentA].height = 1 + std::max(m_nodes[m_nodes[parentA].left].height, m_nodes[m_nodes[parentA].right].height);
-				m_nodes[parentA].aabb = AABB::combine(m_nodes[m_nodes[parentA].left].aabb, m_nodes[m_nodes[parentA].right].aabb);
+				recomputeHeightAndAABB(B);
 			}
 		}
 		else if(isLeft1 && !isLeft2)
@@ -406,7 +438,7 @@ namespace ST
 			{
 				(isLeftA ? m_nodes[parentA].left : m_nodes[parentA].right) = D;
 				m_nodes[D].parent = parentA;
-				m_nodes[parentA].height = 1 + std::max(m_nodes[m_nodes[parentA].left].height, m_nodes[m_nodes[parentA].right].height);
+				recomputeHeightAndAABB(D);
 			}
 		}
 		else if(!isLeft1 && isLeft2)
@@ -434,13 +466,42 @@ namespace ST
 
 			if(minimalTree)
 			{
-				
+				m_nodes[D].parent = -1;
+				m_rootIndex = D;
+			}
+			else
+			{
+				(isLeftA ? m_nodes[parentA].left : m_nodes[parentA].right) = D;
+				m_nodes[D].parent = parentA;
+				recomputeHeightAndAABB(D);
 			}
 		}
 		else
 		{
 			//RR
+			m_nodes[B].left = A;
+			m_nodes[A].parent = B;
 
+			m_nodes[A].right = E;
+			m_nodes[E].parent = A;
+
+			m_nodes[A].height = 1;
+			m_nodes[B].height = 2;
+
+			m_nodes[A].aabb = AABB::combine(m_nodes[C].aabb, m_nodes[E].aabb);
+			m_nodes[B].aabb = AABB::combine(m_nodes[A].aabb, m_nodes[D].aabb);
+
+			if (minimalTree)
+			{
+				m_nodes[B].parent = -1;
+				m_rootIndex = B;
+			}
+			else
+			{
+				(isLeftA ? m_nodes[parentA].left : m_nodes[parentA].right) = B;
+				m_nodes[B].parent = parentA;
+				recomputeHeightAndAABB(B);
+			}
 		}
 
 	}

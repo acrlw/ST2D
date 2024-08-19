@@ -23,10 +23,20 @@
 #define ST_ENABLE_CORE_LOGGER
 #define ST_ENABLE_APP_LOGGER
 #define ST_ENABLE_ASSERT
+#define ST_ENABLE_TRACY_PROFILER
+
 
 #else
 
 #endif
+
+#ifdef ST_ENABLE_TRACY_PROFILER
+
+#define TRACY_ENABLE
+#include <tracy/Tracy.hpp>
+
+#endif
+
 
 namespace ST
 {
