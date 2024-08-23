@@ -43,7 +43,7 @@ namespace ST
 
 	bool Edge::contains(const Vector2& point, const real& epsilon)
 	{
-		return GeometryAlgorithm2D::isPointOnSegment(m_point[0], m_point[1], point);
+		return GeometryAlgorithm2D::checkPointOnSegment(m_point[0], m_point[1], point);
 	}
 
 	Vector2 Edge::center()const

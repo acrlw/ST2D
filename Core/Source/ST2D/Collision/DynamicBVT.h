@@ -40,6 +40,7 @@ namespace ST
 		}
 	};
 
+
 	class ST_API DynamicBVT : public AbstractBroadphase
 	{
 	public:
@@ -52,6 +53,10 @@ namespace ST
 		std::vector<int> queryRay(const Vector2& origin, const Vector2& direction, float maxDistance) override;
 
 		void rebuildTree();
+
+		void rebuildTreeSplitMid(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves);
+
+		void rebuildTreeSAH(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves);
 
 		//private:
 

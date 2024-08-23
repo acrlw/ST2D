@@ -211,4 +211,5 @@ namespace ST
 	{
 		return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w;
 	}
+
 }

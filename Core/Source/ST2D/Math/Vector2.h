@@ -52,6 +52,9 @@ namespace ST
 		Vector2 perpendicular() const;
 		Vector2& matchSign(const Vector2& rhs);
 
+		real& operator[](const int& index);
+		real operator[](const int& index) const;
+
 		real dot(const Vector2& rhs) const;
 		real cross(const Vector2& rhs) const;
 
@@ -63,8 +66,17 @@ namespace ST
 		static Vector2 crossProduct(const real& lhs, const Vector2& rhs);
 		static Vector2 crossProduct(const Vector2& lhs, const real& rhs);
 		static Vector2 lerp(const Vector2& lhs, const Vector2& rhs, const real& t);
-		real x;
-		real y;
+
+		union
+		{
+			struct
+			{
+				real x;
+				real y;
+			};
+			real data[2];
+		};
+
 	};
 
 	ST_API inline Vector2 operator*(const real& f, const Vector2& v)

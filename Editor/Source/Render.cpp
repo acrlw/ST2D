@@ -965,7 +965,7 @@ namespace STEditor
 			const sf::Font& font, real pointSize, const unsigned int& indexSize,
 			bool showIndex)
 		{
-			Vector2 center = GeometryAlgorithm2D::calculateCenter(polytope);
+			Vector2 center = GeometryAlgorithm2D::computeCenter(polytope);
 			for (int i = 0; i < polytope.size(); ++i)
 			{
 				int j = (i + 1) % polytope.size();

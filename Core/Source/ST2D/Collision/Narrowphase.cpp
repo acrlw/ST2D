@@ -98,7 +98,7 @@ namespace ST
 
 			//check if new vertex is located in support direction
 
-			bool validSide = GeometryAlgorithm2D::isPointOnSameSide(info.simplex.vertices[0].result,
+			bool validSide = GeometryAlgorithm2D::checkPointsOnSameSide(info.simplex.vertices[0].result,
 				info.simplex.vertices[1].result, info.simplex.vertices[0].result + direction,
 				vertex.result);
 
@@ -213,7 +213,7 @@ namespace ST
 		case ShapeType::Ellipse:
 		{
 			auto ellipse = static_cast<const Ellipse*>(shape);
-			target = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), rot_dir);
+			target = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), rot_dir);
 			break;
 		}
 		case ShapeType::Edge:
@@ -227,7 +227,7 @@ namespace ST
 		case ShapeType::Capsule:
 		{
 			auto capsule = static_cast<const Capsule*>(shape);
-			target = GeometryAlgorithm2D::calculateCapsuleProjectionPoint(
+			target = GeometryAlgorithm2D::computeCapsuleProjectionPoint(
 				capsule->halfWidth(), capsule->halfHeight(), rot_dir);
 			finalIndex = 0;
 			const Vector2 test(Math::abs(target.x), Math::abs(target.y));
@@ -966,7 +966,7 @@ namespace ST
 			Vector2 b = vb2 - va1;
 
 			if (!Math::sameSign(b.dot(va2 - va1), b.dot(vb2 - va2)) &&
-				GeometryAlgorithm2D::isPointOnSameSide(va1, va2, va1 + info.normal, vb2))
+				GeometryAlgorithm2D::checkPointsOnSameSide(va1, va2, va1 + info.normal, vb2))
 				pair.addContact(GeometryAlgorithm2D::pointToLineSegment(va1, va2, vb2), vb2);
 		}
 
@@ -1047,7 +1047,7 @@ namespace ST
 			Vector2 b = vb2 - va1;
 
 			if (!Math::sameSign(b.dot(va2 - va1), b.dot(vb2 - va2)) &&
-				GeometryAlgorithm2D::isPointOnSameSide(va1, va2, va1 + info.normal, vb2))
+				GeometryAlgorithm2D::checkPointsOnSameSide(va1, va2, va1 + info.normal, vb2))
 				pair.addContact(GeometryAlgorithm2D::pointToLineSegment(va1, va2, vb2), vb2);
 		}
 

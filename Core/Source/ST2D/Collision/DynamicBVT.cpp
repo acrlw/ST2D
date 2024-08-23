@@ -64,13 +64,198 @@ namespace ST
 
 	void DynamicBVT::rebuildTree()
 	{
+		AABB rootAABB;
+
+		std::vector<BVTNodeBinding> leaves;
+		leaves.reserve(m_leaves.size());
+
+		if(m_rootIndex != -1)
+		{
+			rootAABB = m_nodes[m_rootIndex].aabb;
+			for(auto&& leaf: m_leaves)
+			{
+				if(leaf.nodeIndex == -1)
+					continue;
+				leaf.nodeIndex = -1;
+				leaves.push_back(leaf);
+			}
+		}
+
+		if(rootAABB.isEmpty())
+		{
+			for(auto&& leaf:m_leaves)
+			{
+				if(leaf.binding.aabb.isEmpty())
+					continue;
+				rootAABB.combine(leaf.binding.aabb);
+			}
+		}
+
 		m_rootIndex = -1;
 		m_nodes.clear();
 		m_freeNodes.clear();
-		for (auto&& leaf : m_leaves)
-			leaf.nodeIndex = -1;
-		
 
+		int sortIndex = rootAABB.width > rootAABB.height ? 0 : 1;
+
+		std::ranges::sort(leaves, [&sortIndex](const BVTNodeBinding& a, const BVTNodeBinding& b)
+		{
+			return a.binding.aabb.position[sortIndex] < b.binding.aabb.position[sortIndex];
+		});
+
+		//rebuildTreeSplitMid(rootAABB, leaves);
+		rebuildTreeSAH(rootAABB, leaves);
+
+	}
+
+	void DynamicBVT::rebuildTreeSplitMid(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves)
+	{
+		if(leaves.empty() || rootAABB.isEmpty())
+			return;
+
+		int sortIndex = 0;
+		int sortIndex2 = 1;
+		real boxSize = rootAABB.width;
+		real boxSize2 = rootAABB.height;
+
+		if (rootAABB.width > rootAABB.height)
+		{
+			sortIndex = 1;
+			sortIndex2 = 0;
+			boxSize = rootAABB.height;
+			boxSize2 = rootAABB.width;
+		}
+
+
+		
+	}
+
+	void DynamicBVT::rebuildTreeSAH(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves)
+	{
+		if (leaves.empty() || rootAABB.isEmpty())
+			return;
+
+		int bucketCount = 8;
+		std::deque<AABB> rootAABBStack;
+		std::deque<std::vector<BVTNodeBinding>> leavesStack;
+
+		while(!rootAABBStack.empty())
+		{
+			AABB currentRootAABB = rootAABBStack.front();
+			rootAABBStack.pop_front();
+			std::vector<BVTNodeBinding> currentLeaves = leavesStack.front();
+			leavesStack.pop_front();
+
+			if(currentLeaves.size() <= 2)
+			{
+				//just one or two leaves, no need to split
+				continue;
+			}
+
+			int sortIndex = 0;
+			int sortIndex2 = 1;
+			Vector2 rootBottomLeft = currentRootAABB.bottomLeft();
+			Vector2 rootTopRight = currentRootAABB.topRight();
+
+			if (currentRootAABB.width < currentRootAABB.height)
+			{
+				sortIndex = 1;
+				sortIndex2 = 0;
+			}
+
+			real rootArea = currentRootAABB.surfaceArea();
+
+			std::vector<real> leafArea;
+			leafArea.reserve(currentLeaves.size());
+
+			real bucketSize = (rootTopRight[sortIndex] - rootBottomLeft[sortIndex]) / static_cast<real>(bucketCount);
+
+			std::vector<real> bucketArea;
+			std::vector<real> bucketLeafCount;
+			std::vector<real> bucketLeftLeafCount;
+			std::vector<real> bucketRightLeafCount;
+
+			for (int i = 0; i < bucketCount; ++i)
+			{
+				bucketArea.push_back(0);
+				bucketLeafCount.push_back(0);
+				bucketLeftLeafCount.push_back(0);
+				bucketRightLeafCount.push_back(0);
+			}
+
+			for (auto&& leaf : leaves)
+			{
+				const AABB& aabb = leaf.binding.aabb;
+				real dist = aabb.position[sortIndex] - rootBottomLeft[sortIndex];
+				int index = dist / bucketSize;
+				bucketArea[index] += aabb.surfaceArea();
+				bucketLeafCount[index] += 1;
+			}
+
+
+
+			real minCost = std::numeric_limits<real>::max();
+			int minIndex = -1;
+
+			for (int i = 0; i < bucketCount; ++i)
+			{
+				real leftArea = 0;
+				real rightArea = 0;
+				real leftLeafCount = 0;
+				real rightLeafCount = 0;
+				for (int j = 0; j < i; ++j)
+				{
+					leftArea += bucketArea[j];
+					leftLeafCount += bucketLeafCount[j];
+				}
+
+				for (int j = i; j < bucketCount; ++j)
+				{
+					rightArea += bucketArea[j];
+					rightLeafCount += bucketLeafCount[j];
+				}
+
+				real cost = leftArea / rootArea * leftLeafCount + rightArea / rootArea * rightLeafCount;
+				bucketLeftLeafCount[i] = leftLeafCount;
+				bucketRightLeafCount[i] = rightLeafCount;
+
+				if (minCost > cost)
+				{
+					minCost = cost;
+					minIndex = i;
+				}
+
+			}
+
+			AABB leftRoot, rightRoot;
+			std::vector<BVTNodeBinding> leftLeaves;
+			std::vector<BVTNodeBinding> rightLeaves;
+
+			for (auto&& leaf : leaves)
+			{
+				const AABB& aabb = leaf.binding.aabb;
+				real dist = aabb.position[sortIndex] - rootBottomLeft[sortIndex];
+				int index = dist / bucketSize;
+				if (index <= minIndex)
+				{
+					leftRoot.combine(aabb);
+					leftLeaves.push_back(leaf);
+				}
+				else
+				{
+					rightRoot.combine(aabb);
+					rightLeaves.push_back(leaf);
+				}
+
+			}
+
+			rootAABBStack.push_back(leftRoot);
+			rootAABBStack.push_back(rightRoot);
+			leavesStack.push_back(leftLeaves);
+			leavesStack.push_back(rightLeaves);
+
+			
+
+		}
 	}
 
 	void DynamicBVT::checkHeight()
@@ -184,18 +369,12 @@ namespace ST
 
 			updateHeight(newNodeIndex);
 
-			std::deque<int> stack;
-			stack.push_back(newNodeIndex);
-			while (!stack.empty())
+			int currentIndex = newNodeIndex;
+
+			while(currentIndex != m_rootIndex)
 			{
-				int currentIndex = stack.front();
-				stack.pop_front();
-				if (currentIndex == m_rootIndex)
-					break;
-
 				rotateNode(currentIndex);
-
-				stack.push_back(m_nodes[currentIndex].parent);
+				currentIndex = m_nodes[currentIndex].parent;
 			}
 		}
 	}

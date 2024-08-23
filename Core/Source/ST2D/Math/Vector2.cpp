@@ -200,6 +200,18 @@ namespace ST
 		return *this;
 	}
 
+	real& Vector2::operator[](const int& index)
+	{
+		assert(index >= 0 && index < 2);
+		return data[index];
+	}
+
+	real Vector2::operator[](const int& index) const
+	{
+		assert(index >= 0 && index < 2);
+		return data[index];
+	}
+
 	Vector2 Vector2::perpendicular() const
 	{
 		return { -y, x };

@@ -25,6 +25,7 @@ namespace STEditor
 
 		createShapes();
 
+
 	}
 
 	void BroadphaseScene::onUnLoad()
@@ -109,7 +110,7 @@ namespace STEditor
 		ImGui::Begin("Broad-phase");
 
 		int count = m_count;
-		ImGui::DragInt("Count", &count, 10, 10, 1000);
+		ImGui::DragInt("Count", &count, 2, 10, 1000);
 		if (m_count != count)
 		{
 			m_count = count;
@@ -124,11 +125,20 @@ namespace STEditor
 
 		ImGui::SliderInt("Render BVH Height", &m_currentHeight, 0, m_maxHeight);
 		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.1f, 0.0f, 1.0f);
-		m_maxHeight = std::max(0, m_dbvt.m_nodes[m_dbvt.m_rootIndex].height);
+
+		if (m_dbvt.m_rootIndex != -1)
+			m_maxHeight = std::max(0, m_dbvt.m_nodes[m_dbvt.m_rootIndex].height);
+		else
+			m_maxHeight = 0;
 
 		if(ImGui::Button("Check Height"))
 		{
 			m_dbvt.checkHeight();
+		}
+
+		if(ImGui::Button("Rebuild Tree"))
+		{
+			m_dbvt.rebuildTree();
 		}
 
 		ImGui::End();
@@ -179,21 +189,27 @@ namespace STEditor
 		std::uniform_real_distribution<> dist1(-9.0f, 9.0f);
 		std::uniform_int_distribution<> dist2(0, m_shapesArray.size() - 1);
 		std::uniform_real_distribution<> dist3(-Constant::Pi, Constant::Pi);
-
+		std::uniform_real_distribution<> dist4(-29.0f, 29.0f);
 		real rotation = 0.0f;
-		Vector2 position(-4.0f, 4.0f);
-		Vector2 dir(-1.0f, -1.0f);
+		Vector2 position(1.0f, 4.0f);
+		Vector2 dir(1.0f, 0.0f);
 
 		for (int i = 0; i < m_count; ++i)
 		{
 			Transform t;
-			//t.position = Vector2(dist1(gen), dist1(gen));
+			//t.position = Vector2(dist4(gen), dist1(gen));
 			//t.rotation = dist3(gen);
 
 			//int shapeIndex = dist2(gen);
 
+			position.x = static_cast<real>(i % 12) + 1.0f;
+			position.y = static_cast<real>(i / 12);
+			position += Vector2(1, 4);
+
 			t.position = position;
 			t.rotation = rotation;
+
+
 			int shapeIndex = 0;
 
 			m_transforms.push_back(t);
@@ -208,7 +224,6 @@ namespace STEditor
 			binding.objectId = m_objectIds[i];
 			m_dbvt.addObject(binding);
 
-			position += dir * 2.0f;
 		}
 
 	}

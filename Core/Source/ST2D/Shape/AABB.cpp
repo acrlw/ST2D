@@ -96,7 +96,7 @@ namespace ST
 		height = 0.0;
 	}
 
-	AABB& AABB::unite(const AABB& other)
+	AABB& AABB::combine(const AABB& other)
 	{
 		*this = combine(*this, other);
 		return *this;
@@ -168,10 +168,10 @@ namespace ST
 			bottom_dir = rot.multiply(bottom_dir);
 			right_dir = rot.multiply(right_dir);
 
-			Vector2 top = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), top_dir);
-			Vector2 left = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), left_dir);
-			Vector2 bottom = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), bottom_dir);
-			Vector2 right = GeometryAlgorithm2D::calculateEllipseProjectionPoint(ellipse->A(), ellipse->B(), right_dir);
+			Vector2 top = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), top_dir);
+			Vector2 left = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), left_dir);
+			Vector2 bottom = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), bottom_dir);
+			Vector2 right = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), right_dir);
 
 			rot.conjugate();
 
@@ -291,7 +291,7 @@ namespace ST
 		if (!result.has_value())
 			return false;
 		auto [p1, p2] = result.value();
-		return GeometryAlgorithm2D::isPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight())
-			&& GeometryAlgorithm2D::isPointOnAABB(p2, aabb.topLeft(), aabb.bottomRight());
+		return GeometryAlgorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight())
+			&& GeometryAlgorithm2D::checkPointOnAABB(p2, aabb.topLeft(), aabb.bottomRight());
 	}
 }

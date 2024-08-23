@@ -2,6 +2,11 @@
 
 namespace ST
 {
+	Complex::Complex(): re(0.0f), im(0.0f)
+	
+	{
+	}
+
 	Complex::Complex(const real& _re, const real& _im) : re(_re), im(_im)
 	{
 

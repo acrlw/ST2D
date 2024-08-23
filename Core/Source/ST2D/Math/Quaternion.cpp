@@ -19,4 +19,10 @@ namespace ST
 		s = _s;
 		v = vec3;
 	}
+
+	Quaternion::Quaternion(const Quaternion& copy)
+	{
+		s = copy.s;
+		v = copy.v;
+	}
 }

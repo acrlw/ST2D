@@ -8,7 +8,7 @@ namespace ST
 
     struct ST_API Matrix3x3
     {
-        Matrix3x3() = default;
+        Matrix3x3();
         Matrix3x3(const Matrix3x3& mat);
         Matrix3x3(const Vector3& col1, const Vector3& col2, const Vector3& col3);
         Matrix3x3(const real& col1_x, const real& col1_y, const real& col1_z,
@@ -33,17 +33,8 @@ namespace ST
         Vector3 row2()const;
         Vector3 row3()const;
 
-        real& e11();
-        real& e12();
-        real& e13();
-
-        real& e21();
-        real& e22();
-        real& e23();
-
-        real& e31();
-        real& e32();
-        real& e33();
+        real& operator[](const int& index);
+        real operator[](const int& index)const;
 
         Matrix3x3& set(const real& col1_x, const real& col1_y, const real& col1_z,
             const real& col2_x, const real& col2_y, const real& col2_z,
@@ -67,8 +58,17 @@ namespace ST
         static real determinant(const Matrix3x3& mat);
         static bool invert(Matrix3x3& mat);
 
-        Vector3 column1;
-        Vector3 column2;
-        Vector3 column3;
+        union
+        {
+        	struct
+			{
+				real m11, m21, m31, // col1
+        		m12, m22, m32,      // col2
+        		m13, m23, m33;      // col3
+			};
+			real data[9];
+			Vector3 columns[3];
+        };
+
     };
 }

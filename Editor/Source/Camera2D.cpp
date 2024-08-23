@@ -210,7 +210,7 @@ namespace STEditor
 	{
 		Vector2 topLeft = screenToWorld(m_viewport.topLeft);
 		Vector2 bottomRight = screenToWorld(m_viewport.bottomRight);
-		return GeometryAlgorithm2D::isPointInsideAABB(pos, topLeft, bottomRight);
+		return GeometryAlgorithm2D::checkPointInsideAABB(pos, topLeft, bottomRight);
 	}
 
 	void Camera2D::drawGridScaleLine(sf::RenderWindow& window)

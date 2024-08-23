@@ -29,7 +29,7 @@ namespace ST
 
 	Vector2 Polygon::center()const
 	{
-		return GeometryAlgorithm2D::calculateCenter(this->vertices());
+		return GeometryAlgorithm2D::computeCenter(this->vertices());
 	}
 
 	void Polygon::scale(const real& factor)
@@ -49,7 +49,7 @@ namespace ST
 			auto ref = next + 1;
 			if (ref == m_vertices.end())
 				ref = m_vertices.begin();
-			if (!GeometryAlgorithm2D::isPointOnSameSide(*iter, *next, *ref, point))
+			if (!GeometryAlgorithm2D::checkPointsOnSameSide(*iter, *next, *ref, point))
 				return false;
 
 		}

@@ -48,7 +48,7 @@ namespace ST
 		 * \param c point c
 		 * \return
 		 */
-		static bool isCollinear(const Vector2& a, const Vector2& b, const Vector2& c);
+		static bool checkCollinear(const Vector2& a, const Vector2& b, const Vector2& c);
 		/**
 		 * \brief Check if point c is on line segment ab using line projection and set-union method
 		 * \param a end of segment a
@@ -56,7 +56,7 @@ namespace ST
 		 * \param c point c
 		 * \return
 		 */
-		static bool isPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c);
+		static bool checkPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c);
 		/**
 		 * \brief Check if point c is on line segment ab, given a,b,c is already collinear by calculating cross product
 		 * \param a
@@ -65,8 +65,8 @@ namespace ST
 		 * \param epsilon
 		 * \return
 		 */
-		static bool fuzzyIsPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c, const real& epsilon = Constant::GeometryEpsilon);
-		static bool fuzzyIsCollinear(const Vector2& a, const Vector2& b, const Vector2& c);
+		static bool fuzzyCheckPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c, const real& epsilon = Constant::GeometryEpsilon);
+		static bool fuzzyCheckCollinear(const Vector2& a, const Vector2& b, const Vector2& c);
 		/**
 		 * \brief Calculate intersected point between line ab and line cd.\n
 		 * Notices: overlapping is NOT considered as a kind of intersection situation in this function
@@ -109,7 +109,7 @@ namespace ST
 		 * \param c
 		 * \return
 		 */
-		static std::optional<std::tuple<Vector2, real>> calculateCircumcircle(const Vector2& a, const Vector2& b, const Vector2& c);
+		static std::optional<std::tuple<Vector2, real>> computeCircumcircle(const Vector2& a, const Vector2& b, const Vector2& c);
 		/**
 		 * \brief Calculate inscribed circle given three points that can form a triangle. If a,b,c can not form a triangle, return nothing.
 		 * \param a
@@ -117,13 +117,13 @@ namespace ST
 		 * \param c
 		 * \return
 		 */
-		static std::optional<std::tuple<Vector2, real>> calculateInscribedCircle(const Vector2& a, const Vector2& b, const Vector2& c);
+		static std::optional<std::tuple<Vector2, real>> computeInscribedCircle(const Vector2& a, const Vector2& b, const Vector2& c);
 		/**
 		 * \brief Check if a polygon is convex
 		 * \param vertices
 		 * \return
 		 */
-		static bool isConvexPolygon(const std::vector<Vector2>& vertices);
+		static bool checkConvexPolygon(const std::vector<Vector2>& vertices);
 		/**
 		 * \brief Convex hull algorithm: Graham Scan. Given a series of points, find the convex polygon that can contains all of these points.
 		 * \param vertices
@@ -160,8 +160,8 @@ namespace ST
 		 * \param vertices
 		 * \return
 		 */
-		static Vector2 calculateCenter(const std::vector<Vector2>& vertices);
-		static Vector2 calculateCenter(const std::list<Vector2>& vertices);
+		static Vector2 computeCenter(const std::vector<Vector2>& vertices);
+		static Vector2 computeCenter(const std::list<Vector2>& vertices);
 		/**
 		 * \brief Calculate two points on line segment and ellipse respectively. The length of two points is the shortest distance of line segment and ellipse
 		 * \param a major axis a
@@ -182,8 +182,8 @@ namespace ST
 		 */
 		static std::optional<Vector2> raycast(const Vector2& p, const Vector2& dir, const Vector2& a, const Vector2& b);
 		static std::optional<std::pair<Vector2, Vector2>> raycastAABB(const Vector2& p, const Vector2& dir, const Vector2& topLeft, const Vector2& bottomRight);
-		inline static bool isPointInsideAABB(const Vector2& pos, const Vector2& topLeft, const Vector2& bottomRight);
-		static bool isPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight);
+		inline static bool checkPointInsideAABB(const Vector2& pos, const Vector2& topLeft, const Vector2& bottomRight);
+		static bool checkPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight);
 		/**
 		 * \brief Rotate point 'p' around point 'center' by 'radians' radians
 		 * \param p
@@ -200,11 +200,11 @@ namespace ST
 		 * \param direction
 		 * \return the maximum point in ellipse
 		 */
-		static Vector2 calculateEllipseProjectionPoint(const real& a, const real& b, const Vector2& direction);
-		static Vector2 calculateCapsuleProjectionPoint(const real& halfWidth, const real& halfHeight, const Vector2& direction);
-		static Vector2 calculateSectorProjectionPoint(const real& startRadian, const real& spanRadian, const real& radius, const Vector2& direction);
-		static bool triangleContainsOrigin(const Vector2& a, const Vector2& b, const Vector2& c);
-		static bool isPointOnSameSide(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refPoint, const Vector2 targetPoint);
+		static Vector2 computeEllipseProjectionPoint(const real& a, const real& b, const Vector2& direction);
+		static Vector2 computeCapsuleProjectionPoint(const real& halfWidth, const real& halfHeight, const Vector2& direction);
+		static Vector2 computeSectorProjectionPoint(const real& startRadian, const real& spanRadian, const real& radius, const Vector2& direction);
+		static bool checkOriginInTriangle(const Vector2& a, const Vector2& b, const Vector2& c);
+		static bool checkPointsOnSameSide(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refPoint, const Vector2 targetPoint);
 		/**
 		 * \brief calculate normal of line segment with direction of refDirection
 		 * \param edgePoint1
@@ -222,7 +222,7 @@ namespace ST
 		 */
 		static Vector2 pointToLineSegment(const Vector2& a, const Vector2& b, const Vector2& p);
 		/**
-		 * \brief ray-ray intersection with no exception check, be sure two rays must can intersect.
+		 * \brief ray-ray intersection with no exception check, be sure two rays must intersect.
 		 * \param p1
 		 * \param dir1
 		 * \param p2

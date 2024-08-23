@@ -51,9 +51,14 @@ namespace ST
         static real dotProduct(const Vector3& lhs, const Vector3& rhs);
         static Vector3 crossProduct(const Vector3& lhs, const Vector3& rhs);
 
-        real x;
-        real y;
-        real z;
+        union
+        {
+	        struct 
+	        {
+                real x, y, z;
+	        };
+            real data[3];
+        };
     };
 
     ST_API inline Vector3 operator*(const real& f, const Vector3& v)

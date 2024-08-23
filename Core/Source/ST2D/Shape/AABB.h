@@ -27,42 +27,25 @@ namespace ST
 		void expand(const real& factor);
 		void scale(const real& factor);
 		void clear();
-		AABB& unite(const AABB& other);
+		AABB& combine(const AABB& other);
 		real surfaceArea()const;
 		real volume()const;
 		bool isSubset(const AABB& other)const;
 		bool isEmpty()const;
 		bool operator==(const AABB& other)const;
 		bool raycast(const Vector2& start, const Vector2& direction)const;
-		/// <summary>
-		/// Create AABB from shape.
-		/// </summary>
-		/// <param name="shape">shape source</param>
-		/// <param name="factor">AABB scale factor. Default factor 1 means making tight AABB</param>
-		/// <returns></returns>
+
 		static AABB fromShape(const Transform& transform, const Shape* shape, const real& factor = 0);
 
 		static AABB fromBox(const Vector2& topLeft, const Vector2& bottomRight);
-		/// <summary>
-		/// Check if two aabbs are overlapping
-		/// </summary>
-		/// <param name="src"></param>
-		/// <param name="target"></param>
-		/// <returns></returns>
+		
+
 		static bool collide(const AABB& src, const AABB& target);
-		/// <summary>
-		/// Return two aabb union result
-		/// </summary>
-		/// <param name="src"></param>
-		/// <param name="target"></param>
-		/// <returns></returns>
+		
+
 		static AABB combine(const AABB& src, const AABB& target, const real& factor = 0);
-		/// <summary>
-		/// Check if b is subset of a
-		/// </summary>
-		/// <param name="a"></param>
-		/// <param name="b"></param>
-		/// <returns></returns>
+		
+
 		static bool isSubset(const AABB& a, const AABB& b);
 
 		static void expand(AABB& aabb, const real& factor = 0.0);

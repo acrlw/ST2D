@@ -32,7 +32,7 @@ namespace STEditor
 	private:
 		void createShapes();
 
-		bool m_showAABB = true;
+		bool m_showAABB = false;
 		bool m_showGrid = false;
 		bool m_showBVT = true;
 		bool m_showTransform = false;

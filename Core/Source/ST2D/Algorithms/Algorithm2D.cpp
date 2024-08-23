@@ -26,7 +26,7 @@ namespace ST
 			testResult.reserve(polygon.size());
 
 			for (auto it = result.begin(); it != result.end(); ++it)
-				testResult.emplace_back(isPointOnSameSide(clipPoint1, clipPoint2, clipDirectionPoint, *it));
+				testResult.emplace_back(checkPointsOnSameSide(clipPoint1, clipPoint2, clipDirectionPoint, *it));
 
 			std::vector<Vector2> newPolygon;
 			newPolygon.reserve(result.size());
@@ -107,26 +107,26 @@ namespace ST
 		return 2.0 * ((point - center).dot(dir) * dir + center - point) + point;
 	}
 
-	bool GeometryAlgorithm2D::isCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
+	bool GeometryAlgorithm2D::checkCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		//triangle area = 0 then collinear
 		return realEqual(std::fabs((a - b).cross(a - c)), 0);
 	}
 
-	bool GeometryAlgorithm2D::isPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c)
+	bool GeometryAlgorithm2D::checkPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		const Vector2 ab = b - a;
 		const Vector2 ac = c - a;
 		const Vector2 bc = c - b;
-		return !Math::sameSign(ac.dot(ab), bc.dot(ab)) && isCollinear(a, b, c);
+		return !Math::sameSign(ac.dot(ab), bc.dot(ab)) && checkCollinear(a, b, c);
 	}
 
-	bool GeometryAlgorithm2D::fuzzyIsPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c,
+	bool GeometryAlgorithm2D::fuzzyCheckPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c,
 		const real& epsilon)
 	{
 		return fuzzyRealEqual(pointToLineSegment(a, b, c).lengthSquare(), epsilon);
 	}
-	bool GeometryAlgorithm2D::fuzzyIsCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
+	bool GeometryAlgorithm2D::fuzzyCheckCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		return (c.x <= Math::max(a.x, b.x) && c.x >= Math::min(a.x, b.x) &&
 			c.y <= Math::max(a.y, b.y) && c.y >= Math::min(a.y, b.y));
@@ -144,7 +144,7 @@ namespace ST
 
 		if (realEqual(ab_length, 0.0))
 		{
-			if (fuzzyIsCollinear(c, d, a))
+			if (fuzzyCheckCollinear(c, d, a))
 				return std::optional(a);
 			return std::nullopt;
 		}
@@ -169,7 +169,7 @@ namespace ST
 
 		Vector2 p = bp + b;
 
-		return (fuzzyIsCollinear(a, b, p) && fuzzyIsCollinear(d, c, p))
+		return (fuzzyCheckCollinear(a, b, p) && fuzzyCheckCollinear(d, c, p))
 			? std::optional(p)
 			: std::nullopt;
 	}
@@ -210,7 +210,7 @@ namespace ST
 		return std::optional(p);
 	}
 
-	std::optional<std::tuple<Vector2, real>> GeometryAlgorithm2D::calculateCircumcircle(
+	std::optional<std::tuple<Vector2, real>> GeometryAlgorithm2D::computeCircumcircle(
 		const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		if (triangleArea(a, b, c) == 0)
@@ -220,7 +220,7 @@ namespace ST
 		return std::make_tuple(point.value(), radius);
 	}
 
-	std::optional<std::tuple<Vector2, real>> GeometryAlgorithm2D::calculateInscribedCircle(
+	std::optional<std::tuple<Vector2, real>> GeometryAlgorithm2D::computeInscribedCircle(
 		const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		const real area = triangleArea(a, b, c);
@@ -235,7 +235,7 @@ namespace ST
 		return std::make_tuple(p, radius);
 	}
 
-	bool GeometryAlgorithm2D::isConvexPolygon(const std::vector<Vector2>& vertices)
+	bool GeometryAlgorithm2D::checkConvexPolygon(const std::vector<Vector2>& vertices)
 	{
 		if (vertices.size() == 3)
 			return true;
@@ -396,7 +396,7 @@ namespace ST
 		return std::fabs(Vector2::crossProduct(a1 - a2, a1 - a3)) / 2.0f;
 	}
 
-	Vector2 GeometryAlgorithm2D::calculateCenter(const std::vector<Vector2>& vertices)
+	Vector2 GeometryAlgorithm2D::computeCenter(const std::vector<Vector2>& vertices)
 	{
 		if (vertices.size() >= 3)
 		{
@@ -421,7 +421,7 @@ namespace ST
 		return Vector2();
 	}
 
-	Vector2 GeometryAlgorithm2D::calculateCenter(const std::list<Vector2>& vertices)
+	Vector2 GeometryAlgorithm2D::computeCenter(const std::list<Vector2>& vertices)
 	{
 		if (vertices.size() >= 3)
 		{
@@ -513,7 +513,7 @@ namespace ST
 			const Vector2 p1_fp = p1p2 * p1p2.dot(p1f);
 			const Vector2 f_proj = p1 + p1_fp;
 
-			if (fuzzyIsCollinear(a, b, f_proj))
+			if (fuzzyCheckCollinear(a, b, f_proj))
 			{
 				p_ellipse = f;
 				p_line = f_proj;
@@ -599,12 +599,12 @@ namespace ST
 
 	}
 
-	bool GeometryAlgorithm2D::isPointInsideAABB(const Vector2&pos, const Vector2& topLeft, const Vector2& bottomRight)
+	bool GeometryAlgorithm2D::checkPointInsideAABB(const Vector2&pos, const Vector2& topLeft, const Vector2& bottomRight)
 	{
 		return !(pos.x > bottomRight.x || pos.x < topLeft.x && pos.y > topLeft.y || pos.y < bottomRight.y);
 	}
 
-	bool GeometryAlgorithm2D::isPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight)
+	bool GeometryAlgorithm2D::checkPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight)
 	{
 		return Math::isInRange(p.x, topLeft.x, bottomRight.x) &&
 			Math::isInRange(p.y, bottomRight.y, topLeft.y);
@@ -615,7 +615,7 @@ namespace ST
 		return Complex(radians).multiply(p - center) + center;
 	}
 
-	Vector2 GeometryAlgorithm2D::calculateEllipseProjectionPoint(const real& a, const real& b, const Vector2& direction)
+	Vector2 GeometryAlgorithm2D::computeEllipseProjectionPoint(const real& a, const real& b, const Vector2& direction)
 	{
 		Vector2 target;
 		if (realEqual(direction.x, 0))
@@ -644,7 +644,7 @@ namespace ST
 		}
 		return target;
 	}
-	Vector2 GeometryAlgorithm2D::calculateCapsuleProjectionPoint(const real& halfWidth, const real& halfHeight, const Vector2& direction)
+	Vector2 GeometryAlgorithm2D::computeCapsuleProjectionPoint(const real& halfWidth, const real& halfHeight, const Vector2& direction)
 	{
 		Vector2 target;
 		if (halfWidth >= halfHeight) // Horizontal
@@ -664,7 +664,7 @@ namespace ST
 		return target;
 	}
 
-	Vector2 GeometryAlgorithm2D::calculateSectorProjectionPoint(const real& startRadian, const real& spanRadian,
+	Vector2 GeometryAlgorithm2D::computeSectorProjectionPoint(const real& startRadian, const real& spanRadian,
 		const real& radius, const Vector2& direction)
 	{
 		Vector2 result;
@@ -722,14 +722,14 @@ namespace ST
 		return result;
 	}
 
-	bool GeometryAlgorithm2D::triangleContainsOrigin(const Vector2& a, const Vector2& b, const Vector2& c)
+	bool GeometryAlgorithm2D::checkOriginInTriangle(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		real ra = (b - a).cross(-a);
 		real rb = (c - b).cross(-b);
 		real rc = (a - c).cross(-c);
 		return Math::sameSign(ra, rb, rc);
 	}
-	bool GeometryAlgorithm2D::isPointOnSameSide(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refPoint, const Vector2 targetPoint)
+	bool GeometryAlgorithm2D::checkPointsOnSameSide(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refPoint, const Vector2 targetPoint)
 	{
 		Vector2 u = edgePoint2 - edgePoint1;
 		Vector2 v = refPoint - edgePoint1;

@@ -48,13 +48,19 @@ namespace ST
         Vector4& cross(const Vector4& rhs);
 
         static real dotProduct(const Vector4& lhs, const Vector4& rhs);
-        static Vector4 crossProduct(const Vector4& lhs, const Vector4& rhs);
 
-
-        real x;
-        real y;
-        real z;
-        real w;
+        union
+        {
+        	struct
+			{
+				real x, y, z, w;
+			};
+			real data[4];
+        };
     };
 
+    ST_API inline Vector4 operator*(const real& f, const Vector4& v)
+    {
+        return v * f;
+    }
 }

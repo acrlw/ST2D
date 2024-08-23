@@ -4,11 +4,12 @@ namespace ST
 {
     struct ST_API Matrix2x2
     {
-        Matrix2x2() = default;
+	    Matrix2x2();
         Matrix2x2(const real& radian);
         Matrix2x2(const Matrix2x2& mat);
         Matrix2x2(const Vector2& col1, const Vector2& col2);
-        Matrix2x2(const real& col1_x, const real& col1_y, const real& col2_x, const real& col2_y);
+        Matrix2x2(const real& col1_x, 
+            const real& col1_y, const real& col2_x, const real& col2_y);
         Matrix2x2(Matrix2x2&& other) = default;
 
         Matrix2x2& operator=(const Matrix2x2& rhs);
@@ -19,6 +20,9 @@ namespace ST
 
         bool operator==(const Matrix2x2& rhs)const;
 
+        real& operator[](const int& index);
+        real operator[](const int& index)const;
+
         Matrix2x2 operator+(const Matrix2x2& rhs)const;
         Matrix2x2 operator-(const Matrix2x2& rhs)const;
 
@@ -26,12 +30,6 @@ namespace ST
 
         Vector2 row1()const;
         Vector2 row2()const;
-
-        real& e11();
-        real& e12();
-
-        real& e21();
-        real& e22();
 
         real determinant()const;
         Matrix2x2& transpose();
@@ -53,7 +51,15 @@ namespace ST
         static real determinant(const Matrix2x2& mat);
         static bool invert(Matrix2x2& mat);
 
-        Vector2 column1;
-        Vector2 column2;
+        union 
+        {
+			struct
+			{
+				real m11, m21, m12, m22;
+			};
+            real data[4];
+            Vector2 columns[2];
+        };
+
     };
 }

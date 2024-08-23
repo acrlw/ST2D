@@ -14,9 +14,9 @@ namespace ST
 		case 1:
 			return simplex.vertices[0].result.isOrigin() && !simplex.vertices[0].point[0].isOrigin() && !simplex.vertices[0].point[1].isOrigin();
 		case 2:
-			return GeometryAlgorithm2D::isPointOnSegment(simplex.vertices[0].result, simplex.vertices[1].result, { 0, 0 });
+			return GeometryAlgorithm2D::checkPointOnSegment(simplex.vertices[0].result, simplex.vertices[1].result, { 0, 0 });
 		case 3:
-			return GeometryAlgorithm2D::triangleContainsOrigin(simplex.vertices[0].result, simplex.vertices[1].result, simplex.vertices[2].result);
+			return GeometryAlgorithm2D::checkOriginInTriangle(simplex.vertices[0].result, simplex.vertices[1].result, simplex.vertices[2].result);
 		default:
 			assert(false && "Simplex count is more than 3");
 			return false;

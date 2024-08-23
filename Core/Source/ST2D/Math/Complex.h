@@ -7,6 +7,7 @@ namespace ST
 {
 	struct ST_API Complex
 	{
+		Complex();
 		Complex(const real& _re, const real& _im);
 		Complex(const Complex& copy);
 		Complex(const Vector2& vec);
@@ -66,7 +67,15 @@ namespace ST
 
 		Matrix2x2 toMatrix() const;
 
-		real re;
-		real im;
+		union 
+		{
+			struct 
+			{
+				real re;
+				real im;
+			};
+			real data[2];
+		};
+
 	};
 }

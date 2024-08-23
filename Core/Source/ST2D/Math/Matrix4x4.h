@@ -7,7 +7,7 @@ namespace ST
 {
     struct ST_API Matrix4x4
     {
-        Matrix4x4() = default;
+        Matrix4x4();
         Matrix4x4(const Vector4& col1, const Vector4& col2, const Vector4& col3, const Vector4& col4);
 
         Matrix4x4(const real& col1_x, const real& col1_y, const real& col1_z, const real& col1_w,
@@ -39,25 +39,8 @@ namespace ST
         Vector4 row3()const;
         Vector4 row4()const;
 
-        real& e11();
-        real& e12();
-        real& e13();
-        real& e14();
-
-        real& e21();
-        real& e22();
-        real& e23();
-        real& e24();
-
-        real& e31();
-        real& e32();
-        real& e33();
-        real& e34();
-
-        real& e41();
-        real& e42();
-        real& e43();
-        real& e44();
+        real& operator[](const int& index);
+        real operator[](const int& index)const;
 
         Matrix4x4& set(const real& col1_x, const real& col1_y, const real& col1_z, const real& col1_w,
             const real& col2_x, const real& col2_y, const real& col2_z, const real& col2_w,
@@ -82,9 +65,16 @@ namespace ST
         static real determinant(const Matrix4x4& mat);
         static bool invert(Matrix4x4& mat);
 
-        Vector4 column1;
-        Vector4 column2;
-        Vector4 column3;
-        Vector4 column4;
+        union 
+        {
+            struct {
+                real m11, m21, m31, m41;
+                real m12, m22, m32, m42;
+                real m13, m23, m33, m43;
+                real m14, m24, m34, m44;
+            };
+            real data[16];
+            Vector4 columns[4];
+        };
     };
 }
