@@ -124,7 +124,7 @@ namespace STEditor
 		ImGui::Checkbox("Show Object Id", &m_showObjectId);
 
 		ImGui::SliderInt("Render BVH Height", &m_currentHeight, 0, m_maxHeight);
-		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.1f, 0.0f, 1.0f);
+		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
 
 		if (m_dbvt.m_rootIndex != -1)
 			m_maxHeight = std::max(0, m_dbvt.m_nodes[m_dbvt.m_rootIndex].height);

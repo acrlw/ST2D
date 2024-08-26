@@ -81,15 +81,15 @@ namespace STEditor
 		float m_cornerSmoothing = 0.6f;
 		float m_residualResolution = 1e-5f;
 		float m_optimizeSpeed = 1e-5f;
-		float m_innerWidthFactor = 0.55f;
-		float m_innerHeightFactor = 0.55f;
+		float m_innerWidthFactor = 0.678f;
+		float m_innerHeightFactor = 0.678f;
 		float m_curvatureScaleFactor = 0.1f;
 		int m_bezierCount = 8000;
 		int m_count = 100;
 		float m_halfWidth = 1.0f;
 		float m_halfHeight = 1.0f;
-		float m_percentage = 0.618f;
-		float m_cornerPercentage = 0.382f;
+		float m_percentage = 0.670f;
+		float m_cornerPercentage = 0.367f;
 		float m_thickness = 2;
 
 
@@ -100,8 +100,8 @@ namespace STEditor
 		std::vector<Vector2> rationalBezierCurve1, rationalBezierCurve2;
 		std::vector<Vector2> rationalBezierCurvature1, rationalBezierCurvature2;
 
-		std::array<float, 4> rationalBezierWeight1 = { 0.172959998250008, 0.269039988517761, 0.104120828211308, 0.040295515209436 };
-		std::array<float, 4> rationalBezierWeight2 = { 0.172959998250008, 0.269039988517761, 0.104120828211308, 0.040295515209436 };
+		std::array<float, 4> rationalBezierWeight1 = { 0.205959990620613, 0.274320006370544, 0.136367648839951, 0.067795760929585 };
+		std::array<float, 4> rationalBezierWeight2 = { 0.205959990620613, 0.274320006370544, 0.136367648839951, 0.067795760929585 };
 		// shared param for generating curves
 		Vector2 p00, p01, p10, p11;
 		Vector2 b1P01, b1P10, b2P01, b2P10;

@@ -249,10 +249,10 @@ namespace ST
 			}
 
 			rootAABBStack.push_back(leftRoot);
-			rootAABBStack.push_back(rightRoot);
 			leavesStack.push_back(leftLeaves);
-			leavesStack.push_back(rightLeaves);
 
+			rootAABBStack.push_back(rightRoot);
+			leavesStack.push_back(rightLeaves);
 			
 
 		}

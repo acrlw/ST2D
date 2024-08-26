@@ -57,7 +57,7 @@ namespace STEditor
 		int m_count = 5;
 		int m_maxHeight = 0;
 		int m_currentHeight = 0;
-		float m_expandRatio = 0.2f;
+		float m_expandRatio = 0.1f;
 
 		IdPool m_objectIdPool;
 	};
