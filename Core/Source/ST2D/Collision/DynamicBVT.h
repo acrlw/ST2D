@@ -17,7 +17,7 @@ namespace ST
 
 		bool isLeaf()const
 		{
-			return valid && left == -1 && right == -1 && parent != -1;
+			return height == 0;
 		}
 		void reset()
 		{
@@ -32,7 +32,11 @@ namespace ST
 
 		bool isValid()const
 		{
-			return nodeIndex != -1;
+			return nodeIndex != -1 && binding.objectId != -1;
+		}
+		bool isEmpty()const
+		{
+			return binding.objectId == -1;
 		}
 		void reset()
 		{
@@ -53,6 +57,8 @@ namespace ST
 		std::vector<int> queryRay(const Vector2& origin, const Vector2& direction, float maxDistance) override;
 
 		void rebuildTree();
+
+		void printTree();
 
 		void rebuildTreeSplitMid(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves);
 

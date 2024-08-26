@@ -131,14 +131,24 @@ namespace STEditor
 		else
 			m_maxHeight = 0;
 
+
 		if(ImGui::Button("Check Height"))
 		{
 			m_dbvt.checkHeight();
 		}
 
+		ImGui::SameLine();
+
 		if(ImGui::Button("Rebuild Tree"))
 		{
 			m_dbvt.rebuildTree();
+		}
+
+		ImGui::SameLine();
+
+		if(ImGui::Button("Print Tree"))
+		{
+			m_dbvt.printTree();
 		}
 
 		ImGui::End();
@@ -191,7 +201,7 @@ namespace STEditor
 		std::uniform_real_distribution<> dist3(-Constant::Pi, Constant::Pi);
 		std::uniform_real_distribution<> dist4(-29.0f, 29.0f);
 		real rotation = 0.0f;
-		Vector2 position(1.0f, 4.0f);
+		Vector2 position;
 		Vector2 dir(1.0f, 0.0f);
 
 		for (int i = 0; i < m_count; ++i)
@@ -204,7 +214,7 @@ namespace STEditor
 
 			position.x = static_cast<real>(i % 12) + 1.0f;
 			position.y = static_cast<real>(i / 12);
-			position += Vector2(1, 4);
+			position += Vector2(1, 1);
 
 			t.position = position;
 			t.rotation = rotation;

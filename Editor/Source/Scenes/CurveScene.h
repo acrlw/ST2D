@@ -47,9 +47,12 @@ namespace STEditor
 
 		bool m_lockCornerStart = false;
 
+		bool m_lockRelativeRatio = false;
+
 		float m_lockWidthSize = 0.0f;
 		float m_lockHeightSize = 0.0f;
 
+		bool m_lockRadius = false;
 		bool m_connectInner = false;
 		bool m_connectWeights = false;
 		bool m_enableCornerSmoothing = false;
@@ -91,6 +94,9 @@ namespace STEditor
 		float m_percentage = 0.670f;
 		float m_cornerPercentage = 0.367f;
 		float m_thickness = 2;
+
+		float m_relativeRatio1 = 0.0f;
+		float m_relativeRatio2 = 0.0f;
 
 
 		std::vector<Vector2> g1Vertices, g2Vertices, g3Vertices;

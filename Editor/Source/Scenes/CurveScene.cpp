@@ -134,9 +134,13 @@ namespace STEditor
 		ImGui::DragFloat("Half Width", &m_halfWidth, 0.01f, 0.5f, 50.0f);
 		ImGui::DragFloat("Half Height", &m_halfHeight, 0.01f, 0.5f, 50.0f);
 		ImGui::DragFloat("Rounded Radius Percentage", &m_percentage, 0.005f, 0.005f, 1.0f);
+		ImGui::Columns(2);
 		ImGui::Checkbox("Connect Inner", &m_connectInner);
-		ImGui::SameLine();
 		ImGui::Checkbox("Lock Corner Start", &m_lockCornerStart);
+		ImGui::NextColumn();
+		ImGui::Checkbox("Lock Relative Ratio", &m_lockRelativeRatio);
+		ImGui::Checkbox("Lock Radius", &m_lockRadius);
+		ImGui::Columns(1);
 		ImGui::DragFloat("Inner Width Percentage", &m_innerWidthFactor, 0.001f, 0.0f, 1.0f);
 		ImGui::DragFloat("Inner Height Percentage", &m_innerHeightFactor, 0.001f, 0.0f, 1.0f);
 		ImGui::DragFloat("Corner Angle Percentage", &m_cornerPercentage, 0.005f, 0.0f, 0.999f);
@@ -277,7 +281,9 @@ namespace STEditor
 
 		float min = std::min(m_halfWidth, m_halfHeight);
 		float maxRadius = min * m_percentage;
-		currentRadius = maxRadius * m_percentage;
+
+		if (!m_lockRadius)
+			currentRadius = maxRadius * m_percentage;
 
 		roundCenter.set(m_halfWidth - currentRadius, m_halfHeight - currentRadius);
 		roundCorner.set(currentRadius * std::cos(Math::radians(45)),
@@ -309,6 +315,23 @@ namespace STEditor
 			m_innerHeightFactor = Math::clamp(1.0f - mixWidth / (m_halfHeight - currentRadius), 0.0f, 1.0f);
 
 			m_innerWidthFactor = Math::clamp(m_innerWidthFactor, 0.0f, 1.0f);
+		}
+
+		if(m_lockRelativeRatio)
+		{
+			float l1 = m_relativeRatio1 * currentRadius;
+			float l2 = m_relativeRatio2 * currentRadius;
+
+			m_innerWidthFactor = 1.0f - l1 / (m_halfWidth - currentRadius);
+			m_innerHeightFactor = 1.0f - l2 / (m_halfHeight - currentRadius);
+		}
+		else
+		{
+			float l1 = (1.0f - m_innerWidthFactor) * (m_halfWidth - currentRadius);
+			m_relativeRatio1 = l1 / currentRadius;
+
+			float l2 = (1.0f - m_innerHeightFactor) * (m_halfHeight - currentRadius);
+			m_relativeRatio2 = l2 / currentRadius;
 		}
 		
 

@@ -72,11 +72,26 @@ namespace ST
 		if(m_rootIndex != -1)
 		{
 			rootAABB = m_nodes[m_rootIndex].aabb;
-			for(auto&& leaf: m_leaves)
+
+			m_rootIndex = -1;
+			m_nodes.clear();
+			m_freeNodes.clear();
+
+			m_rootIndex = getNewNode();
+			m_nodes[m_rootIndex].aabb = rootAABB;
+
+			for(int leafIndex = 0; leafIndex < m_leaves.size(); ++leafIndex)
 			{
-				if(leaf.nodeIndex == -1)
+				auto&& leaf = m_leaves[leafIndex];
+				if(leaf.isEmpty())
 					continue;
-				leaf.nodeIndex = -1;
+
+				int newNodeIndex = getNewNode();
+				m_nodes[newNodeIndex].aabb = leaf.binding.aabb;
+				m_leaves[leafIndex].nodeIndex = newNodeIndex;
+				m_nodes[newNodeIndex].leafIndex = leafIndex;
+				m_nodes[newNodeIndex].parent = m_rootIndex;
+
 				leaves.push_back(leaf);
 			}
 		}
@@ -85,15 +100,15 @@ namespace ST
 		{
 			for(auto&& leaf:m_leaves)
 			{
-				if(leaf.binding.aabb.isEmpty())
+				if(!leaf.isValid())
 					continue;
 				rootAABB.combine(leaf.binding.aabb);
 			}
-		}
 
-		m_rootIndex = -1;
-		m_nodes.clear();
-		m_freeNodes.clear();
+			m_rootIndex = -1;
+			m_nodes.clear();
+			m_freeNodes.clear();
+		}
 
 		int sortIndex = rootAABB.width > rootAABB.height ? 0 : 1;
 
@@ -102,9 +117,52 @@ namespace ST
 			return a.binding.aabb.position[sortIndex] < b.binding.aabb.position[sortIndex];
 		});
 
+
 		//rebuildTreeSplitMid(rootAABB, leaves);
 		rebuildTreeSAH(rootAABB, leaves);
 
+	}
+
+	void DynamicBVT::printTree()
+	{
+		std::stack<std::tuple<int, std::string, bool>> stack;
+		stack.push({ m_rootIndex, "", true });
+		std::vector<std::string> lines;
+		while (!stack.empty())
+		{
+			auto [index, prefix, isLeft] = stack.top();
+			stack.pop();
+
+			if (index == -1)
+				continue;
+
+			std::string line = prefix + (isLeft ? "©À©¤©¤ " : "©¸©¤©¤ ") + std::to_string(index);
+
+
+			std::string newPrefix = prefix + (isLeft ? "©¦   " : "    ");
+
+			if (m_nodes[index].isLeaf())
+			{
+				int leafIdx = m_nodes[index].leafIndex;
+				int objectId = m_leaves[leafIdx].binding.objectId;
+				line += "(" + std::to_string(objectId) + ")";
+			}
+			else
+			{
+				int height = m_nodes[index].height;
+				line += "[" + std::to_string(height) + "]";
+			}
+
+			lines.push_back(line);
+
+			stack.push({ m_nodes[index].right, newPrefix, false });
+			stack.push({ m_nodes[index].left, newPrefix, true });
+		}
+
+		for (auto it = lines.begin(); it != lines.end(); ++it)
+			std::cout << *it << "\n";
+
+		std::cout << "--------------------\n";
 	}
 
 	void DynamicBVT::rebuildTreeSplitMid(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves)
@@ -135,39 +193,44 @@ namespace ST
 			return;
 
 		int bucketCount = 8;
-		std::deque<AABB> rootAABBStack;
-		std::deque<std::vector<BVTNodeBinding>> leavesStack;
 
-		while(!rootAABBStack.empty())
+		std::stack<std::tuple<int, std::vector<BVTNodeBinding>>> stack;
+		stack.push({ m_rootIndex, leaves });
+
+		while(!stack.empty())
 		{
-			AABB currentRootAABB = rootAABBStack.front();
-			rootAABBStack.pop_front();
-			std::vector<BVTNodeBinding> currentLeaves = leavesStack.front();
-			leavesStack.pop_front();
+			auto [rootIndex, currentLeaves] = stack.top();
+			stack.pop();
+
+			AABB currentRootAABB = m_nodes[rootIndex].aabb;
 
 			if(currentLeaves.size() <= 2)
 			{
 				//just one or two leaves, no need to split
+				if(currentLeaves.size() == 2)
+				{
+					m_nodes[rootIndex].left = currentLeaves[0].nodeIndex;
+					m_nodes[rootIndex].right = currentLeaves[1].nodeIndex;
+				}
+
 				continue;
 			}
 
-			int sortIndex = 0;
-			int sortIndex2 = 1;
+			int sortIndex1 = 0;
+
 			Vector2 rootBottomLeft = currentRootAABB.bottomLeft();
 			Vector2 rootTopRight = currentRootAABB.topRight();
 
 			if (currentRootAABB.width < currentRootAABB.height)
-			{
-				sortIndex = 1;
-				sortIndex2 = 0;
-			}
+				sortIndex1 = 1;
+			
 
 			real rootArea = currentRootAABB.surfaceArea();
 
 			std::vector<real> leafArea;
 			leafArea.reserve(currentLeaves.size());
 
-			real bucketSize = (rootTopRight[sortIndex] - rootBottomLeft[sortIndex]) / static_cast<real>(bucketCount);
+			real bucketSize = (rootTopRight[sortIndex1] - rootBottomLeft[sortIndex1]) / static_cast<real>(bucketCount);
 
 			std::vector<real> bucketArea;
 			std::vector<real> bucketLeafCount;
@@ -182,16 +245,14 @@ namespace ST
 				bucketRightLeafCount.push_back(0);
 			}
 
-			for (auto&& leaf : leaves)
+			for (auto&& leaf : currentLeaves)
 			{
 				const AABB& aabb = leaf.binding.aabb;
-				real dist = aabb.position[sortIndex] - rootBottomLeft[sortIndex];
+				real dist = aabb.position[sortIndex1] - rootBottomLeft[sortIndex1];
 				int index = dist / bucketSize;
 				bucketArea[index] += aabb.surfaceArea();
 				bucketLeafCount[index] += 1;
 			}
-
-
 
 			real minCost = std::numeric_limits<real>::max();
 			int minIndex = -1;
@@ -230,10 +291,10 @@ namespace ST
 			std::vector<BVTNodeBinding> leftLeaves;
 			std::vector<BVTNodeBinding> rightLeaves;
 
-			for (auto&& leaf : leaves)
+			for (auto&& leaf : currentLeaves)
 			{
 				const AABB& aabb = leaf.binding.aabb;
-				real dist = aabb.position[sortIndex] - rootBottomLeft[sortIndex];
+				real dist = aabb.position[sortIndex1] - rootBottomLeft[sortIndex1];
 				int index = dist / bucketSize;
 				if (index <= minIndex)
 				{
@@ -248,14 +309,41 @@ namespace ST
 
 			}
 
-			rootAABBStack.push_back(leftRoot);
-			leavesStack.push_back(leftLeaves);
+			if(leftLeaves.empty() || rightLeaves.empty())
+			{
+				// cannot split
+				continue;
+			}
 
-			rootAABBStack.push_back(rightRoot);
-			leavesStack.push_back(rightLeaves);
+			int leftNewNode = getNewNode();
+			m_nodes[leftNewNode].parent = rootIndex;
+			m_nodes[leftNewNode].aabb = leftRoot;
+			m_nodes[rootIndex].left = leftNewNode;
+
+			int rightNewNode = getNewNode();
+			m_nodes[rightNewNode].parent = rootIndex;
+			m_nodes[rightNewNode].aabb = rightRoot;
+			m_nodes[rootIndex].right = rightNewNode;
+
+			
+			for(auto&& leaf: leftLeaves)
+				m_nodes[leaf.nodeIndex].parent = leftNewNode;
+
+			for(auto&& leaf: rightLeaves)
+				m_nodes[leaf.nodeIndex].parent = rightNewNode;
+
+
+			stack.push({ leftNewNode, leftLeaves });
+			stack.push({ rightNewNode, rightLeaves });
 			
 
 		}
+
+		for(int i = 0;i < m_leaves.size();++i)
+		{
+			updateHeight(m_leaves[i].nodeIndex);
+		}
+
 	}
 
 	void DynamicBVT::checkHeight()

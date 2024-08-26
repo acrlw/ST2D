@@ -40,6 +40,7 @@ namespace STEditor
 
 		void drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve, const sf::Color& color) const;
 
+		bool m_lockRelativeRatio = false;
 		bool m_lockRadius = false;
 		bool m_lockCornerStart = false;
 		bool m_drawSpiralConnector = true;
@@ -63,6 +64,9 @@ namespace STEditor
 		float m_halfHeight = 1.0f;
 		float m_percentage = 0.638f;
 		float m_cornerPercentage = 0.301f;
+
+		float m_relativeRatio1 = 0.0f;
+		float m_relativeRatio2 = 0.0f;
 
 		int m_circleSegment = 100;
 

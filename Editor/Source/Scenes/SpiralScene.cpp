@@ -124,11 +124,14 @@ namespace STEditor
 		ImGui::DragFloat("Half Width", &m_halfWidth, 0.01f, 1.0f, 50.0f);
 		ImGui::DragFloat("Half Height", &m_halfHeight, 0.01f, 1.0f, 50.0f);
 		ImGui::DragFloat("Rounded Radius Percentage", &m_percentage, 0.001f, 0.001f, 1.0f);
+
+		ImGui::Columns(2);
 		ImGui::Checkbox("Connect Inner", &m_connectInner);
-		ImGui::SameLine();
 		ImGui::Checkbox("Lock Corner Start", &m_lockCornerStart);
-		ImGui::SameLine();
+		ImGui::NextColumn();
+		ImGui::Checkbox("Lock Relative Ratio", &m_lockRelativeRatio);
 		ImGui::Checkbox("Lock Radius", &m_lockRadius);
+		ImGui::Columns(1);
 
 		ImGui::DragFloat("Inner Width Percentage", &m_innerWidthFactor, 0.001f, 0.0f, 1.0f);
 		ImGui::DragFloat("Inner Height Percentage", &m_innerHeightFactor, 0.001f, 0.0f, 1.0f);
@@ -240,6 +243,22 @@ namespace STEditor
 			m_innerWidthFactor = Math::clamp(m_innerWidthFactor, 0.0f, 1.0f);
 		}
 
+		if (m_lockRelativeRatio)
+		{
+			float l1 = m_relativeRatio1 * m_currentRadius;
+			float l2 = m_relativeRatio2 * m_currentRadius;
+
+			m_innerWidthFactor = 1.0f - l1 / (m_halfWidth - m_currentRadius);
+			m_innerHeightFactor = 1.0f - l2 / (m_halfHeight - m_currentRadius);
+		}
+		else
+		{
+			float l1 = (1.0f - m_innerWidthFactor) * (m_halfWidth - m_currentRadius);
+			m_relativeRatio1 = l1 / m_currentRadius;
+
+			float l2 = (1.0f - m_innerHeightFactor) * (m_halfHeight - m_currentRadius);
+			m_relativeRatio2 = l2 / m_currentRadius;
+		}
 
 		m_p01.set(m_innerWidthFactor * (m_halfWidth - m_currentRadius), m_halfHeight);
 		m_p10.set(m_halfWidth, m_innerHeightFactor * (m_halfHeight - m_currentRadius));
