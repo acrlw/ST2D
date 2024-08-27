@@ -199,28 +199,28 @@ namespace STEditor
 		std::uniform_real_distribution<> dist1(-9.0f, 9.0f);
 		std::uniform_int_distribution<> dist2(0, m_shapesArray.size() - 1);
 		std::uniform_real_distribution<> dist3(-Constant::Pi, Constant::Pi);
-		std::uniform_real_distribution<> dist4(-29.0f, 29.0f);
+		std::uniform_real_distribution<> dist4(-9.0f, 9.0f);
 		real rotation = 0.0f;
 		Vector2 position;
-		Vector2 dir(1.0f, 0.0f);
+		Vector2 dir(1.0f, 1.0f);
 
 		for (int i = 0; i < m_count; ++i)
 		{
 			Transform t;
-			//t.position = Vector2(dist4(gen), dist1(gen));
-			//t.rotation = dist3(gen);
+			t.position = Vector2(dist4(gen), dist1(gen));
+			t.rotation = dist3(gen);
 
-			//int shapeIndex = dist2(gen);
+			int shapeIndex = dist2(gen);
 
-			position.x = static_cast<real>(i % 12);
-			position.y = static_cast<real>(i / 12);
-			position += Vector2(1, 1);
+			//position.x = static_cast<real>(i % 12);
+			//position.y = static_cast<real>(i / 12);
+			//position += Vector2(1, 1);
 
-			t.position = position;
-			t.rotation = rotation;
+			//t.position = position;
+			//t.rotation = rotation;
 
 
-			int shapeIndex = 0;
+			//int shapeIndex = 0;
 
 			m_transforms.push_back(t);
 			m_shapes.push_back(m_shapesArray[shapeIndex]);
@@ -234,6 +234,7 @@ namespace STEditor
 			binding.objectId = m_objectIds[i];
 			m_dbvt.addObject(binding);
 
+			//position += dir;
 		}
 
 	}

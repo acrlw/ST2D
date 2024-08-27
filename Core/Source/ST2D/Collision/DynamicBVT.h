@@ -60,6 +60,8 @@ namespace ST
 
 		void printTree();
 
+		void directBuildTree(int nodeIndex, const std::vector<BVTNodeBinding>& leaves);
+
 		void rebuildTreeSplitMid(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves);
 
 		void rebuildTreeSAH(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves);
@@ -79,10 +81,10 @@ namespace ST
 		void removeLeaf(int objectId);
 		void updateLeaf(int objectId, const AABB& aabb);
 
-		int findBestNode(int nodeIndex) const;
+		int findBestLeafNode(int nodeIndex) const;
 
-		int greedyFindBestNode(int nodeIndex) const;
-		int fullFindBestNode(int nodeIndex) const;
+		int greedyFindBestLeafNode(int nodeIndex) const;
+		int fullFindBestLeafNode(int nodeIndex) const;
 
 		int getNewNode();
 		void freeNode(int nodeIndex);

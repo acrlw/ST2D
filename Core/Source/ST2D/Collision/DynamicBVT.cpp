@@ -110,9 +110,6 @@ namespace ST
 			m_freeNodes.clear();
 		}
 
-
-
-
 		//rebuildTreeSplitMid(rootAABB, leaves);
 		rebuildTreeSAH(rootAABB, leaves);
 
@@ -160,23 +157,20 @@ namespace ST
 		std::cout << "--------------------\n";
 	}
 
+	void DynamicBVT::directBuildTree(int nodeIndex, const std::vector<BVTNodeBinding>& leaves)
+	{
+		// nodeIndex contains more than 2 leaf node and cannot split anymore
+		// just build tree by order
+
+		
+	}
+
 	void DynamicBVT::rebuildTreeSplitMid(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves)
 	{
 		if(leaves.empty() || rootAABB.isEmpty())
 			return;
 
-		int sortIndex = 0;
-		int sortIndex2 = 1;
-		real boxSize = rootAABB.width;
-		real boxSize2 = rootAABB.height;
 
-		if (rootAABB.width > rootAABB.height)
-		{
-			sortIndex = 1;
-			sortIndex2 = 0;
-			boxSize = rootAABB.height;
-			boxSize2 = rootAABB.width;
-		}
 
 
 		
@@ -187,7 +181,7 @@ namespace ST
 		if (leaves.empty() || rootAABB.isEmpty())
 			return;
 
-		int bucketCount = 8;
+		int bucketCount = 12;
 
 		std::stack<std::tuple<int, std::vector<BVTNodeBinding>>> stack;
 		stack.push({ m_rootIndex, leaves });
@@ -199,16 +193,18 @@ namespace ST
 
 			AABB currentRootAABB = m_nodes[rootIndex].aabb;
 
-			if(currentLeaves.size() <= 2)
+			if(currentLeaves.size() == 2)
 			{
-				//just one or two leaves, no need to split
-				if(currentLeaves.size() == 2)
-				{
-					m_nodes[rootIndex].left = currentLeaves[0].nodeIndex;
-					m_nodes[rootIndex].right = currentLeaves[1].nodeIndex;
-				}
+				//just two leaves, no need to split
+				m_nodes[rootIndex].left = currentLeaves[0].nodeIndex;
+				m_nodes[rootIndex].right = currentLeaves[1].nodeIndex;
 
 				continue;
+			}
+
+			if(currentLeaves.size() == 1)
+			{
+				__debugbreak();
 			}
 
 			int sortIndex1 = 0;
@@ -304,9 +300,10 @@ namespace ST
 
 			}
 
-			if(leftLeaves.empty() || rightLeaves.empty())
+			if(leftLeaves.empty() && rightLeaves.empty())
 			{
 				// cannot split
+				__debugbreak();
 				continue;
 			}
 
@@ -352,6 +349,7 @@ namespace ST
 					m_nodes[leafNodeIndex].parent = grandParentIndex;
 					(m_nodes[grandParentIndex].left == rootIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = leafNodeIndex;
 
+					freeNode(rootIndex);
 				}
 				else if (rightLeaves.size() == 1 && leftLeaves.size() == 0)
 				{
@@ -360,6 +358,7 @@ namespace ST
 					m_nodes[leafNodeIndex].parent = grandParentIndex;
 					(m_nodes[grandParentIndex].left == rootIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = leafNodeIndex;
 
+					freeNode(rootIndex);
 				}
 				else if(leftLeaves.size() == 1 && rightLeaves.size() >= 2)
 				{
@@ -395,6 +394,15 @@ namespace ST
 				}
 				else
 				{
+					if (leftLeaves.size() == currentLeaves.size())
+					{
+						directBuildTree(rootIndex, leftLeaves);
+					}
+					else if (rightLeaves.size() == currentLeaves.size())
+					{
+						directBuildTree(rootIndex, rightLeaves);
+					}
+
 					__debugbreak();
 				}
 			}
@@ -450,6 +458,13 @@ namespace ST
 		{
 			int leftIndex = m_nodes[currentIndex].left;
 			int rightIndex = m_nodes[currentIndex].right;
+
+			if (leftIndex == -1)
+				__debugbreak();
+
+			if (rightIndex == -1)
+				__debugbreak();
+
 			m_nodes[currentIndex].height = 1 + std::max(m_nodes[leftIndex].height, m_nodes[rightIndex].height);
 			m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
 			currentIndex = m_nodes[currentIndex].parent;
@@ -508,7 +523,7 @@ namespace ST
 		else
 		{
 			//root is a branch node, insert the new leaf into the tree
-			int targetIndex = findBestNode(newNodeIndex);
+			int targetIndex = findBestLeafNode(newNodeIndex);
 			int parentIndex = m_nodes[targetIndex].parent;
 			int mergeIndex = mergeTwoNodes(newNodeIndex, targetIndex);
 
@@ -596,12 +611,12 @@ namespace ST
 		updateHeightAndAABB(nodeIndex);
 	}
 
-	int DynamicBVT::findBestNode(int nodeIndex) const
+	int DynamicBVT::findBestLeafNode(int nodeIndex) const
 	{
-		return greedyFindBestNode(nodeIndex);
+		return greedyFindBestLeafNode(nodeIndex);
 	}
 
-	int DynamicBVT::greedyFindBestNode(int nodeIndex) const
+	int DynamicBVT::greedyFindBestLeafNode(int nodeIndex) const
 	{
 		int currentIndex = m_rootIndex;
 		while(m_nodes[currentIndex].height > 0)
@@ -629,7 +644,7 @@ namespace ST
 		return currentIndex;
 	}
 
-	int DynamicBVT::fullFindBestNode(int nodeIndex) const
+	int DynamicBVT::fullFindBestLeafNode(int nodeIndex) const
 	{
 		int targetIndex = -1;
 		real minCost = std::numeric_limits<real>::max();
