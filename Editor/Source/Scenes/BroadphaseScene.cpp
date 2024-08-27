@@ -212,7 +212,7 @@ namespace STEditor
 
 			//int shapeIndex = dist2(gen);
 
-			position.x = static_cast<real>(i % 12) + 1.0f;
+			position.x = static_cast<real>(i % 12);
 			position.y = static_cast<real>(i / 12);
 			position += Vector2(1, 1);
 

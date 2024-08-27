@@ -110,12 +110,7 @@ namespace ST
 			m_freeNodes.clear();
 		}
 
-		int sortIndex = rootAABB.width > rootAABB.height ? 0 : 1;
 
-		std::ranges::sort(leaves, [&sortIndex](const BVTNodeBinding& a, const BVTNodeBinding& b)
-		{
-			return a.binding.aabb.position[sortIndex] < b.binding.aabb.position[sortIndex];
-		});
 
 
 		//rebuildTreeSplitMid(rootAABB, leaves);
@@ -315,27 +310,94 @@ namespace ST
 				continue;
 			}
 
-			int leftNewNode = getNewNode();
-			m_nodes[leftNewNode].parent = rootIndex;
-			m_nodes[leftNewNode].aabb = leftRoot;
-			m_nodes[rootIndex].left = leftNewNode;
+			if(leftLeaves.size() >= 2 && rightLeaves.size() >= 2)
+			{
+				int leftNewNode = getNewNode();
+				m_nodes[leftNewNode].parent = rootIndex;
+				m_nodes[leftNewNode].aabb = leftRoot;
+				m_nodes[rootIndex].left = leftNewNode;
 
-			int rightNewNode = getNewNode();
-			m_nodes[rightNewNode].parent = rootIndex;
-			m_nodes[rightNewNode].aabb = rightRoot;
-			m_nodes[rootIndex].right = rightNewNode;
-
-			
-			for(auto&& leaf: leftLeaves)
-				m_nodes[leaf.nodeIndex].parent = leftNewNode;
-
-			for(auto&& leaf: rightLeaves)
-				m_nodes[leaf.nodeIndex].parent = rightNewNode;
+				int rightNewNode = getNewNode();
+				m_nodes[rightNewNode].parent = rootIndex;
+				m_nodes[rightNewNode].aabb = rightRoot;
+				m_nodes[rootIndex].right = rightNewNode;
 
 
-			stack.push({ leftNewNode, leftLeaves });
-			stack.push({ rightNewNode, rightLeaves });
-			
+				for (auto&& leaf : leftLeaves)
+					m_nodes[leaf.nodeIndex].parent = leftNewNode;
+
+				for (auto&& leaf : rightLeaves)
+					m_nodes[leaf.nodeIndex].parent = rightNewNode;
+
+
+				stack.push({ leftNewNode, leftLeaves });
+				stack.push({ rightNewNode, rightLeaves });
+			}
+			else
+			{
+				if (leftLeaves.size() == 1 && rightLeaves.size() == 1)
+				{
+					int leafNodeIndex = leftLeaves[0].nodeIndex;
+					m_nodes[leafNodeIndex].parent = rootIndex;
+					m_nodes[rootIndex].left = leafNodeIndex;
+
+					leafNodeIndex = rightLeaves[0].nodeIndex;
+					m_nodes[leafNodeIndex].parent = rootIndex;
+					m_nodes[rootIndex].right = leafNodeIndex;
+				}
+				else if (leftLeaves.size() == 1 && rightLeaves.size() == 0)
+				{
+					int leafNodeIndex = leftLeaves[0].nodeIndex;
+					int grandParentIndex = m_nodes[rootIndex].parent;
+					m_nodes[leafNodeIndex].parent = grandParentIndex;
+					(m_nodes[grandParentIndex].left == rootIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = leafNodeIndex;
+
+				}
+				else if (rightLeaves.size() == 1 && leftLeaves.size() == 0)
+				{
+					int leafNodeIndex = rightLeaves[0].nodeIndex;
+					int grandParentIndex = m_nodes[rootIndex].parent;
+					m_nodes[leafNodeIndex].parent = grandParentIndex;
+					(m_nodes[grandParentIndex].left == rootIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = leafNodeIndex;
+
+				}
+				else if(leftLeaves.size() == 1 && rightLeaves.size() >= 2)
+				{
+					int leafNodeIndex = leftLeaves[0].nodeIndex;
+					m_nodes[leafNodeIndex].parent = rootIndex;
+					m_nodes[rootIndex].left = leafNodeIndex;
+
+					int rightNewNode = getNewNode();
+					m_nodes[rightNewNode].parent = rootIndex;
+					m_nodes[rightNewNode].aabb = rightRoot;
+					m_nodes[rootIndex].right = rightNewNode;
+
+					for (auto&& leaf : rightLeaves)
+						m_nodes[leaf.nodeIndex].parent = rightNewNode;
+
+					stack.push({ rightNewNode, rightLeaves });
+				}
+				else if(rightLeaves.size() == 1 && leftLeaves.size() >= 2)
+				{
+					int leafNodeIndex = rightLeaves[0].nodeIndex;
+					m_nodes[leafNodeIndex].parent = rootIndex;
+					m_nodes[rootIndex].right = leafNodeIndex;
+
+					int leftNewNode = getNewNode();
+					m_nodes[leftNewNode].parent = rootIndex;
+					m_nodes[leftNewNode].aabb = leftRoot;
+					m_nodes[rootIndex].left = leftNewNode;
+
+					for (auto&& leaf : leftLeaves)
+						m_nodes[leaf.nodeIndex].parent = leftNewNode;
+
+					stack.push({ leftNewNode, leftLeaves });
+				}
+				else
+				{
+					__debugbreak();
+				}
+			}
 
 		}
 
