@@ -125,6 +125,43 @@ namespace ST
 		ZoneScopedN("[DBVT] Query AABB");
 		std::vector<int> result;
 
+		if (m_rootIndex == -1)
+			return result;
+
+		std::vector<int> stack;
+		stack.push_back(m_rootIndex);
+
+		int counter = 0;
+
+		while (!stack.empty())
+		{
+			counter++;
+
+			int currentIndex = stack.back();
+			stack.pop_back();
+
+			if (currentIndex == -1)
+				continue;
+
+			if (!m_nodes[currentIndex].aabb.collide(aabb))
+				continue;
+
+			if (m_nodes[currentIndex].isLeaf())
+			{
+				int leafIndex = m_nodes[currentIndex].leafIndex;
+				if (m_leaves[leafIndex].binding.aabb.collide(aabb))
+					result.push_back(m_leaves[leafIndex].binding.objectId);
+			}
+			else
+			{
+				stack.push_back(m_nodes[currentIndex].left);
+				stack.push_back(m_nodes[currentIndex].right);
+			}
+		}
+
+
+		CORE_INFO("Query Counter: {}", counter);
+
 		return result;
 	}
 
@@ -132,6 +169,42 @@ namespace ST
 	{
 		ZoneScopedN("[DBVT] Query Ray");
 		std::vector<int> result;
+
+		std::vector<int> stack;
+		stack.push_back(m_rootIndex);
+
+		int counter = 0;
+
+		while (!stack.empty())
+		{
+			counter++;
+
+			int currentIndex = stack.back();
+			stack.pop_back();
+
+			if (currentIndex == -1)
+				continue;
+
+			if (!m_nodes[currentIndex].aabb.raycast(origin, direction))
+				continue;
+
+			if (m_nodes[currentIndex].isLeaf())
+			{
+				int leafIndex = m_nodes[currentIndex].leafIndex;
+				if (m_leaves[leafIndex].binding.aabb.raycast(origin, direction))
+					result.push_back(m_leaves[leafIndex].binding.objectId);
+			}
+			else
+			{
+				stack.push_back(m_nodes[currentIndex].left);
+				stack.push_back(m_nodes[currentIndex].right);
+			}
+		}
+
+
+		CORE_INFO("Query Counter: {}", counter);
+
+
 		return result;
 	}
 
@@ -268,9 +341,9 @@ namespace ST
 
 		if(leaves.size() > 2)
 		{
-			for(int i = 2; i < m_leaves.size(); ++i)
+			for(int i = 2; i < leaves.size(); ++i)
 			{
-				int newNodeIndex = m_leaves[i].nodeIndex;
+				int newNodeIndex = leaves[i].nodeIndex;
 				int targetIndex = queue.front();
 				queue.pop_front();
 
@@ -279,11 +352,9 @@ namespace ST
 				int mergeIndex = mergeTwoNodes(newNodeIndex, targetIndex);
 
 				(m_nodes[parentIndex].left == targetIndex ? m_nodes[parentIndex].left : m_nodes[parentIndex].right) = mergeIndex;
-
 				m_nodes[mergeIndex].parent = parentIndex;
-				m_nodes[parentIndex].height = 1 + std::max(m_nodes[m_nodes[parentIndex].left].height, m_nodes[m_nodes[parentIndex].right].height);
 
-				updateHeightAndAABB(newNodeIndex);
+				m_nodes[parentIndex].height = 1 + std::max(m_nodes[m_nodes[parentIndex].left].height, m_nodes[m_nodes[parentIndex].right].height);
 
 				queue.push_back(newNodeIndex);
 				queue.push_back(targetIndex);
@@ -299,7 +370,12 @@ namespace ST
 		if (leaves.empty() || rootAABB.isEmpty())
 			return;
 
-		int bucketCount = 12;
+		int bucketCount = 24;
+
+		std::vector<real> bucketArea;
+		std::vector<real> bucketLeafCount;
+		std::vector<real> bucketLeftLeafCount;
+		std::vector<real> bucketRightLeafCount;
 
 		std::deque<std::tuple<int, std::vector<BVTNodeBinding>>> stack;
 		stack.push_back({ m_rootIndex, leaves });
@@ -341,10 +417,11 @@ namespace ST
 
 			real bucketSize = (rootTopRight[sortIndex1] - rootBottomLeft[sortIndex1]) / static_cast<real>(bucketCount);
 
-			std::vector<real> bucketArea;
-			std::vector<real> bucketLeafCount;
-			std::vector<real> bucketLeftLeafCount;
-			std::vector<real> bucketRightLeafCount;
+			bucketArea.clear();
+			bucketLeafCount.clear();
+			bucketLeftLeafCount.clear();
+			bucketRightLeafCount.clear();
+
 
 			for (int i = 0; i < bucketCount; ++i)
 			{
@@ -511,10 +588,12 @@ namespace ST
 			{
 				if (leftLeaves.size() == currentLeaves.size())
 				{
+					__debugbreak();
 					directBuildTree(rootIndex, leftLeaves);
 				}
 				else if (rightLeaves.size() == currentLeaves.size())
 				{
+					__debugbreak();
 					directBuildTree(rootIndex, rightLeaves);
 				}
 

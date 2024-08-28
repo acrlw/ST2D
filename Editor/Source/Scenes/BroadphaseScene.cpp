@@ -116,7 +116,7 @@ namespace STEditor
 		ImGui::Begin("Broad-phase");
 
 		int count = m_count;
-		ImGui::DragInt("Count", &count, 2, 10, 1000);
+		ImGui::DragInt("Count", &count, 2, 5, 5000);
 		if (m_count != count)
 		{
 			m_count = count;
@@ -161,11 +161,21 @@ namespace STEditor
 		if(ImGui::Button("Query Overlaps"))
 		{
 			auto pairs = m_dbvt.queryOverlaps();
-			std::string str;
-			for(auto&& elem: pairs)
-				str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
-			
-			CORE_INFO("Overlaps: {}", str);
+
+			//std::ranges::sort(pairs, [](const auto& a, const auto& b)
+			//	{
+			//		if (a.objectIdA < b.objectIdA)
+			//			return true;
+			//		if (a.objectIdA == b.objectIdA)
+			//			return a.objectIdB < b.objectIdB;
+
+			//	return false;
+			//	});
+			//std::string str;
+			//for(auto&& elem: pairs)
+			//	str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
+			//
+			//CORE_INFO("Overlaps: {}", str);
 		}
 
 		ImGui::End();
@@ -215,10 +225,10 @@ namespace STEditor
 
 		std::random_device rd;
 		std::mt19937 gen(rd());
-		std::uniform_real_distribution<> dist1(-9.0f, 9.0f);
+		std::uniform_real_distribution<> dist1(-3.0f, 3.0f);
 		std::uniform_int_distribution<> dist2(0, m_shapesArray.size() - 1);
 		std::uniform_real_distribution<> dist3(-Constant::Pi, Constant::Pi);
-		std::uniform_real_distribution<> dist4(-9.0f, 9.0f);
+		std::uniform_real_distribution<> dist4(-3.0f, 3.0f);
 		real rotation = 0.0f;
 		Vector2 position;
 		Vector2 dir(1.0f, 1.0f);
