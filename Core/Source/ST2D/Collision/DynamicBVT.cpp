@@ -2,6 +2,8 @@
 
 #include <deque>
 
+#include <iostream>
+
 #include "ST2D/Log.h"
 
 namespace ST
@@ -64,6 +66,16 @@ namespace ST
 
 	void DynamicBVT::rebuildTree()
 	{
+		int validLeafCount = 0;
+		for (auto&& leaf : m_leaves)
+			if (leaf.isValid())
+				validLeafCount++;
+
+		//no need to rebuild
+		if (validLeafCount < 4)
+			return;
+		
+
 		AABB rootAABB;
 
 		std::vector<BVTNodeBinding> leaves;
@@ -117,13 +129,14 @@ namespace ST
 
 	void DynamicBVT::printTree()
 	{
-		std::stack<std::tuple<int, std::string, bool>> stack;
-		stack.push({ m_rootIndex, "", true });
+		std::deque<std::tuple<int, std::string, bool>> stack;
+		stack.push_back({ m_rootIndex, "", true });
 		std::vector<std::string> lines;
+		size_t maxLength = 0;
 		while (!stack.empty())
 		{
-			auto [index, prefix, isLeft] = stack.top();
-			stack.pop();
+			auto [index, prefix, isLeft] = stack.back();
+			stack.pop_back();
 
 			if (index == -1)
 				continue;
@@ -144,24 +157,62 @@ namespace ST
 				int height = m_nodes[index].height;
 				line += "[" + std::to_string(height) + "]";
 			}
+			maxLength = std::max(maxLength, line.length());
 
 			lines.push_back(line);
 
-			stack.push({ m_nodes[index].right, newPrefix, false });
-			stack.push({ m_nodes[index].left, newPrefix, true });
+			stack.push_back({ m_nodes[index].right, newPrefix, false });
+			stack.push_back({ m_nodes[index].left, newPrefix, true });
 		}
 
 		for (auto it = lines.begin(); it != lines.end(); ++it)
-			std::cout << *it << "\n";
+			CORE_INFO(*it);
 
-		std::cout << "--------------------\n";
+		std::string splitter(maxLength, '-');
+
+		CORE_INFO(splitter);
 	}
 
 	void DynamicBVT::directBuildTree(int nodeIndex, const std::vector<BVTNodeBinding>& leaves)
 	{
-		// nodeIndex contains more than 2 leaf node and cannot split anymore
+		// nodeIndex contains >= 2 leaf nodes and cannot split anymore
 		// just build tree by order
 
+		if (leaves.size() < 2) // this shouldn't happen
+			__debugbreak();
+
+		m_nodes[nodeIndex].left = leaves[0].nodeIndex;
+		m_nodes[nodeIndex].right = leaves[1].nodeIndex;
+		m_nodes[leaves[0].nodeIndex].parent = nodeIndex;
+		m_nodes[leaves[1].nodeIndex].parent = nodeIndex;
+
+		std::deque<int> queue;
+		queue.push_back(leaves[0].nodeIndex);
+		queue.push_back(leaves[1].nodeIndex);
+
+		if(leaves.size() > 2)
+		{
+			for(int i = 2; i < m_leaves.size(); ++i)
+			{
+				int newNodeIndex = m_leaves[i].nodeIndex;
+				int targetIndex = queue.front();
+				queue.pop_front();
+
+				int parentIndex = m_nodes[targetIndex].parent;
+
+				int mergeIndex = mergeTwoNodes(newNodeIndex, targetIndex);
+
+				(m_nodes[parentIndex].left == targetIndex ? m_nodes[parentIndex].left : m_nodes[parentIndex].right) = mergeIndex;
+
+				m_nodes[mergeIndex].parent = parentIndex;
+				m_nodes[parentIndex].height = 1 + std::max(m_nodes[m_nodes[parentIndex].left].height, m_nodes[m_nodes[parentIndex].right].height);
+
+				updateHeightAndAABB(newNodeIndex);
+
+				queue.push_back(newNodeIndex);
+				queue.push_back(targetIndex);
+			}
+		}
 		
 	}
 
@@ -181,19 +232,20 @@ namespace ST
 		if (leaves.empty() || rootAABB.isEmpty())
 			return;
 
+
 		int bucketCount = 12;
 
-		std::stack<std::tuple<int, std::vector<BVTNodeBinding>>> stack;
-		stack.push({ m_rootIndex, leaves });
+		std::deque<std::tuple<int, std::vector<BVTNodeBinding>>> stack;
+		stack.push_back({ m_rootIndex, leaves });
 
-		while(!stack.empty())
+		while (!stack.empty())
 		{
-			auto [rootIndex, currentLeaves] = stack.top();
-			stack.pop();
+			auto [rootIndex, currentLeaves] = stack.back();
+			stack.pop_back();
 
 			AABB currentRootAABB = m_nodes[rootIndex].aabb;
 
-			if(currentLeaves.size() == 2)
+			if (currentLeaves.size() == 2)
 			{
 				//just two leaves, no need to split
 				m_nodes[rootIndex].left = currentLeaves[0].nodeIndex;
@@ -202,7 +254,7 @@ namespace ST
 				continue;
 			}
 
-			if(currentLeaves.size() == 1)
+			if (currentLeaves.size() == 1)
 			{
 				__debugbreak();
 			}
@@ -214,7 +266,7 @@ namespace ST
 
 			if (currentRootAABB.width < currentRootAABB.height)
 				sortIndex1 = 1;
-			
+
 
 			real rootArea = currentRootAABB.surfaceArea();
 
@@ -287,7 +339,7 @@ namespace ST
 				const AABB& aabb = leaf.binding.aabb;
 				real dist = aabb.position[sortIndex1] - rootBottomLeft[sortIndex1];
 				int index = dist / bucketSize;
-				if (index <= minIndex)
+				if (index < minIndex)
 				{
 					leftRoot.combine(aabb);
 					leftLeaves.push_back(leaf);
@@ -300,14 +352,14 @@ namespace ST
 
 			}
 
-			if(leftLeaves.empty() && rightLeaves.empty())
+			if (leftLeaves.empty() && rightLeaves.empty())
 			{
 				// cannot split
 				__debugbreak();
 				continue;
 			}
 
-			if(leftLeaves.size() >= 2 && rightLeaves.size() >= 2)
+			if (leftLeaves.size() > 1 && rightLeaves.size() > 1)
 			{
 				int leftNewNode = getNewNode();
 				m_nodes[leftNewNode].parent = rootIndex;
@@ -326,87 +378,84 @@ namespace ST
 				for (auto&& leaf : rightLeaves)
 					m_nodes[leaf.nodeIndex].parent = rightNewNode;
 
+				stack.push_back({ leftNewNode, leftLeaves });
+				stack.push_back({ rightNewNode, rightLeaves });
+			}
+			else if (leftLeaves.size() == 1 && rightLeaves.size() == 1)
+			{
+				int leafNodeIndex = leftLeaves[0].nodeIndex;
+				m_nodes[leafNodeIndex].parent = rootIndex;
+				m_nodes[rootIndex].left = leafNodeIndex;
 
-				stack.push({ leftNewNode, leftLeaves });
-				stack.push({ rightNewNode, rightLeaves });
+				leafNodeIndex = rightLeaves[0].nodeIndex;
+				m_nodes[leafNodeIndex].parent = rootIndex;
+				m_nodes[rootIndex].right = leafNodeIndex;
+			}
+			else if (leftLeaves.size() == 1 && rightLeaves.size() == 0)
+			{
+				int leafNodeIndex = leftLeaves[0].nodeIndex;
+				int grandParentIndex = m_nodes[rootIndex].parent;
+				m_nodes[leafNodeIndex].parent = grandParentIndex;
+				(m_nodes[grandParentIndex].left == rootIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = leafNodeIndex;
+
+				freeNode(rootIndex);
+			}
+			else if (leftLeaves.size() == 0 && rightLeaves.size() == 1)
+			{
+				int leafNodeIndex = rightLeaves[0].nodeIndex;
+				int grandParentIndex = m_nodes[rootIndex].parent;
+				m_nodes[leafNodeIndex].parent = grandParentIndex;
+				(m_nodes[grandParentIndex].left == rootIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = leafNodeIndex;
+
+				freeNode(rootIndex);
+			}
+			else if (leftLeaves.size() == 1 && rightLeaves.size() > 1)
+			{
+				int leafNodeIndex = leftLeaves[0].nodeIndex;
+				m_nodes[leafNodeIndex].parent = rootIndex;
+				m_nodes[rootIndex].left = leafNodeIndex;
+
+				int rightNewNode = getNewNode();
+				m_nodes[rightNewNode].parent = rootIndex;
+				m_nodes[rightNewNode].aabb = rightRoot;
+				m_nodes[rootIndex].right = rightNewNode;
+
+				for (auto&& leaf : rightLeaves)
+					m_nodes[leaf.nodeIndex].parent = rightNewNode;
+
+				stack.push_back({ rightNewNode, rightLeaves });
+			}
+			else if (leftLeaves.size() > 1 && rightLeaves.size() == 1)
+			{
+				int leafNodeIndex = rightLeaves[0].nodeIndex;
+				m_nodes[leafNodeIndex].parent = rootIndex;
+				m_nodes[rootIndex].right = leafNodeIndex;
+
+				int leftNewNode = getNewNode();
+				m_nodes[leftNewNode].parent = rootIndex;
+				m_nodes[leftNewNode].aabb = leftRoot;
+				m_nodes[rootIndex].left = leftNewNode;
+
+				for (auto&& leaf : leftLeaves)
+					m_nodes[leaf.nodeIndex].parent = leftNewNode;
+
+				stack.push_back({ leftNewNode, leftLeaves });
 			}
 			else
 			{
-				if (leftLeaves.size() == 1 && rightLeaves.size() == 1)
+				if (leftLeaves.size() == currentLeaves.size())
 				{
-					int leafNodeIndex = leftLeaves[0].nodeIndex;
-					m_nodes[leafNodeIndex].parent = rootIndex;
-					m_nodes[rootIndex].left = leafNodeIndex;
-
-					leafNodeIndex = rightLeaves[0].nodeIndex;
-					m_nodes[leafNodeIndex].parent = rootIndex;
-					m_nodes[rootIndex].right = leafNodeIndex;
-				}
-				else if (leftLeaves.size() == 1 && rightLeaves.size() == 0)
-				{
-					int leafNodeIndex = leftLeaves[0].nodeIndex;
-					int grandParentIndex = m_nodes[rootIndex].parent;
-					m_nodes[leafNodeIndex].parent = grandParentIndex;
-					(m_nodes[grandParentIndex].left == rootIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = leafNodeIndex;
-
-					freeNode(rootIndex);
-				}
-				else if (rightLeaves.size() == 1 && leftLeaves.size() == 0)
-				{
-					int leafNodeIndex = rightLeaves[0].nodeIndex;
-					int grandParentIndex = m_nodes[rootIndex].parent;
-					m_nodes[leafNodeIndex].parent = grandParentIndex;
-					(m_nodes[grandParentIndex].left == rootIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = leafNodeIndex;
-
-					freeNode(rootIndex);
-				}
-				else if(leftLeaves.size() == 1 && rightLeaves.size() >= 2)
-				{
-					int leafNodeIndex = leftLeaves[0].nodeIndex;
-					m_nodes[leafNodeIndex].parent = rootIndex;
-					m_nodes[rootIndex].left = leafNodeIndex;
-
-					int rightNewNode = getNewNode();
-					m_nodes[rightNewNode].parent = rootIndex;
-					m_nodes[rightNewNode].aabb = rightRoot;
-					m_nodes[rootIndex].right = rightNewNode;
-
-					for (auto&& leaf : rightLeaves)
-						m_nodes[leaf.nodeIndex].parent = rightNewNode;
-
-					stack.push({ rightNewNode, rightLeaves });
-				}
-				else if(rightLeaves.size() == 1 && leftLeaves.size() >= 2)
-				{
-					int leafNodeIndex = rightLeaves[0].nodeIndex;
-					m_nodes[leafNodeIndex].parent = rootIndex;
-					m_nodes[rootIndex].right = leafNodeIndex;
-
-					int leftNewNode = getNewNode();
-					m_nodes[leftNewNode].parent = rootIndex;
-					m_nodes[leftNewNode].aabb = leftRoot;
-					m_nodes[rootIndex].left = leftNewNode;
-
-					for (auto&& leaf : leftLeaves)
-						m_nodes[leaf.nodeIndex].parent = leftNewNode;
-
-					stack.push({ leftNewNode, leftLeaves });
-				}
-				else
-				{
-					if (leftLeaves.size() == currentLeaves.size())
-					{
-						directBuildTree(rootIndex, leftLeaves);
-					}
-					else if (rightLeaves.size() == currentLeaves.size())
-					{
-						directBuildTree(rootIndex, rightLeaves);
-					}
-
 					__debugbreak();
+					directBuildTree(rootIndex, leftLeaves);
 				}
-			}
+				else if (rightLeaves.size() == currentLeaves.size())
+				{
+					__debugbreak();
+					directBuildTree(rootIndex, rightLeaves);
+				}
 
+				__debugbreak();
+			}
 		}
 
 		for(int i = 0;i < m_leaves.size();++i)
@@ -501,7 +550,6 @@ namespace ST
 
 	void DynamicBVT::insertLeaf(const BVTNodeBinding& leaf)
 	{
-
 		int leafIndex = getNewLeafNode();
 		m_leaves[leafIndex] = leaf;
 		int newNodeIndex = getNewNode();
@@ -733,12 +781,12 @@ namespace ST
 
 
     //       A             A              A              A  
-    //      / \		      / \		     / \		        / \	
-    //     B   C		     B   C		    C   B		   C   B
+    //      / \		      / \		     / \		    / \	
+    //     B   C		 B   C		    C   B		   C   B
     //    / \		    / \			       / \	          / \	
-    //   D   E		   E   D			      D   E	         E   D	
-    //  / \			      / \			 / \	                / \	
-    // F   G			     F   G		    F   G		       F   G		
+    //   D   E		   E   D			  D   E	         E   D	
+    //  / \			      / \			 / \	            / \	
+    // F   G			 F   G		    F   G		       F   G		
     //       LL             LR            RL             RR
     
     //                           | 
@@ -747,12 +795,12 @@ namespace ST
     
     //       B		  	  D                D                B
     //      / \          / \              / \              / \	
-    //     D   A		    B   A		     A   B		      A   D
+    //     D   A		B   A		     A   B		      A   D
     //    / \ / \      / \ / \          / \ / \          / \ / \
-    	//   F  G E  C    E  F G  C        C  F G  E        C  E F  G
+	//   F  G E  C    E  F G  C        C  F G  E        C  E F  G
     
     
-    	// F is new added leaf, default is left child of D
+	// F is new added leaf, default is left child of D
 
 	void DynamicBVT::rotateNode(int nodeIndex)
 	{
