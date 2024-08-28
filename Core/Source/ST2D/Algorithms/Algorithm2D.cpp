@@ -556,8 +556,8 @@ namespace ST
 	std::optional<std::pair<Vector2, Vector2>> GeometryAlgorithm2D::raycastAABB(const Vector2& p, const Vector2& dir, const Vector2& topLeft, const Vector2& bottomRight)
 	{
 		const real xmin = topLeft.x;
-		const real ymin = bottomRight.y;
 		const real xmax = bottomRight.x;
+		const real ymin = bottomRight.y;
 		const real ymax = topLeft.y;
 		real txmin, txmax, tymin, tymax;
 		real txenter, txexit, tyenter, tyexit;

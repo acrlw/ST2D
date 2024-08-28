@@ -24,6 +24,13 @@ namespace STEditor
 		m_triangle.scale(0.15f);
 		m_polygon.scale(0.05f);
 
+		m_queryAABB.position = Vector2(0.0f, 0.0f);
+		m_queryAABB.width = 20;
+		m_queryAABB.height = 6;
+
+		m_queryRayOrigin.set(-10.0f, -10.0f);
+		m_queryRayDirection.set(1.0f, 1.0f).normalize();
+
 		createShapes();
 
 		m_dbvtStack.reserve(512);
@@ -58,7 +65,8 @@ namespace STEditor
 				RenderSFMLImpl::renderAngleLine(window, *m_settings.camera, m_transforms[i]);
 			}
 
-			RenderSFMLImpl::renderShape(window, *m_settings.camera, m_transforms[i], m_shapes[i], RenderConstant::Green);
+			if(m_showObject)
+				RenderSFMLImpl::renderShape(window, *m_settings.camera, m_transforms[i], m_shapes[i], RenderConstant::Green);
 
 			if (m_showAABB)
 			{
@@ -70,8 +78,13 @@ namespace STEditor
 				//points.emplace_back(m_aabbs[i].topLeft());
 				//RenderSFMLImpl::renderPolyDashedLine(window, *m_settings.camera, points, RenderConstant::Yellow);
 				RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_aabbs[i], RenderConstant::Cyan);
+
 			}
 		}
+
+		RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_queryAABB, RenderConstant::Yellow);
+
+		RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * 30.0f, RenderConstant::Yellow);
 
 		if (m_showBVT)
 		{
@@ -107,6 +120,25 @@ namespace STEditor
 
 		}
 
+		if (m_idsAABB.size() > 0)
+		{
+			for (auto&& id : m_idsAABB)
+			{
+				AABB aabb = m_aabbs[id];
+				aabb.expand(m_expandRatio * static_cast<real>(1));
+				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
+			}
+		}
+
+		if(m_idsRaycast.size() > 0)
+		{
+			for (auto&& id : m_idsRaycast)
+			{
+				AABB aabb = m_aabbs[id];
+				aabb.expand(m_expandRatio * static_cast<real>(1));
+				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
+			}
+		}
 	}
 
 	void BroadphaseScene::onRenderUI()
@@ -123,6 +155,7 @@ namespace STEditor
 			createShapes();
 		}
 
+		ImGui::Checkbox("Show Object", &m_showObject);
 		ImGui::Checkbox("Show AABB", &m_showAABB);
 		ImGui::Checkbox("Show Grid", &m_showGrid);
 		ImGui::Checkbox("Show BVT", &m_showBVT);
@@ -178,6 +211,25 @@ namespace STEditor
 			//CORE_INFO("Overlaps: {}", str);
 		}
 
+		ImGui::SameLine();
+		if (ImGui::Button("Query AABB"))
+		{
+			m_idsAABB = m_dbvt.queryAABB(m_queryAABB);
+
+			//std::string str;
+			//for(auto&& elem: ids)
+			//	str += std::format("{0} ", elem);
+			//
+			//CORE_INFO("AABB: {}", str);
+		}
+
+		ImGui::SameLine();
+		if(ImGui::Button("Query Raycast"))
+		{
+			m_idsRaycast.clear();
+			m_idsRaycast = m_dbvt.queryRay(m_queryRayOrigin, m_queryRayDirection, 30.0f);
+		}
+
 		ImGui::End();
 	}
 
@@ -214,7 +266,8 @@ namespace STEditor
 	void BroadphaseScene::createShapes()
 	{
 		ZoneScopedN("[BroadphaseScene] Create Shapes");
-
+		m_idsAABB.clear();
+		m_idsRaycast.clear();
 		m_dbvt.clearAllObjects();
 		m_aabbs.clear();
 		m_bitmasks.clear();
@@ -225,10 +278,10 @@ namespace STEditor
 
 		std::random_device rd;
 		std::mt19937 gen(rd());
-		std::uniform_real_distribution<> dist1(-3.0f, 3.0f);
+		std::uniform_real_distribution<> dist1(-9.0f, 9.0f);
 		std::uniform_int_distribution<> dist2(0, m_shapesArray.size() - 1);
 		std::uniform_real_distribution<> dist3(-Constant::Pi, Constant::Pi);
-		std::uniform_real_distribution<> dist4(-3.0f, 3.0f);
+		std::uniform_real_distribution<> dist4(-9.0f, 9.0f);
 		real rotation = 0.0f;
 		Vector2 position;
 		Vector2 dir(1.0f, 1.0f);

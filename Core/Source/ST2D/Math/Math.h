@@ -195,7 +195,9 @@ namespace ST
 		ST_API static bool isInRange(const real& value, const real& low, const real& high,
 			const real& epsilon = Constant::GeometryEpsilon)
 		{
-			return value >= low - epsilon && value <= high + epsilon;
+			real lowest = low - epsilon;
+			real highest = high + epsilon;
+			return value >= lowest && value <= highest;
 		}
 
 		ST_API static bool fuzzyIsInRange(const real& value, const real& low, const real& high,

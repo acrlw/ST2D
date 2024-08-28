@@ -33,6 +33,7 @@ namespace STEditor
 	private:
 		void createShapes();
 
+		bool m_showObject = true;
 		bool m_showAABB = false;
 		bool m_showGrid = false;
 		bool m_showBVT = true;
@@ -62,6 +63,12 @@ namespace STEditor
 
 		IdPool m_objectIdPool;
 
+		AABB m_queryAABB;
+		Vector2 m_queryRayOrigin;
+		Vector2 m_queryRayDirection;
+
 		std::vector<int> m_dbvtStack;
+		std::vector<int> m_idsAABB;
+		std::vector<int> m_idsRaycast;
 	};
 }

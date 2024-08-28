@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "ST2D/Log.h"
+#include "ST2D/Algorithms/Algorithm2D.h"
 
 namespace ST
 {
@@ -101,8 +102,8 @@ namespace ST
 				}
 				else
 				{
-					stack.push_back({ m_nodes[leftIndex].left, rightIndex, false });
 					stack.push_back({ m_nodes[leftIndex].right, rightIndex, false });
+					stack.push_back({ m_nodes[leftIndex].left, rightIndex, false });
 				}
 			}
 
@@ -154,8 +155,8 @@ namespace ST
 			}
 			else
 			{
-				stack.push_back(m_nodes[currentIndex].left);
 				stack.push_back(m_nodes[currentIndex].right);
+				stack.push_back(m_nodes[currentIndex].left);
 			}
 		}
 
@@ -169,6 +170,9 @@ namespace ST
 	{
 		ZoneScopedN("[DBVT] Query Ray");
 		std::vector<int> result;
+
+		if (m_rootIndex == -1)
+			return result;
 
 		std::vector<int> stack;
 		stack.push_back(m_rootIndex);
@@ -185,7 +189,10 @@ namespace ST
 			if (currentIndex == -1)
 				continue;
 
-			if (!m_nodes[currentIndex].aabb.raycast(origin, direction))
+			AABB aabb = m_nodes[currentIndex].aabb;
+
+			bool raycastHit = aabb.raycast(origin, direction);
+			if (!raycastHit)
 				continue;
 
 			if (m_nodes[currentIndex].isLeaf())
@@ -196,13 +203,13 @@ namespace ST
 			}
 			else
 			{
-				stack.push_back(m_nodes[currentIndex].left);
 				stack.push_back(m_nodes[currentIndex].right);
+				stack.push_back(m_nodes[currentIndex].left);
 			}
 		}
 
 
-		CORE_INFO("Query Counter: {}", counter);
+		CORE_INFO("Query Counter: {}, Size: {}", counter, result.size());
 
 
 		return result;
@@ -521,8 +528,8 @@ namespace ST
 				for (auto&& leaf : rightLeaves)
 					m_nodes[leaf.nodeIndex].parent = rightNewNode;
 
-				stack.push_back({ leftNewNode, leftLeaves });
 				stack.push_back({ rightNewNode, rightLeaves });
+				stack.push_back({ leftNewNode, leftLeaves });
 			}
 			else if (leftLeaves.size() == 1 && rightLeaves.size() == 1)
 			{
@@ -588,12 +595,10 @@ namespace ST
 			{
 				if (leftLeaves.size() == currentLeaves.size())
 				{
-					__debugbreak();
 					directBuildTree(rootIndex, leftLeaves);
 				}
 				else if (rightLeaves.size() == currentLeaves.size())
 				{
-					__debugbreak();
 					directBuildTree(rootIndex, rightLeaves);
 				}
 

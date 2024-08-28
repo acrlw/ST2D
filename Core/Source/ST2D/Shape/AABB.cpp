@@ -291,7 +291,9 @@ namespace ST
 		if (!result.has_value())
 			return false;
 		auto [p1, p2] = result.value();
-		return GeometryAlgorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight())
-			&& GeometryAlgorithm2D::checkPointOnAABB(p2, aabb.topLeft(), aabb.bottomRight());
+		bool isP1Inside = GeometryAlgorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight());
+		bool isP2Inside = GeometryAlgorithm2D::checkPointOnAABB(p2, aabb.topLeft(), aabb.bottomRight());
+
+		return isP1Inside && isP2Inside;
 	}
 }
