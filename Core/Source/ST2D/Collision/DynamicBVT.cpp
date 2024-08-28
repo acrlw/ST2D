@@ -10,6 +10,8 @@ namespace ST
 {
 	void DynamicBVT::addObject(const BroadphaseObjectBinding& binding)
 	{
+		ZoneScopedN("[DBVT] Add Object");
+
 		//check if the object is already in the tree
 		for(auto&& elem: m_leaves)
 		{
@@ -47,12 +49,14 @@ namespace ST
 
 	std::vector<ObjectPair> DynamicBVT::queryOverlaps()
 	{
+		ZoneScopedN("[DBVT] Query Overlaps");
 		std::vector<ObjectPair> result;
 		return result;
 	}
 
 	std::vector<int> DynamicBVT::queryAABB(const AABB& aabb)
 	{
+		ZoneScopedN("[DBVT] Query AABB");
 		std::vector<int> result;
 
 		return result;
@@ -60,12 +64,15 @@ namespace ST
 
 	std::vector<int> DynamicBVT::queryRay(const Vector2& origin, const Vector2& direction, float maxDistance)
 	{
+		ZoneScopedN("[DBVT] Query Ray");
 		std::vector<int> result;
 		return result;
 	}
 
 	void DynamicBVT::rebuildTree()
 	{
+		ZoneScopedN("[DBVT] Rebuild Tree");
+
 		int validLeafCount = 0;
 		for (auto&& leaf : m_leaves)
 			if (leaf.isValid())
@@ -129,6 +136,8 @@ namespace ST
 
 	void DynamicBVT::printTree()
 	{
+		ZoneScopedN("[DBVT] Print Tree");
+
 		std::deque<std::tuple<int, std::string, bool>> stack;
 		stack.push_back({ m_rootIndex, "", true });
 		std::vector<std::string> lines;
@@ -177,6 +186,8 @@ namespace ST
 	{
 		// nodeIndex contains >= 2 leaf nodes and cannot split anymore
 		// just build tree by order
+
+		ZoneScopedN("[DBVT] Direct Rebuild Tree");
 
 		if (leaves.size() < 2) // this shouldn't happen
 			__debugbreak();
@@ -229,6 +240,8 @@ namespace ST
 
 	void DynamicBVT::rebuildTreeSAH(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves)
 	{
+		ZoneScopedN("[DBVT] Rebuild Tree By SAH");
+
 		if (leaves.empty() || rootAABB.isEmpty())
 			return;
 
@@ -445,16 +458,13 @@ namespace ST
 			{
 				if (leftLeaves.size() == currentLeaves.size())
 				{
-					__debugbreak();
 					directBuildTree(rootIndex, leftLeaves);
 				}
 				else if (rightLeaves.size() == currentLeaves.size())
 				{
-					__debugbreak();
 					directBuildTree(rootIndex, rightLeaves);
 				}
 
-				__debugbreak();
 			}
 		}
 
@@ -500,6 +510,8 @@ namespace ST
 
 	void DynamicBVT::updateHeightAndAABB(int nodeIndex)
 	{
+		ZoneScopedN("[DBVT] Update Height And AABB");
+
 		CORE_ASSERT(nodeIndex >= 0, "Invalid node index");
 
 		int currentIndex = m_nodes[nodeIndex].parent;
@@ -522,6 +534,8 @@ namespace ST
 
 	void DynamicBVT::updateHeight(int nodeIndex)
 	{
+		ZoneScopedN("[DBVT] Update Height");
+
 		CORE_ASSERT(nodeIndex >= 0, "Invalid node index");
 
 		int currentIndex = m_nodes[nodeIndex].parent;
@@ -550,6 +564,8 @@ namespace ST
 
 	void DynamicBVT::insertLeaf(const BVTNodeBinding& leaf)
 	{
+		ZoneScopedN("[DBVT] Insert Leaf");
+
 		int leafIndex = getNewLeafNode();
 		m_leaves[leafIndex] = leaf;
 		int newNodeIndex = getNewNode();
@@ -594,6 +610,8 @@ namespace ST
 
 	void DynamicBVT::removeLeaf(int objectId)
 	{
+		ZoneScopedN("[DBVT] Remove Leaf");
+
 		int leafIndex = -1;
 		int leafNodeIndex = -1;
 		for (int i = 0; i < m_leaves.size(); ++i)
@@ -645,6 +663,8 @@ namespace ST
 
 	void DynamicBVT::updateLeaf(int objectId, const AABB& aabb)
 	{
+		ZoneScopedN("[DBVT] Update Leaf");
+
 		int nodeIndex = -1;
 		for(int i = 0; i < m_leaves.size(); ++i)
 		{
@@ -666,6 +686,8 @@ namespace ST
 
 	int DynamicBVT::greedyFindBestLeafNode(int nodeIndex) const
 	{
+		ZoneScopedN("[DBVT] Greedy Find Best Leaf Node");
+
 		int currentIndex = m_rootIndex;
 		while(m_nodes[currentIndex].height > 0)
 		{
@@ -694,6 +716,8 @@ namespace ST
 
 	int DynamicBVT::fullFindBestLeafNode(int nodeIndex) const
 	{
+		ZoneScopedN("[DBVT] Fully Find Best Leaf Node");
+
 		int targetIndex = -1;
 		real minCost = std::numeric_limits<real>::max();
 		for(auto&& leaf:m_leaves)
@@ -769,6 +793,8 @@ namespace ST
 
 	int DynamicBVT::mergeTwoNodes(int nodeIndexA, int nodeIndexB)
 	{
+		ZoneScopedN("[DBVT] Merge Two Nodes");
+
 		int newIndex = getNewNode();
 		m_nodes[nodeIndexA].parent = newIndex;
 		m_nodes[nodeIndexB].parent = newIndex;
@@ -804,6 +830,8 @@ namespace ST
 
 	void DynamicBVT::rotateNode(int nodeIndex)
 	{
+		ZoneScopedN("[DBVT] Rotate Node");
+
 		int F = nodeIndex;
 		int D = m_nodes[nodeIndex].parent;
 

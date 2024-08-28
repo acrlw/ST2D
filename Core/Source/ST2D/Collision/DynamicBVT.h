@@ -17,7 +17,7 @@ namespace ST
 
 		bool isLeaf()const
 		{
-			return height == 0;
+			return height == 0 && leafIndex != -1;
 		}
 		void reset()
 		{

@@ -5,6 +5,7 @@
 #include "ST2D/Shape/Circle.h"
 #include "ST2D/Shape/Polygon.h"
 #include <random>
+#include <vector>
 
 namespace STEditor
 {
@@ -57,8 +58,10 @@ namespace STEditor
 		int m_count = 5;
 		int m_maxHeight = 0;
 		int m_currentHeight = 0;
-		float m_expandRatio = 0.1f;
+		float m_expandRatio = 0.03f;
 
 		IdPool m_objectIdPool;
+
+		std::vector<int> m_dbvtStack;
 	};
 }

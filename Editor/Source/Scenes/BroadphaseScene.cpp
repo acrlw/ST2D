@@ -1,6 +1,5 @@
 #include "BroadphaseScene.h"
 
-#include <deque>
 
 
 namespace STEditor
@@ -12,19 +11,22 @@ namespace STEditor
 
 	void BroadphaseScene::onLoad()
 	{
-		m_rectangle.set(0.5f, 0.5f);
-		m_circle.setRadius(0.5f);
-		m_capsule.set(1.5f, 0.5f);
+		ZoneScopedN("[BroadphaseScene] On Load");
+
+		m_rectangle.set(0.2f, 0.2f);
+		m_circle.setRadius(0.25f);
+		m_capsule.set(0.6f, 0.3f);
 		m_triangle.append({ {-1.0f, -1.0f}, {1.0f, -1.0f}, {0.0f, Math::sqrt(2.0f)} });
 		m_polygon.append({
 			{0.0f, 4.0f}, {-3.0f, 3.0f}, {-4.0f, 0.0f}, {-3.0f, -3.0f}, {0, -4.0f},
 			{3.0f, -3.0f}, {4.0f, 0.0f}, {3.0f, 3.0f}
 			});
-		m_triangle.scale(0.5f);
-		m_polygon.scale(0.1f);
+		m_triangle.scale(0.1f);
+		m_polygon.scale(0.05f);
 
 		createShapes();
 
+		m_dbvtStack.reserve(512);
 
 	}
 
@@ -40,12 +42,14 @@ namespace STEditor
 
 	void BroadphaseScene::onRender(sf::RenderWindow& window)
 	{
+		ZoneScopedN("[BroadphaseScene] On Render");
+
 		for(int i = 0; i < m_count; ++i)
 		{
 			if (m_showObjectId)
 			{
 				RenderSFMLImpl::renderInt(window, *m_settings.camera, m_transforms[i].position, 
-					*m_settings.font, m_objectIds[i], RenderConstant::Gray, 18, {});
+					*m_settings.font, m_objectIds[i], RenderConstant::Gray, 12, {});
 			}
 
 			if(m_showTransform)
@@ -67,37 +71,37 @@ namespace STEditor
 				//RenderSFMLImpl::renderPolyDashedLine(window, *m_settings.camera, points, RenderConstant::Yellow);
 				RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_aabbs[i], RenderConstant::Cyan);
 			}
+		}
 
-			if(m_showBVT)
+		if (m_showBVT)
+		{
+
+
+			m_dbvtStack.push_back(m_dbvt.m_rootIndex);
+			while (!m_dbvtStack.empty())
 			{
-				std::deque<int> queue;
-				queue.push_back(m_dbvt.m_rootIndex);
-				while(!queue.empty())
+				int index = m_dbvtStack.back();
+				m_dbvtStack.pop_back();
+
+				if (index == -1)
+					continue;
+
+				AABB aabb = m_dbvt.m_nodes[index].aabb;
+				aabb.expand(m_expandRatio * static_cast<real>(1 + m_dbvt.m_nodes[index].height));
+
+				if (m_dbvt.m_nodes[index].height <= m_currentHeight)
 				{
-					int index = queue.front();
-					queue.pop_front();
-
-					if (index == -1)
-						continue;
-
-					AABB aabb = m_dbvt.m_nodes[index].aabb;
-					aabb.expand(m_expandRatio * static_cast<real>(1 + m_dbvt.m_nodes[index].height));
-
-					if (m_dbvt.m_nodes[index].height <= m_currentHeight)
-					{
-						if (index == m_dbvt.m_rootIndex)
-							RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
-						else if (m_dbvt.m_nodes[index].isLeaf())
-							RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
-						else
-							RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
-					}
-
-
-					queue.push_back(m_dbvt.m_nodes[index].left);
-					queue.push_back(m_dbvt.m_nodes[index].right);
-
+					if (index == m_dbvt.m_rootIndex)
+						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
+					else if (m_dbvt.m_nodes[index].isLeaf())
+						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
+					else
+						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
 				}
+
+
+				m_dbvtStack.push_back(m_dbvt.m_nodes[index].left);
+				m_dbvtStack.push_back(m_dbvt.m_nodes[index].right);
 
 			}
 
@@ -107,6 +111,8 @@ namespace STEditor
 
 	void BroadphaseScene::onRenderUI()
 	{
+		ZoneScopedN("[BroadphaseScene] On RenderUI");
+
 		ImGui::Begin("Broad-phase");
 
 		int count = m_count;
@@ -130,6 +136,7 @@ namespace STEditor
 			m_maxHeight = std::max(0, m_dbvt.m_nodes[m_dbvt.m_rootIndex].height);
 		else
 			m_maxHeight = 0;
+
 
 
 		if(ImGui::Button("Check Height"))
@@ -186,6 +193,8 @@ namespace STEditor
 
 	void BroadphaseScene::createShapes()
 	{
+		ZoneScopedN("[BroadphaseScene] Create Shapes");
+
 		m_dbvt.clearAllObjects();
 		m_aabbs.clear();
 		m_bitmasks.clear();
@@ -207,20 +216,20 @@ namespace STEditor
 		for (int i = 0; i < m_count; ++i)
 		{
 			Transform t;
-			//t.position = Vector2(dist4(gen), dist1(gen));
-			//t.rotation = dist3(gen);
+			t.position = Vector2(dist4(gen), dist1(gen));
+			t.rotation = dist3(gen);
 
-			//int shapeIndex = dist2(gen);
+			int shapeIndex = dist2(gen);
 
 			//position.x = static_cast<real>(i % 12);
 			//position.y = static_cast<real>(i / 12);
-			position = Vector2(1, 1);
+			//position = Vector2(1, 1);
 
-			t.position = position;
-			t.rotation = rotation;
+			//t.position = position;
+			//t.rotation = rotation;
 
 
-			int shapeIndex = 0;
+			//int shapeIndex = 0;
 
 			m_transforms.push_back(t);
 			m_shapes.push_back(m_shapesArray[shapeIndex]);
