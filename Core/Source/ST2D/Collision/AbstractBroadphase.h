@@ -7,7 +7,7 @@ namespace ST
 	struct ST_API BroadphaseObjectBinding
 	{
 		int objectId = -1;
-		int bitmask = 0;
+		int bitmask = 1;
 		AABB aabb;
 	};
 	struct ST_API ObjectPair

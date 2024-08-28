@@ -14,14 +14,14 @@ namespace STEditor
 		ZoneScopedN("[BroadphaseScene] On Load");
 
 		m_rectangle.set(0.2f, 0.2f);
-		m_circle.setRadius(0.25f);
-		m_capsule.set(0.6f, 0.3f);
+		m_circle.setRadius(0.15f);
+		m_capsule.set(0.4f, 0.2f);
 		m_triangle.append({ {-1.0f, -1.0f}, {1.0f, -1.0f}, {0.0f, Math::sqrt(2.0f)} });
 		m_polygon.append({
 			{0.0f, 4.0f}, {-3.0f, 3.0f}, {-4.0f, 0.0f}, {-3.0f, -3.0f}, {0, -4.0f},
 			{3.0f, -3.0f}, {4.0f, 0.0f}, {3.0f, 3.0f}
 			});
-		m_triangle.scale(0.1f);
+		m_triangle.scale(0.15f);
 		m_polygon.scale(0.05f);
 
 		createShapes();
@@ -158,6 +158,16 @@ namespace STEditor
 			m_dbvt.printTree();
 		}
 
+		if(ImGui::Button("Query Overlaps"))
+		{
+			auto pairs = m_dbvt.queryOverlaps();
+			std::string str;
+			for(auto&& elem: pairs)
+				str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
+			
+			CORE_INFO("Overlaps: {}", str);
+		}
+
 		ImGui::End();
 	}
 
@@ -239,7 +249,7 @@ namespace STEditor
 
 			BroadphaseObjectBinding binding;
 			binding.aabb = m_aabbs[i];
-			binding.bitmask = 0;
+			binding.bitmask = 1;
 			binding.objectId = m_objectIds[i];
 			m_dbvt.addObject(binding);
 

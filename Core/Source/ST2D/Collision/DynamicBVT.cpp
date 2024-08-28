@@ -51,6 +51,72 @@ namespace ST
 	{
 		ZoneScopedN("[DBVT] Query Overlaps");
 		std::vector<ObjectPair> result;
+
+		if (m_nodes.size() < 2)
+			return result;
+
+		int counter = 0;
+
+		std::vector<std::tuple<int, int, bool>> stack;
+		stack.push_back({ m_nodes[m_rootIndex].left, m_nodes[m_rootIndex].right, true });
+		while (!stack.empty())
+		{
+			counter++;
+
+			auto [leftIndex, rightIndex, selfTest] = stack.back();
+			stack.pop_back();
+
+			const AABB& leftBox = m_nodes[leftIndex].aabb;
+			const AABB& rightBox = m_nodes[rightIndex].aabb;
+
+			bool isLeftLeaf = m_nodes[leftIndex].isLeaf();
+			bool isRightLeaf = m_nodes[rightIndex].isLeaf();
+
+			if(isLeftLeaf && isRightLeaf)
+			{
+				int leftLeafIndex = m_nodes[leftIndex].leafIndex;
+				int rightLeafIndex = m_nodes[rightIndex].leafIndex;
+
+				int leftBitmask = m_leaves[leftLeafIndex].binding.bitmask;
+				int rightBitmask = m_leaves[rightLeafIndex].binding.bitmask;
+
+				if(leftBitmask & rightBitmask && leftBox.collide(rightBox))
+				{
+					int leftId = m_leaves[leftLeafIndex].binding.objectId;
+					int rightId = m_leaves[rightLeafIndex].binding.objectId;
+
+					if (leftId < rightId)
+						result.push_back({ leftId, rightId });
+					else
+						result.push_back({ rightId, leftId });
+				}
+				
+			}
+			else if (leftBox.collide(rightBox))
+			{
+				if(isLeftLeaf)
+				{
+					stack.push_back({ leftIndex, m_nodes[rightIndex].left, false });
+					stack.push_back({ leftIndex, m_nodes[rightIndex].right, false });
+				}
+				else
+				{
+					stack.push_back({ m_nodes[leftIndex].left, rightIndex, false });
+					stack.push_back({ m_nodes[leftIndex].right, rightIndex, false });
+				}
+			}
+
+			if(!isLeftLeaf && selfTest)
+				stack.push_back({ m_nodes[leftIndex].left, m_nodes[leftIndex].right, true });
+
+			if (!isRightLeaf && selfTest)
+				stack.push_back({ m_nodes[rightIndex].left, m_nodes[rightIndex].right, true });
+
+
+		}
+
+		CORE_INFO("Query Counter: {}", counter);
+
 		return result;
 	}
 
@@ -129,7 +195,6 @@ namespace ST
 			m_freeNodes.clear();
 		}
 
-		//rebuildTreeSplitMid(rootAABB, leaves);
 		rebuildTreeSAH(rootAABB, leaves);
 
 	}
@@ -227,24 +292,12 @@ namespace ST
 		
 	}
 
-	void DynamicBVT::rebuildTreeSplitMid(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves)
-	{
-		if(leaves.empty() || rootAABB.isEmpty())
-			return;
-
-
-
-
-		
-	}
-
 	void DynamicBVT::rebuildTreeSAH(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves)
 	{
 		ZoneScopedN("[DBVT] Rebuild Tree By SAH");
 
 		if (leaves.empty() || rootAABB.isEmpty())
 			return;
-
 
 		int bucketCount = 12;
 
