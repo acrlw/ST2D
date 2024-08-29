@@ -13,6 +13,8 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Load");
 
+		m_grid.initializeGrid();
+
 		m_rectangle.set(0.2f, 0.2f);
 		m_circle.setRadius(0.15f);
 		m_capsule.set(0.4f, 0.2f);
@@ -30,6 +32,8 @@ namespace STEditor
 
 		m_queryRayOrigin.set(-10.0f, -10.0f);
 		m_queryRayDirection.set(1.0f, 1.0f).normalize();
+
+
 
 		createShapes();
 
@@ -81,15 +85,10 @@ namespace STEditor
 
 			}
 		}
-
-		RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_queryAABB, RenderConstant::Yellow);
-
-		RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * 30.0f, RenderConstant::Yellow);
+		
 
 		if (m_showBVT)
 		{
-
-
 			m_dbvtStack.push_back(m_dbvt.m_rootIndex);
 			while (!m_dbvtStack.empty())
 			{
@@ -120,8 +119,27 @@ namespace STEditor
 
 		}
 
+		if(m_showGrid)
+		{
+			for (int i = 0; i <= m_grid.m_row; ++i)
+			{
+				Vector2 start = m_grid.m_gridTopLeft + Vector2(0.0f, -i * m_grid.m_cellHeight);
+				Vector2 end = start + Vector2(m_grid.m_halfWidth * 2.0f, 0.0f);
+				RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, RenderConstant::Yellow);
+			}
+
+			for (int i = 0; i <= m_grid.m_col; ++i)
+			{
+				Vector2 start = m_grid.m_gridTopLeft + Vector2(i * m_grid.m_cellWidth, 0.0f);
+				Vector2 end = start + Vector2(0.0f, -m_grid.m_halfHeight * 2.0f);
+				RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, RenderConstant::Yellow);
+			}
+		}
+
 		if (m_idsAABB.size() > 0)
 		{
+			RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_queryAABB, RenderConstant::Yellow);
+
 			for (auto&& id : m_idsAABB)
 			{
 				AABB aabb = m_aabbs[id];
@@ -132,6 +150,8 @@ namespace STEditor
 
 		if(m_idsRaycast.size() > 0)
 		{
+			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * 30.0f, RenderConstant::Yellow);
+
 			for (auto&& id : m_idsRaycast)
 			{
 				AABB aabb = m_aabbs[id];
@@ -226,7 +246,6 @@ namespace STEditor
 		ImGui::SameLine();
 		if(ImGui::Button("Query Raycast"))
 		{
-			m_idsRaycast.clear();
 			m_idsRaycast = m_dbvt.queryRay(m_queryRayOrigin, m_queryRayDirection, 30.0f);
 		}
 
@@ -269,6 +288,7 @@ namespace STEditor
 		m_idsAABB.clear();
 		m_idsRaycast.clear();
 		m_dbvt.clearAllObjects();
+		m_grid.clearAllObjects();
 		m_aabbs.clear();
 		m_bitmasks.clear();
 		m_transforms.clear();
@@ -314,7 +334,8 @@ namespace STEditor
 			binding.aabb = m_aabbs[i];
 			binding.bitmask = 1;
 			binding.objectId = m_objectIds[i];
-			m_dbvt.addObject(binding);
+			m_grid.addObject(binding);
+			//m_dbvt.addObject(binding);
 
 			//position += dir;
 		}
