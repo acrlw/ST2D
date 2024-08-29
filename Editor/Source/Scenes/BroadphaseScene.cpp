@@ -84,8 +84,45 @@ namespace STEditor
 				RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_aabbs[i], RenderConstant::Cyan);
 
 			}
+
 		}
-		
+
+		if (m_showGrid)
+		{
+			for(auto&& elem: m_grid.m_objects)
+			{
+				AABB aabb = elem.binding.aabb;
+				Vector2 topLeft = aabb.topLeft();
+				Vector2 bottomRight = aabb.bottomRight();
+				int rowStart = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - topLeft.y) / m_grid.m_cellHeight));
+				int rowEnd = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - bottomRight.y) / m_grid.m_cellHeight));
+				int colStart = static_cast<int>(std::floor((topLeft.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
+				int colEnd = static_cast<int>(std::floor((bottomRight.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
+				auto color = RenderConstant::Yellow;
+				color.a = 60;
+				for (int i = rowStart; i <= rowEnd; ++i)
+				{
+					for (int j = colStart; j <= colEnd; ++j)
+					{
+						Vector2 start = m_grid.m_gridTopLeft + Vector2(j * m_grid.m_cellWidth, -i * m_grid.m_cellHeight);
+						Vector2 end = start + Vector2(m_grid.m_cellWidth, 0.0f);
+						RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+						end = start + Vector2(0.0f, -m_grid.m_cellHeight);
+						RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+					}
+				}
+				Vector2 start = m_grid.m_gridTopLeft + Vector2((colEnd + 1) * m_grid.m_cellWidth, -rowStart * m_grid.m_cellHeight);
+				Vector2 end = start + Vector2(0.0f, -m_grid.m_cellHeight * (rowEnd - rowStart + 1));
+				RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+
+				start = m_grid.m_gridTopLeft + Vector2(colStart * m_grid.m_cellWidth, -(rowEnd + 1) * m_grid.m_cellHeight);
+				end = start + Vector2(m_grid.m_cellWidth * (colEnd - colStart + 1), 0.0f);
+				RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+			}
+			
+
+
+		}
 
 		if (m_showBVT)
 		{
@@ -121,19 +158,21 @@ namespace STEditor
 
 		if(m_showGrid)
 		{
-			for (int i = 0; i <= m_grid.m_row; ++i)
-			{
-				Vector2 start = m_grid.m_gridTopLeft + Vector2(0.0f, -i * m_grid.m_cellHeight);
-				Vector2 end = start + Vector2(m_grid.m_halfWidth * 2.0f, 0.0f);
-				RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, RenderConstant::Yellow);
-			}
+			
 
-			for (int i = 0; i <= m_grid.m_col; ++i)
-			{
-				Vector2 start = m_grid.m_gridTopLeft + Vector2(i * m_grid.m_cellWidth, 0.0f);
-				Vector2 end = start + Vector2(0.0f, -m_grid.m_halfHeight * 2.0f);
-				RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, RenderConstant::Yellow);
-			}
+			//for (int i = 0; i <= m_grid.m_row; ++i)
+			//{
+			//	Vector2 start = m_grid.m_gridTopLeft + Vector2(0.0f, -i * m_grid.m_cellHeight);
+			//	Vector2 end = start + Vector2(m_grid.m_halfWidth * 2.0f, 0.0f);
+			//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, RenderConstant::Yellow);
+			//}
+
+			//for (int i = 0; i <= m_grid.m_col; ++i)
+			//{
+			//	Vector2 start = m_grid.m_gridTopLeft + Vector2(i * m_grid.m_cellWidth, 0.0f);
+			//	Vector2 end = start + Vector2(0.0f, -m_grid.m_halfHeight * 2.0f);
+			//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, RenderConstant::Yellow);
+			//}
 		}
 
 		if (m_idsAABB.size() > 0)
@@ -320,6 +359,7 @@ namespace STEditor
 
 			//t.position = position;
 			//t.rotation = rotation;
+
 
 
 			//int shapeIndex = 0;
