@@ -34,9 +34,9 @@ namespace ST
 		removeLeaf(objectId);
 	}
 
-	void DynamicBVT::updateObject(int objectId, const AABB& aabb)
+	void DynamicBVT::updateObject(const BroadphaseObjectBinding& binding)
 	{
-		updateLeaf(objectId, aabb);
+		updateLeaf(binding);
 	}
 
 	void DynamicBVT::clearAllObjects()
@@ -798,21 +798,21 @@ namespace ST
 		freeLeafNode(leafIndex);
 	}
 
-	void DynamicBVT::updateLeaf(int objectId, const AABB& aabb)
+	void DynamicBVT::updateLeaf(const BroadphaseObjectBinding& binding)
 	{
 		ZoneScopedN("[DBVT] Update Leaf");
 
 		int nodeIndex = -1;
 		for(int i = 0; i < m_leaves.size(); ++i)
 		{
-			if(m_leaves[i].binding.objectId == objectId)
+			if(m_leaves[i].binding.objectId == binding.objectId)
 			{
 				nodeIndex = m_leaves[i].nodeIndex;
-				m_leaves[i].binding.aabb = aabb;
+				m_leaves[i].binding = binding;
 				break;
 			}
 		}
-		m_nodes[nodeIndex].aabb = aabb;
+		m_nodes[nodeIndex].aabb = binding.aabb;
 		updateHeightAndAABB(nodeIndex);
 	}
 

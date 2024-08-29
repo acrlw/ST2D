@@ -73,12 +73,32 @@ namespace ST
 
 	void DynamicGrid::removeObject(int objectId)
 	{
+		std::vector<CellPosition> cells;
+		for (auto iter = m_objects.begin(); iter != m_objects.end(); iter++)
+		{
+			if (iter->binding.objectId == objectId)
+			{
+				cells = iter->cells;
+				m_objects.erase(iter);
+				break;
+			}
+		}
+		if (cells.empty())
+			return;
 
+		for (auto&& elem : cells)
+		{
+			std::erase_if(m_grid[elem.row * m_col + elem.col].bindings,
+			              [objectId](const GridObjectBinding& binding)
+			              {
+				              return binding.binding.objectId == objectId;
+			              });
+		}
 	}
 
-	void DynamicGrid::updateObject(int objectId, const AABB& aabb)
+	void DynamicGrid::updateObject(const BroadphaseObjectBinding& binding)
 	{
-
+		incrementalUpdate(binding);
 	}
 
 	std::vector<ObjectPair> DynamicGrid::queryOverlaps()
@@ -100,5 +120,10 @@ namespace ST
 		std::vector<int> result;
 
 		return result;
+	}
+
+	void DynamicGrid::incrementalUpdate(const BroadphaseObjectBinding& binding)
+	{
+
 	}
 }

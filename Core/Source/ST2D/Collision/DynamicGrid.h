@@ -32,13 +32,15 @@ namespace ST
 		void clearAllObjects() override;
 		void addObject(const BroadphaseObjectBinding& binding) override;
 		void removeObject(int objectId) override;
-		void updateObject(int objectId, const AABB& aabb) override;
+		void updateObject(const BroadphaseObjectBinding& binding) override;
 		std::vector<ObjectPair> queryOverlaps() override;
 		std::vector<int> queryAABB(const AABB& aabb) override;
 		std::vector<int> queryRay(const Vector2& origin, const Vector2& direction, float maxDistance) override;
 
 
 		//private:
+
+		void incrementalUpdate(const BroadphaseObjectBinding& binding);
 
 		real m_halfWidth = 50.0f;
 		real m_halfHeight = 50.0f;

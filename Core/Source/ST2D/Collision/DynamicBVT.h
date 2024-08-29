@@ -50,7 +50,7 @@ namespace ST
 	public:
 		void addObject(const BroadphaseObjectBinding& binding) override;
 		void removeObject(int objectId) override;
-		void updateObject(int objectId, const AABB& aabb) override;
+		void updateObject(const BroadphaseObjectBinding& binding) override;
 		void clearAllObjects() override;
 		std::vector<ObjectPair> queryOverlaps() override;
 		std::vector<int> queryAABB(const AABB& aabb) override;
@@ -79,7 +79,7 @@ namespace ST
 
 		void insertLeaf(const BVTNodeBinding& leaf);
 		void removeLeaf(int objectId);
-		void updateLeaf(int objectId, const AABB& aabb);
+		void updateLeaf(const BroadphaseObjectBinding& binding);
 
 		int findBestLeafNode(int nodeIndex) const;
 
