@@ -1,13 +1,16 @@
 #include "DynamicGrid.h"
 
+#include <ranges>
+#include <unordered_set>
+
 #include "ST2D/Log.h"
 
 namespace ST
 {
 	void DynamicGrid::initializeGrid()
 	{
+		m_objects.clear();
 		m_usedCells.clear();
-		m_grid.clear();
 
 		m_cellWidth = 2.0f * m_halfWidth / static_cast<real>(m_col);
 		m_cellHeight = 2.0f * m_halfHeight / static_cast<real>(m_row);
@@ -18,8 +21,6 @@ namespace ST
 
 	void DynamicGrid::clearAllObjects()
 	{
-		m_grid.clear();
-		m_objects.clear();
 		initializeGrid();
 	}
 
@@ -38,31 +39,42 @@ namespace ST
 		Vector2 topLeft = aabb.topLeft();
 		Vector2 bottomRight = aabb.bottomRight();
 
-		int rowStart = static_cast<int>(std::floor((m_gridTopLeft.y - topLeft.y) / m_cellHeight));
-		int colStart = static_cast<int>(std::floor((topLeft.x - m_gridTopLeft.x) / m_cellWidth));
+		uint32_t rowStart = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - topLeft.y) / m_cellHeight));
+		uint32_t rowEnd = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - bottomRight.y) / m_cellHeight));
+		uint32_t colStart = static_cast<uint32_t>(std::floor((topLeft.x - m_gridTopLeft.x) / m_cellWidth));
+		uint32_t colEnd = static_cast<uint32_t>(std::floor((bottomRight.x - m_gridTopLeft.x) / m_cellWidth));
 
-		int rowEnd = static_cast<int>(std::floor((m_gridTopLeft.y - bottomRight.y) / m_cellHeight));
-		int colEnd = static_cast<int>(std::floor((bottomRight.x - m_gridTopLeft.x) / m_cellWidth));
 
 		GridObjectBinding objectBinding;
 		objectBinding.binding = binding;
 
-		for (int i = rowStart; i <= rowEnd; i++)
+		for (uint32_t i = rowStart; i <= rowEnd; i++)
 		{
-			for (int j = colStart; j <= colEnd; j++)
+			for (uint32_t j = colStart; j <= colEnd; j++)
 			{
 				CellPosition cellPos;
 				cellPos.row = i;
 				cellPos.col = j;
 
 				objectBinding.cells.push_back(cellPos);
-				m_grid[i * m_col + j].push_back(objectBinding);
-				m_usedCells[cellPos].push_back(objectBinding);
 
 			}
 		}
 
 		m_objects.push_back(objectBinding);
+
+		for (uint32_t i = rowStart; i <= rowEnd; i++)
+		{
+			for (uint32_t j = colStart; j <= colEnd; j++)
+			{
+				CellPosition cellPos;
+				cellPos.row = i;
+				cellPos.col = j;
+
+				m_usedCells[cellPos].push_back(objectBinding);
+			}
+		}
+
 
 
 
@@ -104,24 +116,26 @@ namespace ST
 	std::vector<ObjectPair> DynamicGrid::queryOverlaps()
 	{
 		std::vector<ObjectPair> result;
+		std::unordered_set<ObjectPair, ObjectPairHash> uniquePairs;
 
 		if (m_usedCells.empty())
 			return result;
 
-		for (auto&& [key, cell] : m_usedCells)
+		for (auto& value : m_usedCells | 
+			std::views::values | 
+			std::views::filter([](const GridCellObjectsList& cell)
+				{ return cell.size() > 1; }))
 		{
-			if (cell.size() < 2)
-				continue;
-
-			for (int i = 0; i < cell.size(); i++)
+			for (int i = 0; i < value.size(); i++)
 			{
-				for (int j = i + 1; j < cell.size(); j++)
+				for (int j = i + 1; j < value.size(); j++)
 				{
-					ObjectPair pair;
-					pair.objectIdA = cell[i].binding.objectId;
-					pair.objectIdB = cell[j].binding.objectId;
-
-					result.push_back(pair);
+					ObjectPair pair(value[i].binding.objectId, value[j].binding.objectId);
+					if (!uniquePairs.contains(pair))
+					{
+						uniquePairs.insert(pair);
+						result.push_back(pair);
+					}
 				}
 			}
 		}
@@ -133,21 +147,37 @@ namespace ST
 	std::vector<int> DynamicGrid::queryAABB(const AABB& aabb)
 	{
 		std::vector<int> result;
+		std::unordered_set<int> uniqueObjects;
 
-		if (m_grid.empty())
+		if (m_usedCells.empty())
 			return result;
 
 		Vector2 topLeft = aabb.topLeft();
 		Vector2 bottomRight = aabb.bottomRight();
 
-		int rowStart = static_cast<int>(std::floor((m_gridTopLeft.y - topLeft.y) / m_cellHeight));
-		int colStart = static_cast<int>(std::floor((topLeft.x - m_gridTopLeft.x) / m_cellWidth));
+		uint32_t rowStart = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - topLeft.y) / m_cellHeight));
+		uint32_t colStart = static_cast<uint32_t>(std::floor((topLeft.x - m_gridTopLeft.x) / m_cellWidth));
 
-		int rowEnd = static_cast<int>(std::floor((m_gridTopLeft.y - bottomRight.y) / m_cellHeight));
-		int colEnd = static_cast<int>(std::floor((bottomRight.x - m_gridTopLeft.x) / m_cellWidth));
+		uint32_t rowEnd = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - bottomRight.y) / m_cellHeight));
+		uint32_t colEnd = static_cast<uint32_t>(std::floor((bottomRight.x - m_gridTopLeft.x) / m_cellWidth));
 
-		
-
+		for (auto& [key, value] : m_usedCells |
+			std::views::filter([rowStart, rowEnd, colStart, colEnd](const std::pair<CellPosition, GridCellObjectsList>& cell)
+				{
+					return cell.first.row >= rowStart && cell.first.row <= rowEnd &&
+						cell.first.col >= colStart && cell.first.col <= colEnd;
+				}))
+		{
+			for (auto& elem : value)
+			{
+				if (!uniqueObjects.contains(elem.binding.objectId))
+				{
+					uniqueObjects.insert(elem.binding.objectId);
+					result.push_back(elem.binding.objectId);
+				}
+			}
+			
+		}
 
 		return result;
 	}
@@ -156,7 +186,7 @@ namespace ST
 	{
 		std::vector<int> result;
 
-		if (m_grid.empty())
+		if (m_usedCells.empty())
 			return result;
 
 

@@ -1,5 +1,6 @@
 #include "BroadphaseScene.h"
 
+#include <ranges>
 
 
 namespace STEditor
@@ -89,36 +90,51 @@ namespace STEditor
 
 		if (m_showGrid)
 		{
-			for(auto&& elem: m_grid.m_objects)
+			auto color = RenderConstant::Yellow;
+			color.a = 50;
+			for (const auto& key : m_grid.m_usedCells | std::views::keys)
 			{
-				AABB aabb = elem.binding.aabb;
-				Vector2 topLeft = aabb.topLeft();
-				Vector2 bottomRight = aabb.bottomRight();
-				int rowStart = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - topLeft.y) / m_grid.m_cellHeight));
-				int rowEnd = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - bottomRight.y) / m_grid.m_cellHeight));
-				int colStart = static_cast<int>(std::floor((topLeft.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
-				int colEnd = static_cast<int>(std::floor((bottomRight.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
-				auto color = RenderConstant::Yellow;
-				color.a = 60;
-				for (int i = rowStart; i <= rowEnd; ++i)
-				{
-					for (int j = colStart; j <= colEnd; ++j)
-					{
-						Vector2 start = m_grid.m_gridTopLeft + Vector2(j * m_grid.m_cellWidth, -i * m_grid.m_cellHeight);
-						Vector2 end = start + Vector2(m_grid.m_cellWidth, 0.0f);
-						RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
-						end = start + Vector2(0.0f, -m_grid.m_cellHeight);
-						RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
-					}
-				}
-				Vector2 start = m_grid.m_gridTopLeft + Vector2((colEnd + 1) * m_grid.m_cellWidth, -rowStart * m_grid.m_cellHeight);
-				Vector2 end = start + Vector2(0.0f, -m_grid.m_cellHeight * (rowEnd - rowStart + 1));
-				RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+				real row = static_cast<real>(key.row);
+				real col = static_cast<real>(key.col);
 
-				start = m_grid.m_gridTopLeft + Vector2(colStart * m_grid.m_cellWidth, -(rowEnd + 1) * m_grid.m_cellHeight);
-				end = start + Vector2(m_grid.m_cellWidth * (colEnd - colStart + 1), 0.0f);
-				RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+				Vector2 start = m_grid.m_gridTopLeft + Vector2(col * m_grid.m_cellWidth, -row * m_grid.m_cellHeight);
+				Vector2 end = m_grid.m_gridTopLeft + Vector2((col + 1.0f) * m_grid.m_cellWidth, -(row + 1.0f) * m_grid.m_cellHeight);
+				AABB aabb = AABB::fromBox(start, end);
+
+				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, color);
+
 			}
+			//color = RenderConstant::Yellow;
+
+			//for(auto&& elem: m_grid.m_objects)
+			//{
+			//	AABB aabb = elem.binding.aabb;
+			//	Vector2 topLeft = aabb.topLeft();
+			//	Vector2 bottomRight = aabb.bottomRight();
+			//	int rowStart = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - topLeft.y) / m_grid.m_cellHeight));
+			//	int rowEnd = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - bottomRight.y) / m_grid.m_cellHeight));
+			//	int colStart = static_cast<int>(std::floor((topLeft.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
+			//	int colEnd = static_cast<int>(std::floor((bottomRight.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
+			//	
+			//	for (int i = rowStart; i <= rowEnd; ++i)
+			//	{
+			//		for (int j = colStart; j <= colEnd; ++j)
+			//		{
+			//			Vector2 start = m_grid.m_gridTopLeft + Vector2(j * m_grid.m_cellWidth, -i * m_grid.m_cellHeight);
+			//			Vector2 end = start + Vector2(m_grid.m_cellWidth, 0.0f);
+			//			RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+			//			end = start + Vector2(0.0f, -m_grid.m_cellHeight);
+			//			RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+			//		}
+			//	}
+			//	Vector2 start = m_grid.m_gridTopLeft + Vector2((colEnd + 1) * m_grid.m_cellWidth, -rowStart * m_grid.m_cellHeight);
+			//	Vector2 end = start + Vector2(0.0f, -m_grid.m_cellHeight * (rowEnd - rowStart + 1));
+			//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+
+			//	start = m_grid.m_gridTopLeft + Vector2(colStart * m_grid.m_cellWidth, -(rowEnd + 1) * m_grid.m_cellHeight);
+			//	end = start + Vector2(m_grid.m_cellWidth * (colEnd - colStart + 1), 0.0f);
+			//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+			//}
 			
 
 

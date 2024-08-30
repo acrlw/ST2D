@@ -227,7 +227,6 @@ namespace ST
 		//no need to rebuild
 		if (validLeafCount < 4)
 			return;
-		
 
 		AABB rootAABB;
 
@@ -377,19 +376,19 @@ namespace ST
 		if (leaves.empty() || rootAABB.isEmpty())
 			return;
 
-		int bucketCount = 24;
+		constexpr int bucketCount = 12;
 
-		std::vector<real> bucketArea;
-		std::vector<real> bucketLeafCount;
-		std::vector<real> bucketLeftLeafCount;
-		std::vector<real> bucketRightLeafCount;
+		std::array<real, bucketCount> bucketArea{};
+		std::array<real, bucketCount> bucketLeafCount{};
+		std::array<real, bucketCount> bucketLeftLeafCount{};
+		std::array<real, bucketCount> bucketRightLeafCount{};
 
 		std::deque<std::tuple<int, std::vector<BVTNodeBinding>>> stack;
 		stack.push_back({ m_rootIndex, leaves });
 
 		while (!stack.empty())
 		{
-			auto [rootIndex, currentLeaves] = stack.back();
+			auto& [rootIndex, currentLeaves] = stack.back();
 			stack.pop_back();
 
 			AABB currentRootAABB = m_nodes[rootIndex].aabb;
@@ -419,26 +418,16 @@ namespace ST
 
 			real rootArea = currentRootAABB.surfaceArea();
 
-			std::vector<real> leafArea;
-			leafArea.reserve(currentLeaves.size());
 
 			real bucketSize = (rootTopRight[sortIndex1] - rootBottomLeft[sortIndex1]) / static_cast<real>(bucketCount);
 
-			bucketArea.clear();
-			bucketLeafCount.clear();
-			bucketLeftLeafCount.clear();
-			bucketRightLeafCount.clear();
+			std::ranges::fill(bucketArea, 0);
+			std::ranges::fill(bucketLeafCount, 0);
+			std::ranges::fill(bucketLeftLeafCount, 0);
+			std::ranges::fill(bucketRightLeafCount, 0);
 
 
-			for (int i = 0; i < bucketCount; ++i)
-			{
-				bucketArea.push_back(0);
-				bucketLeafCount.push_back(0);
-				bucketLeftLeafCount.push_back(0);
-				bucketRightLeafCount.push_back(0);
-			}
-
-			for (auto&& leaf : currentLeaves)
+			for (const auto& leaf : currentLeaves)
 			{
 				const AABB& aabb = leaf.binding.aabb;
 				real dist = aabb.position[sortIndex1] - rootBottomLeft[sortIndex1];
@@ -484,7 +473,7 @@ namespace ST
 			std::vector<BVTNodeBinding> leftLeaves;
 			std::vector<BVTNodeBinding> rightLeaves;
 
-			for (auto&& leaf : currentLeaves)
+			for (const auto& leaf : currentLeaves)
 			{
 				const AABB& aabb = leaf.binding.aabb;
 				real dist = aabb.position[sortIndex1] - rootBottomLeft[sortIndex1];
@@ -522,10 +511,10 @@ namespace ST
 				m_nodes[rootIndex].right = rightNewNode;
 
 
-				for (auto&& leaf : leftLeaves)
+				for (const auto& leaf : leftLeaves)
 					m_nodes[leaf.nodeIndex].parent = leftNewNode;
 
-				for (auto&& leaf : rightLeaves)
+				for (const auto& leaf : rightLeaves)
 					m_nodes[leaf.nodeIndex].parent = rightNewNode;
 
 				stack.push_back({ rightNewNode, rightLeaves });
@@ -612,7 +601,7 @@ namespace ST
 
 	}
 
-	void DynamicBVT::checkHeight()
+	void DynamicBVT::checkHeight() const
 	{
 		std::deque<int> stack;
 		stack.push_back(m_rootIndex);
@@ -798,6 +787,43 @@ namespace ST
 		freeLeafNode(leafIndex);
 	}
 
+	void DynamicBVT::removeLeafFromTree(int leafNodeIndex)
+	{
+		if (leafNodeIndex == -1)
+			return;
+
+		if (leafNodeIndex == m_rootIndex)
+		{
+			//root is the leaf
+			m_rootIndex = -1;
+			freeNode(leafNodeIndex);
+			return;
+		}
+
+		int parentIndex = m_nodes[leafNodeIndex].parent;
+		int siblingIndex = m_nodes[parentIndex].left == leafNodeIndex ? m_nodes[parentIndex].right : m_nodes[parentIndex].left;
+
+		if (parentIndex == m_rootIndex)
+		{
+			//root is the parent of the leaf
+			m_rootIndex = siblingIndex;
+			freeNode(leafNodeIndex);
+			freeNode(parentIndex);
+			return;
+		}
+
+		int grandParentIndex = m_nodes[parentIndex].parent;
+
+		(m_nodes[grandParentIndex].left == parentIndex ? m_nodes[grandParentIndex].left : m_nodes[grandParentIndex].right) = siblingIndex;
+
+		m_nodes[siblingIndex].parent = grandParentIndex;
+
+		updateHeightAndAABB(siblingIndex);
+
+		freeNode(leafNodeIndex);
+
+	}
+
 	void DynamicBVT::updateLeaf(const BroadphaseObjectBinding& binding)
 	{
 		ZoneScopedN("[DBVT] Update Leaf");
@@ -812,8 +838,13 @@ namespace ST
 				break;
 			}
 		}
-		m_nodes[nodeIndex].aabb = binding.aabb;
-		updateHeightAndAABB(nodeIndex);
+
+		if (nodeIndex == -1)
+			return;
+
+		removeLeafFromTree(binding.objectId);
+		insertLeaf(m_leaves[nodeIndex]);
+
 	}
 
 	int DynamicBVT::findBestLeafNode(int nodeIndex) const

@@ -62,13 +62,11 @@ namespace ST
 
 		void directBuildTree(int nodeIndex, const std::vector<BVTNodeBinding>& leaves);
 
-		void rebuildTreeSplitMid(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves);
-
 		void rebuildTreeSAH(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves);
 
 		//private:
 
-		void checkHeight();
+		void checkHeight() const;
 
 		void rotateNode(int nodeIndex);
 
@@ -79,6 +77,7 @@ namespace ST
 
 		void insertLeaf(const BVTNodeBinding& leaf);
 		void removeLeaf(int objectId);
+		void removeLeafFromTree(int nodeIndex);
 		void updateLeaf(const BroadphaseObjectBinding& binding);
 
 		int findBestLeafNode(int nodeIndex) const;

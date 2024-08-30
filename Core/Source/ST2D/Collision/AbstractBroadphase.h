@@ -10,11 +10,38 @@ namespace ST
 		int bitmask = 1;
 		AABB aabb;
 	};
-	struct ST_API ObjectPair
+
+	union ST_API ObjectPair
 	{
-		int objectIdA = -1;
-		int objectIdB = -1;
+		struct
+		{
+			int32_t objectIdA = -1;
+			int32_t objectIdB = -1;
+		};
+		int64_t key;
+
+		ObjectPair() : key(0) {}
+		ObjectPair(int32_t a, int32_t b)
+		{
+			objectIdA = std::min(a, b);
+			objectIdB = std::max(a, b);
+		}
+
+		bool operator==(const ObjectPair& other) const
+		{
+			return key == other.key;
+		}
+
 	};
+
+	struct ObjectPairHash
+	{
+		std::size_t operator()(const ObjectPair& p) const
+		{
+			return static_cast<std::size_t>(p.key);
+		}
+	};
+
 
 	class ST_API AbstractBroadphase
 	{

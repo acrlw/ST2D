@@ -10,8 +10,8 @@ namespace ST
 	{
 		struct
 		{
-			uint32_t row = 0;
-			uint32_t col = 0;
+			uint32_t row;
+			uint32_t col;
 		};
 		uint64_t key = 0;
 
@@ -50,7 +50,7 @@ namespace ST
 
 		//private:
 
-		using GridCell = std::vector<GridObjectBinding>;
+		using GridCellObjectsList= std::vector<GridObjectBinding>;
 
 		void incrementalUpdate(const BroadphaseObjectBinding& binding);
 
@@ -68,8 +68,7 @@ namespace ST
 		Vector2 m_gridTopLeft;
 		Vector2 m_gridBottomRight;
 
-		std::map<CellPosition, GridCell> m_usedCells;
+		std::map<CellPosition, GridCellObjectsList> m_usedCells;
 		std::vector<GridObjectBinding> m_objects;
-		std::vector<GridCell> m_grid;
 	};
 }

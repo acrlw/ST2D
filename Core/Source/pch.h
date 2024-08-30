@@ -17,6 +17,11 @@
 #include <list>
 #include <vector>
 #include <array>
+#include <unordered_map>
+#include <map>
+#include <unordered_set>
+
+
 #include <ranges>
 #include <algorithm>
 #include <cmath>
