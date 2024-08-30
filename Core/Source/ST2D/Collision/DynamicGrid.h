@@ -6,11 +6,26 @@
 
 namespace ST
 {
-	struct ST_API CellPosition
+	union ST_API CellPosition
 	{
-		uint32_t row = 0;
-		uint32_t col = 0;
+		struct
+		{
+			uint32_t row = 0;
+			uint32_t col = 0;
+		};
+		uint64_t key = 0;
+
+		bool operator==(const CellPosition& other) const
+		{
+			return key == other.key;
+		}
+
+		bool operator<(const CellPosition& other) const
+		{
+			return key < other.key;
+		}
 	};
+
 	struct ST_API GridObjectBinding
 	{
 		BroadphaseObjectBinding binding;
@@ -18,11 +33,6 @@ namespace ST
 		std::vector<CellPosition> cells;
 	};
 
-	struct ST_API GridCell
-	{
-		//how many objects are in this cell
-		std::vector<GridObjectBinding> bindings;
-	};
 
 	class ST_API DynamicGrid : AbstractBroadphase
 	{
@@ -40,6 +50,8 @@ namespace ST
 
 		//private:
 
+		using GridCell = std::vector<GridObjectBinding>;
+
 		void incrementalUpdate(const BroadphaseObjectBinding& binding);
 
 		real m_halfWidth = 50.0f;
@@ -56,8 +68,8 @@ namespace ST
 		Vector2 m_gridTopLeft;
 		Vector2 m_gridBottomRight;
 
-		std::vector<GridCell> m_grid;
+		std::map<CellPosition, GridCell> m_usedCells;
 		std::vector<GridObjectBinding> m_objects;
-
+		std::vector<GridCell> m_grid;
 	};
 }
