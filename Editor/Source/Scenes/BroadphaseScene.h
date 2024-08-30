@@ -35,7 +35,7 @@ namespace STEditor
 
 		bool m_showObject = true;
 		bool m_showAABB = false;
-		bool m_showGrid = true;
+		bool m_showGrid = false;
 		bool m_showBVT = true;
 		bool m_showTransform = false;
 		bool m_showObjectId = true;
@@ -68,6 +68,7 @@ namespace STEditor
 		Vector2 m_queryRayDirection;
 
 		std::vector<int> m_dbvtStack;
+		std::vector<int> m_idsObject;
 		std::vector<int> m_idsAABB;
 		std::vector<int> m_idsRaycast;
 	};

@@ -121,6 +121,8 @@ namespace ST
 		if (m_usedCells.empty())
 			return result;
 
+		int counter = 0;
+
 		for (auto& value : m_usedCells | 
 			std::views::values | 
 			std::views::filter([](const GridCellObjectsList& cell)
@@ -130,6 +132,13 @@ namespace ST
 			{
 				for (int j = i + 1; j < value.size(); j++)
 				{
+					counter++;
+					if (!(value[i].binding.bitmask & value[j].binding.bitmask))
+						continue;
+
+					if (!value[i].binding.aabb.collide(value[j].binding.aabb))
+						continue;
+
 					ObjectPair pair(value[i].binding.objectId, value[j].binding.objectId);
 					if (!uniquePairs.contains(pair))
 					{
@@ -140,6 +149,7 @@ namespace ST
 			}
 		}
 
+		CORE_INFO("[Grid] Overlaps Query Counter: {}", counter);
 
 		return result;
 	}
@@ -151,6 +161,8 @@ namespace ST
 
 		if (m_usedCells.empty())
 			return result;
+
+		int counter = 0;
 
 		Vector2 topLeft = aabb.topLeft();
 		Vector2 bottomRight = aabb.bottomRight();
@@ -170,6 +182,10 @@ namespace ST
 		{
 			for (auto& elem : value)
 			{
+				counter++;
+				if (!aabb.collide(elem.binding.aabb))
+					continue;
+
 				if (!uniqueObjects.contains(elem.binding.objectId))
 				{
 					uniqueObjects.insert(elem.binding.objectId);
@@ -178,6 +194,8 @@ namespace ST
 			}
 			
 		}
+
+		CORE_INFO("[Grid] AABB Query Counter: {}", counter);
 
 		return result;
 	}
@@ -188,6 +206,8 @@ namespace ST
 
 		if (m_usedCells.empty())
 			return result;
+
+
 
 
 		return result;

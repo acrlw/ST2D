@@ -1,6 +1,7 @@
 #include "BroadphaseScene.h"
 
 #include <ranges>
+#include <unordered_set>
 
 
 namespace STEditor
@@ -28,7 +29,7 @@ namespace STEditor
 		m_polygon.scale(0.05f);
 
 		m_queryAABB.position = Vector2(0.0f, 0.0f);
-		m_queryAABB.width = 20;
+		m_queryAABB.width = 6;
 		m_queryAABB.height = 6;
 
 		m_queryRayOrigin.set(-10.0f, -10.0f);
@@ -172,23 +173,12 @@ namespace STEditor
 
 		}
 
-		if(m_showGrid)
+		if(m_idsObject.size() > 0)
 		{
-			
-
-			//for (int i = 0; i <= m_grid.m_row; ++i)
-			//{
-			//	Vector2 start = m_grid.m_gridTopLeft + Vector2(0.0f, -i * m_grid.m_cellHeight);
-			//	Vector2 end = start + Vector2(m_grid.m_halfWidth * 2.0f, 0.0f);
-			//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, RenderConstant::Yellow);
-			//}
-
-			//for (int i = 0; i <= m_grid.m_col; ++i)
-			//{
-			//	Vector2 start = m_grid.m_gridTopLeft + Vector2(i * m_grid.m_cellWidth, 0.0f);
-			//	Vector2 end = start + Vector2(0.0f, -m_grid.m_halfHeight * 2.0f);
-			//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, RenderConstant::Yellow);
-			//}
+			for (auto&& id : m_idsObject)
+			{
+				RenderSFMLImpl::renderShape(window, *m_settings.camera, m_transforms[id], m_shapes[id], RenderConstant::Red);
+			}
 		}
 
 		if (m_idsAABB.size() > 0)
@@ -266,28 +256,29 @@ namespace STEditor
 			m_dbvt.printTree();
 		}
 
-		if(ImGui::Button("Query Overlaps"))
+		if(ImGui::Button("Query Overlaps(DBVT)"))
 		{
 			auto pairs = m_dbvt.queryOverlaps();
 
-			//std::ranges::sort(pairs, [](const auto& a, const auto& b)
-			//	{
-			//		if (a.objectIdA < b.objectIdA)
-			//			return true;
-			//		if (a.objectIdA == b.objectIdA)
-			//			return a.objectIdB < b.objectIdB;
 
-			//	return false;
-			//	});
-			//std::string str;
-			//for(auto&& elem: pairs)
-			//	str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
-			//
-			//CORE_INFO("Overlaps: {}", str);
+			std::ranges::sort(pairs, [](const auto& a, const auto& b)
+				{
+					if (a.objectIdA < b.objectIdA)
+						return true;
+					if (a.objectIdA == b.objectIdA)
+						return a.objectIdB < b.objectIdB;
+
+				return false;
+				});
+			std::string str;
+			for(auto&& elem: pairs)
+				str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
+			
+			CORE_INFO("Overlaps: {}", str);
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("Query AABB"))
+		if (ImGui::Button("Query AABB(DBVT)"))
 		{
 			m_idsAABB = m_dbvt.queryAABB(m_queryAABB);
 
@@ -299,10 +290,55 @@ namespace STEditor
 		}
 
 		ImGui::SameLine();
-		if(ImGui::Button("Query Raycast"))
+		if(ImGui::Button("Query Raycast(DBVT)"))
 		{
 			m_idsRaycast = m_dbvt.queryRay(m_queryRayOrigin, m_queryRayDirection, 30.0f);
 		}
+
+		if(ImGui::Button("Query Overlaps(Grid)"))
+		{
+			m_idsObject.clear();
+			auto pairs = m_grid.queryOverlaps();
+			std::unordered_set<int> uniqueObjects;
+
+			for (auto&& elem : pairs)
+			{
+				if (!uniqueObjects.contains(elem.objectIdA))
+				{
+					uniqueObjects.insert(elem.objectIdA);
+					m_idsObject.push_back(elem.objectIdA);
+				}
+
+				if (!uniqueObjects.contains(elem.objectIdB))
+				{
+					uniqueObjects.insert(elem.objectIdB);
+					m_idsObject.push_back(elem.objectIdB);
+				}
+
+			}
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Query AABB(Grid)"))
+		{
+			m_idsAABB = m_grid.queryAABB(m_queryAABB);
+
+			//std::string str;
+			//for(auto&& elem: ids)
+			//	str += std::format("{0} ", elem);
+			//
+			//CORE_INFO("AABB: {}", str);
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Query Raycast(Grid)"))
+		{
+			m_idsRaycast = m_grid.queryRay(m_queryRayOrigin, m_queryRayDirection, 30.0f);
+		}
+
+
 
 		ImGui::End();
 	}
@@ -342,6 +378,7 @@ namespace STEditor
 		ZoneScopedN("[BroadphaseScene] Create Shapes");
 		m_idsAABB.clear();
 		m_idsRaycast.clear();
+		m_idsObject.clear();
 		m_dbvt.clearAllObjects();
 		m_grid.clearAllObjects();
 		m_aabbs.clear();
@@ -391,7 +428,7 @@ namespace STEditor
 			binding.bitmask = 1;
 			binding.objectId = m_objectIds[i];
 			m_grid.addObject(binding);
-			//m_dbvt.addObject(binding);
+			m_dbvt.addObject(binding);
 
 			//position += dir;
 		}

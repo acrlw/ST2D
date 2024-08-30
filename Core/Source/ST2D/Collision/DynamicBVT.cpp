@@ -116,7 +116,7 @@ namespace ST
 
 		}
 
-		CORE_INFO("Query Counter: {}", counter);
+		CORE_INFO("[DBVT] Overlaps Query Counter: {}", counter);
 
 		return result;
 	}
@@ -161,7 +161,7 @@ namespace ST
 		}
 
 
-		CORE_INFO("Query Counter: {}", counter);
+		CORE_INFO("[DBVT] AABB Query Counter: {}", counter);
 
 		return result;
 	}
@@ -209,7 +209,7 @@ namespace ST
 		}
 
 
-		CORE_INFO("Query Counter: {}, Size: {}", counter, result.size());
+		CORE_INFO("[DBVT] Raycast Query Counter: {}, Size: {}", counter, result.size());
 
 
 		return result;
@@ -388,7 +388,7 @@ namespace ST
 
 		while (!stack.empty())
 		{
-			auto& [rootIndex, currentLeaves] = stack.back();
+			auto [rootIndex, currentLeaves] = std::move(stack.back());
 			stack.pop_back();
 
 			AABB currentRootAABB = m_nodes[rootIndex].aabb;
@@ -425,7 +425,6 @@ namespace ST
 			std::ranges::fill(bucketLeafCount, 0);
 			std::ranges::fill(bucketLeftLeafCount, 0);
 			std::ranges::fill(bucketRightLeafCount, 0);
-
 
 			for (const auto& leaf : currentLeaves)
 			{
