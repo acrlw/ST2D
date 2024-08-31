@@ -76,8 +76,9 @@ namespace ST
 		void updateAABB(int nodeIndex);
 
 		void insertLeaf(const BVTNodeBinding& leaf);
+		void directInsertLeaf(int leafIndex);
 		void removeLeaf(int objectId);
-		void removeLeafFromTree(int nodeIndex);
+		void directRemoveLeaf(int nodeIndex);
 		void updateLeaf(const BroadphaseObjectBinding& binding);
 
 		int findBestLeafNode(int nodeIndex) const;

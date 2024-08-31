@@ -383,6 +383,7 @@ namespace ST
 		std::array<real, bucketCount> bucketLeftLeafCount{};
 		std::array<real, bucketCount> bucketRightLeafCount{};
 
+
 		std::deque<std::tuple<int, std::vector<BVTNodeBinding>>> stack;
 		stack.push_back({ m_rootIndex, leaves });
 
@@ -421,10 +422,10 @@ namespace ST
 
 			real bucketSize = (rootTopRight[sortIndex1] - rootBottomLeft[sortIndex1]) / static_cast<real>(bucketCount);
 
-			std::ranges::fill(bucketArea, 0);
-			std::ranges::fill(bucketLeafCount, 0);
-			std::ranges::fill(bucketLeftLeafCount, 0);
-			std::ranges::fill(bucketRightLeafCount, 0);
+			bucketArea.fill(0);
+			bucketLeafCount.fill(0);
+			bucketLeftLeafCount.fill(0);
+			bucketRightLeafCount.fill(0);
 
 			for (const auto& leaf : currentLeaves)
 			{
@@ -733,6 +734,50 @@ namespace ST
 		}
 	}
 
+	void DynamicBVT::directInsertLeaf(int leafIndex)
+	{
+		ZoneScopedN("[DBVT] Insert Leaf To Tree");
+
+		int newNodeIndex = getNewNode();
+		m_nodes[newNodeIndex].aabb = m_leaves[leafIndex].binding.aabb;
+		m_leaves[leafIndex].nodeIndex = newNodeIndex;
+		m_nodes[newNodeIndex].leafIndex = leafIndex;
+
+		if (m_rootIndex == -1)
+		{
+			//no root node, new leaf is the root
+			m_rootIndex = newNodeIndex;
+		}
+		else if (m_rootIndex == 0)
+		{
+			//root is a leaf, create a new root, merge the two leaves
+			int mergeIndex = mergeTwoNodes(newNodeIndex, m_rootIndex);
+			m_rootIndex = mergeIndex;
+		}
+		else
+		{
+			//root is a branch node, insert the new leaf into the tree
+			int targetIndex = findBestLeafNode(newNodeIndex);
+			int parentIndex = m_nodes[targetIndex].parent;
+			int mergeIndex = mergeTwoNodes(newNodeIndex, targetIndex);
+
+			(m_nodes[parentIndex].left == targetIndex ? m_nodes[parentIndex].left : m_nodes[parentIndex].right) = mergeIndex;
+
+			m_nodes[mergeIndex].parent = parentIndex;
+			m_nodes[parentIndex].height = 1 + std::max(m_nodes[m_nodes[parentIndex].left].height, m_nodes[m_nodes[parentIndex].right].height);
+
+			updateHeight(newNodeIndex);
+
+			int currentIndex = newNodeIndex;
+
+			while (currentIndex != m_rootIndex)
+			{
+				rotateNode(currentIndex);
+				currentIndex = m_nodes[currentIndex].parent;
+			}
+		}
+	}
+
 	void DynamicBVT::removeLeaf(int objectId)
 	{
 		ZoneScopedN("[DBVT] Remove Leaf");
@@ -786,7 +831,7 @@ namespace ST
 		freeLeafNode(leafIndex);
 	}
 
-	void DynamicBVT::removeLeafFromTree(int leafNodeIndex)
+	void DynamicBVT::directRemoveLeaf(int leafNodeIndex)
 	{
 		if (leafNodeIndex == -1)
 			return;
@@ -828,12 +873,14 @@ namespace ST
 		ZoneScopedN("[DBVT] Update Leaf");
 
 		int nodeIndex = -1;
+		int leafIndex = -1;
 		for(int i = 0; i < m_leaves.size(); ++i)
 		{
 			if(m_leaves[i].binding.objectId == binding.objectId)
 			{
 				nodeIndex = m_leaves[i].nodeIndex;
 				m_leaves[i].binding = binding;
+				leafIndex = i;
 				break;
 			}
 		}
@@ -841,8 +888,8 @@ namespace ST
 		if (nodeIndex == -1)
 			return;
 
-		removeLeafFromTree(binding.objectId);
-		insertLeaf(m_leaves[nodeIndex]);
+		directRemoveLeaf(nodeIndex);
+		directInsertLeaf(leafIndex);
 
 	}
 

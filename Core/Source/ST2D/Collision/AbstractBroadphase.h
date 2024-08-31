@@ -6,9 +6,10 @@ namespace ST
 {
 	struct ST_API BroadphaseObjectBinding
 	{
-		int objectId = -1;
-		int bitmask = 1;
+		int32_t objectId = -1;
+		int32_t bitmask = 1;
 		AABB aabb;
+		void* userData = nullptr;
 	};
 
 	union ST_API ObjectPair

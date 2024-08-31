@@ -338,6 +338,24 @@ namespace STEditor
 			m_idsRaycast = m_grid.queryRay(m_queryRayOrigin, m_queryRayDirection, 30.0f);
 		}
 
+		if(ImGui::Button("Update Object"))
+		{
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_real_distribution<> dist1(-9.0f, 9.0f);
+
+			int index = 0;
+			Transform t;
+			t.position = Vector2(dist1(gen), dist1(gen));
+			m_transforms[index] = t;
+			m_aabbs[index] = AABB::fromShape(t, m_shapes[index]);
+			BroadphaseObjectBinding binding;
+			binding.aabb = m_aabbs[index];
+			binding.bitmask = m_bitmasks[index];
+			binding.objectId = m_objectIds[index];
+			m_grid.updateObject(binding);
+			m_dbvt.updateObject(binding);
+		}
 
 
 		ImGui::End();
@@ -394,6 +412,7 @@ namespace STEditor
 		std::uniform_int_distribution<> dist2(0, m_shapesArray.size() - 1);
 		std::uniform_real_distribution<> dist3(-Constant::Pi, Constant::Pi);
 		std::uniform_real_distribution<> dist4(-9.0f, 9.0f);
+
 		real rotation = 0.0f;
 		Vector2 position;
 		Vector2 dir(1.0f, 1.0f);

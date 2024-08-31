@@ -76,8 +76,6 @@ namespace ST
 		}
 
 
-
-
 		//CORE_INFO("ID: {}, Row:({}, {}), Col:({}, {})", binding.objectId,
 		//	rowStart, rowEnd, colStart, colEnd);
 
@@ -100,6 +98,9 @@ namespace ST
 
 		for (auto&& elem : cells)
 		{
+			if (!m_usedCells.contains(elem))
+				continue;
+
 			std::erase_if(m_usedCells[elem],
 			              [objectId](const GridObjectBinding& binding)
 			              {
@@ -208,13 +209,51 @@ namespace ST
 			return result;
 
 
-
-
 		return result;
 	}
 
 	void DynamicGrid::incrementalUpdate(const BroadphaseObjectBinding& binding)
 	{
+		int index = -1;
+		for (int i = 0; i < m_objects.size(); i++)
+		{
+			if (m_objects[i].binding.objectId == binding.objectId)
+			{
+				index = i;
+				break;
+			}
+		}
+		if (index == -1)
+		{
+			CORE_WARN("Object with ID: {} does not exist in the grid", binding.objectId);
+			return;
+		}
+
+		AABB aabb = binding.aabb;
+		Vector2 topLeft = aabb.topLeft();
+		Vector2 bottomRight = aabb.bottomRight();
+
+		uint32_t rowStart = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - topLeft.y) / m_cellHeight));
+		uint32_t rowEnd = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - bottomRight.y) / m_cellHeight));
+		uint32_t colStart = static_cast<uint32_t>(std::floor((topLeft.x - m_gridTopLeft.x) / m_cellWidth));
+		uint32_t colEnd = static_cast<uint32_t>(std::floor((bottomRight.x - m_gridTopLeft.x) / m_cellWidth));
+
+		std::vector<CellPosition> newCells;
+
+		for (uint32_t i = rowStart; i <= rowEnd; i++)
+		{
+			for (uint32_t j = colStart; j <= colEnd; j++)
+			{
+				CellPosition cellPos;
+				cellPos.row = i;
+				cellPos.col = j;
+
+				newCells.push_back(cellPos);
+
+			}
+		}
+
+
 
 	}
 }
