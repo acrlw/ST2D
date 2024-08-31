@@ -704,7 +704,7 @@ namespace ST
 			//no root node, new leaf is the root
 			m_rootIndex = newNodeIndex;
 		}
-		else if (m_rootIndex == 0)
+		else if (m_rootIndex == 0 && m_nodes[m_rootIndex].isLeaf())
 		{
 			//root is a leaf, create a new root, merge the two leaves
 			int mergeIndex = mergeTwoNodes(newNodeIndex, m_rootIndex);
@@ -748,7 +748,7 @@ namespace ST
 			//no root node, new leaf is the root
 			m_rootIndex = newNodeIndex;
 		}
-		else if (m_rootIndex == 0)
+		else if (m_rootIndex == 0 && m_nodes[m_rootIndex].isLeaf())
 		{
 			//root is a leaf, create a new root, merge the two leaves
 			int mergeIndex = mergeTwoNodes(newNodeIndex, m_rootIndex);
@@ -828,6 +828,7 @@ namespace ST
 		updateHeightAndAABB(siblingIndex);
 
 		freeNode(leafNodeIndex);
+		freeNode(parentIndex);
 		freeLeafNode(leafIndex);
 	}
 
@@ -865,6 +866,7 @@ namespace ST
 		updateHeightAndAABB(siblingIndex);
 
 		freeNode(leafNodeIndex);
+		freeNode(parentIndex);
 
 	}
 
@@ -976,6 +978,7 @@ namespace ST
 		}
 
 		int result = m_freeNodes.back();
+		m_nodes[result].valid = true;
 		m_freeNodes.pop_back();
 		return result;
 	}
