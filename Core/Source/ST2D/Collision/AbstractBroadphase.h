@@ -16,10 +16,10 @@ namespace ST
 	{
 		struct
 		{
-			int32_t objectIdA = -1;
-			int32_t objectIdB = -1;
+			int32_t objectIdA;
+			int32_t objectIdB;
 		};
-		int64_t key;
+		int64_t key = 0;
 
 		ObjectPair() : key(0) {}
 		ObjectPair(int32_t a, int32_t b)

@@ -127,15 +127,15 @@ namespace STEditor
 
 		static void renderText(sf::RenderWindow& window, Camera2D& camera, const Vector2& position, const sf::Font& font,
 			const std::string& text, const sf::Color& color, const unsigned int& size = 18,
-			const Vector2& screenOffset = { 0, 0 });
+			Vector2 offset = { 0, 0 }, bool useWorldOffset = true);
 
 		static void renderFloat(sf::RenderWindow& window, Camera2D& camera, const Vector2& position, const sf::Font& font,
 			const real& value, const sf::Color& color, const unsigned int& size = 18,
-			const Vector2& screenOffset = Vector2(-0.2f, -0.2f));
+			const Vector2& worldOffset = Vector2(-0.2f, -0.2f));
 
 		static void renderInt(sf::RenderWindow& window, Camera2D& camera, const Vector2& position, const sf::Font& font,
 			const int& value, const sf::Color& color, const unsigned int& size = 18,
-			const Vector2& screenOffset = Vector2(-0.2f, -0.2f));
+			const Vector2& worldOffset = Vector2(-0.2f, -0.2f));
 
 		static void renderUInt(sf::RenderWindow& window, Camera2D& camera, const Vector2& position, const sf::Font& font,
 			const uint32_t& value, const sf::Color& color, const unsigned int& size = 18,
@@ -155,6 +155,6 @@ namespace STEditor
 
 		static void renderPosition(sf::RenderWindow& window, Camera2D& camera, const Vector2& position,
 			const sf::Color& color, const sf::Font& font, const unsigned int& size = 18,
-			const Vector2& screenOffset = Vector2(0.6f, 0.6f));
+			const Vector2& worldOffset = Vector2(0.6f, 0.6f));
 	};
 }

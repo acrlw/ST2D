@@ -35,8 +35,8 @@ namespace STEditor
 
 		bool m_showObject = true;
 		bool m_showAABB = false;
-		bool m_showGrid = false;
-		bool m_showBVT = true;
+		bool m_showGrid = true;
+		bool m_showBVT = false;
 		bool m_showTransform = false;
 		bool m_showObjectId = true;
 
@@ -66,6 +66,9 @@ namespace STEditor
 		AABB m_queryAABB;
 		Vector2 m_queryRayOrigin;
 		Vector2 m_queryRayDirection;
+		real m_rayMaxDistance = 10.0f;
+
+		real m_theta = 45.0f;
 
 		std::vector<int> m_dbvtStack;
 		std::vector<int> m_idsObject;

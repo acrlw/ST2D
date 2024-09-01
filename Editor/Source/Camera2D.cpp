@@ -260,11 +260,11 @@ namespace STEditor
 
 			std::string str = std::format("{}", i);
 			if (!checkOutOfX)
-				RenderSFMLImpl::renderText(window, *this, Vector2(static_cast<real>(i), 0.0f), *m_font, str, color, 16, { -0.25f, -0.25f });
+				RenderSFMLImpl::renderText(window, *this, Vector2(static_cast<real>(i), 0.0f), *m_font, str, color, 16, { -15.0f, -15.0f }, false);
 			if (i == 0)
 				continue;
 			if (!checkOutOfY)
-				RenderSFMLImpl::renderText(window, *this, Vector2(0.0f, static_cast<real>(i)), *m_font, str, color, 16, { -0.25f, -0.25f });
+				RenderSFMLImpl::renderText(window, *this, Vector2(0.0f, static_cast<real>(i)), *m_font, str, color, 16, { -15.0f, -15.0f }, false);
 
 		}
 

@@ -11,12 +11,6 @@ namespace ST
 	{
 		m_objects.clear();
 		m_usedCells.clear();
-
-		m_cellWidth = 2.0f * m_halfWidth / static_cast<real>(m_col);
-		m_cellHeight = 2.0f * m_halfHeight / static_cast<real>(m_row);
-
-		m_gridTopLeft = Vector2(-m_halfWidth, m_halfHeight) + m_origin;
-		m_gridBottomRight = Vector2(m_halfWidth, -m_halfHeight) + m_origin;
 	}
 
 	void DynamicGrid::clearAllObjects()
@@ -35,41 +29,31 @@ namespace ST
 			}
 		}
 
-		AABB aabb = binding.aabb;
-		Vector2 topLeft = aabb.topLeft();
-		Vector2 bottomRight = aabb.bottomRight();
+		CellIndex rowStart, rowEnd, colStart, colEnd;
 
-		uint32_t rowStart = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - topLeft.y) / m_cellHeight));
-		uint32_t rowEnd = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - bottomRight.y) / m_cellHeight));
-		uint32_t colStart = static_cast<uint32_t>(std::floor((topLeft.x - m_gridTopLeft.x) / m_cellWidth));
-		uint32_t colEnd = static_cast<uint32_t>(std::floor((bottomRight.x - m_gridTopLeft.x) / m_cellWidth));
-
+		getGridIndicesFromAABB(binding.aabb, rowStart, rowEnd, colStart, colEnd);
 
 		GridObjectBinding objectBinding;
 		objectBinding.binding = binding;
 
-		for (uint32_t i = rowStart; i <= rowEnd; i++)
+		for (CellIndex i = rowStart; i <= rowEnd; i++)
 		{
-			for (uint32_t j = colStart; j <= colEnd; j++)
+			for (CellIndex j = colStart; j <= colEnd; j++)
 			{
-				CellPosition cellPos;
-				cellPos.row = i;
-				cellPos.col = j;
+				CellPosition cellPos(i, j);
 
-				objectBinding.cells.push_back(cellPos);
+				objectBinding.cells.insert(cellPos);
 
 			}
 		}
 
 		m_objects.push_back(objectBinding);
 
-		for (uint32_t i = rowStart; i <= rowEnd; i++)
+		for (CellIndex i = rowStart; i <= rowEnd; i++)
 		{
-			for (uint32_t j = colStart; j <= colEnd; j++)
+			for (CellIndex j = colStart; j <= colEnd; j++)
 			{
-				CellPosition cellPos;
-				cellPos.row = i;
-				cellPos.col = j;
+				CellPosition cellPos(i, j);
 
 				m_usedCells[cellPos].push_back(objectBinding);
 			}
@@ -83,7 +67,7 @@ namespace ST
 
 	void DynamicGrid::removeObject(int objectId)
 	{
-		std::vector<CellPosition> cells;
+		std::set<CellPosition> cells;
 		for (auto iter = m_objects.begin(); iter != m_objects.end(); iter++)
 		{
 			if (iter->binding.objectId == objectId)
@@ -165,14 +149,9 @@ namespace ST
 
 		int counter = 0;
 
-		Vector2 topLeft = aabb.topLeft();
-		Vector2 bottomRight = aabb.bottomRight();
+		int32_t rowStart, rowEnd, colStart, colEnd;
 
-		uint32_t rowStart = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - topLeft.y) / m_cellHeight));
-		uint32_t colStart = static_cast<uint32_t>(std::floor((topLeft.x - m_gridTopLeft.x) / m_cellWidth));
-
-		uint32_t rowEnd = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - bottomRight.y) / m_cellHeight));
-		uint32_t colEnd = static_cast<uint32_t>(std::floor((bottomRight.x - m_gridTopLeft.x) / m_cellWidth));
+		getGridIndicesFromAABB(aabb, rowStart, rowEnd, colStart, colEnd);
 
 		for (auto& [key, value] : m_usedCells |
 			std::views::filter([rowStart, rowEnd, colStart, colEnd](const std::pair<CellPosition, GridCellObjectsList>& cell)
@@ -208,8 +187,90 @@ namespace ST
 		if (m_usedCells.empty())
 			return result;
 
+		int counter = 0;
+
+		Vector2 start = origin;
+		Vector2 end = origin + direction * maxDistance;
+
+		CellIndex rStart, rEnd, cStart, cEnd;
+
+		getGridIndicesFromVector(start, rStart, cStart);
+		getGridIndicesFromVector(end, rEnd, cEnd);
+
+		CellIndex dx = rEnd - rStart;
+		CellIndex dy = cEnd - cStart;
+
+		if (rStart == rEnd && cStart == cEnd)
+		{
+			//ray is in a single cell
+			CellPosition cellPos(rStart, cStart);
+
+			if (!m_usedCells.contains(cellPos))
+				return result;
+
+			for (auto&& elem : m_usedCells[cellPos])
+			{
+				if (elem.binding.aabb.raycast(start, direction))
+					result.push_back(elem.binding.objectId);
+			}
+
+			return result;
+		}
+
+		std::vector<CellPosition> rayCells;
+
+
+
+		CORE_INFO("[Grid] Ray Query Counter: {}", counter);
 
 		return result;
+	}
+
+	void DynamicGrid::getGridIndicesFromAABB(const AABB& aabb, CellIndex& rowStart, CellIndex& rowEnd, CellIndex& colStart,
+		CellIndex& colEnd) const
+	{
+		Vector2 bottomLeft = aabb.bottomLeft();
+		Vector2 topRight = aabb.topRight();
+
+		rowStart = static_cast<CellIndex>(std::floor((bottomLeft.y - m_gridShift.y) / m_cellHeight));
+		rowEnd = static_cast<CellIndex>(std::floor((topRight.y - m_gridShift.y) / m_cellHeight));
+		colStart = static_cast<CellIndex>(std::floor((bottomLeft.x - m_gridShift.x) / m_cellWidth));
+		colEnd = static_cast<CellIndex>(std::floor((topRight.x - m_gridShift.x) / m_cellWidth));
+	}
+
+	void DynamicGrid::getGridIndicesFromAABB(const AABB& aabb, CellPosition& start, CellPosition& end) const
+	{
+		Vector2 bottomLeft = aabb.bottomLeft();
+		Vector2 topRight = aabb.topRight();
+
+		start.row = static_cast<CellIndex>(std::floor((bottomLeft.y - m_gridShift.y) / m_cellHeight));
+		end.row = static_cast<CellIndex>(std::floor((topRight.y - m_gridShift.y) / m_cellHeight));
+		start.col = static_cast<CellIndex>(std::floor((bottomLeft.x - m_gridShift.x) / m_cellWidth));
+		end.col = static_cast<CellIndex>(std::floor((topRight.x - m_gridShift.x) / m_cellWidth));
+	}
+
+	void DynamicGrid::getGridIndicesFromVector(const Vector2& position, CellIndex& row, CellIndex& col) const
+	{
+		row = static_cast<CellIndex>(std::floor((position.y - m_gridShift.y) / m_cellHeight));
+		col = static_cast<CellIndex>(std::floor((position.x - m_gridShift.x) / m_cellWidth));
+	}
+
+	void DynamicGrid::getGridIndicesFromVector(const Vector2& position, CellPosition& cell) const
+	{
+		cell.row = static_cast<CellIndex>(std::floor((position.y - m_gridShift.y) / m_cellHeight));
+		cell.col = static_cast<CellIndex>(std::floor((position.x - m_gridShift.x) / m_cellWidth));
+	}
+
+	void DynamicGrid::getVectorFromGridIndices(const CellIndex& row, const CellIndex& col, Vector2& position) const
+	{
+		position.x = m_gridShift.x + col * m_cellWidth;
+		position.y = m_gridShift.y + row * m_cellHeight;
+	}
+
+	void DynamicGrid::getVectorFromGridIndices(const CellPosition& cell, Vector2& position) const
+	{
+		position.x = m_gridShift.x + cell.col * m_cellWidth;
+		position.y = m_gridShift.y + cell.row * m_cellHeight;
 	}
 
 	void DynamicGrid::incrementalUpdate(const BroadphaseObjectBinding& binding)
@@ -229,31 +290,84 @@ namespace ST
 			return;
 		}
 
+		m_objects[index].binding = binding;
+
 		AABB aabb = binding.aabb;
-		Vector2 topLeft = aabb.topLeft();
-		Vector2 bottomRight = aabb.bottomRight();
 
-		uint32_t rowStart = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - topLeft.y) / m_cellHeight));
-		uint32_t rowEnd = static_cast<uint32_t>(std::floor((m_gridTopLeft.y - bottomRight.y) / m_cellHeight));
-		uint32_t colStart = static_cast<uint32_t>(std::floor((topLeft.x - m_gridTopLeft.x) / m_cellWidth));
-		uint32_t colEnd = static_cast<uint32_t>(std::floor((bottomRight.x - m_gridTopLeft.x) / m_cellWidth));
+		CellIndex rowStart, rowEnd, colStart, colEnd;
 
-		std::vector<CellPosition> newCells;
+		getGridIndicesFromAABB(aabb, rowStart, rowEnd, colStart, colEnd);
 
-		for (uint32_t i = rowStart; i <= rowEnd; i++)
+		std::set<CellPosition> newCells;
+
+		for (CellIndex i = rowStart; i <= rowEnd; i++)
 		{
-			for (uint32_t j = colStart; j <= colEnd; j++)
+			for (CellIndex j = colStart; j <= colEnd; j++)
 			{
-				CellPosition cellPos;
-				cellPos.row = i;
-				cellPos.col = j;
+				CellPosition cellPos(i, j);
 
-				newCells.push_back(cellPos);
+				newCells.insert(cellPos);
 
 			}
 		}
 
+		// double pointer to compute symmetric difference
 
+		std::vector<CellPosition> cellsToRemove, cellsToAdd;
+
+		auto it1 = m_objects[index].cells.begin();
+		auto it2 = newCells.begin();
+
+		while (it1 != m_objects[index].cells.end() && it2 != newCells.end())
+		{
+			if (*it1 < *it2)
+			{
+				cellsToRemove.emplace_back(*it1);
+				++it1;
+			}
+			else if (*it2 < *it1)
+			{
+				cellsToAdd.emplace_back(*it2);
+				++it2;
+			}
+			else
+			{
+				++it1;
+				++it2;
+			}
+		}
+
+		while (it1 != m_objects[index].cells.end())
+		{
+			cellsToRemove.emplace_back(*it1);
+			++it1;
+		}
+
+		while (it2 != newCells.end())
+		{
+			cellsToAdd.emplace_back(*it2);
+			++it2;
+		}
+
+		for (auto&& elem : cellsToRemove)
+		{
+
+			if (!m_usedCells.contains(elem))
+				continue;
+
+			std::erase_if(m_usedCells[elem],
+				[&binding](const GridObjectBinding& bd)
+				{
+					return binding.objectId == bd.binding.objectId;
+				});
+		}
+
+		for (auto&& elem : cellsToAdd)
+		{
+			m_usedCells[elem].push_back(m_objects[index]);
+		}
+
+		m_objects[index].cells = std::move(newCells);
 
 	}
 }

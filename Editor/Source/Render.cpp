@@ -917,7 +917,7 @@ namespace STEditor
 
 		void RenderSFMLImpl::renderText(sf::RenderWindow& window, Camera2D& camera, const Vector2& position,
 			const sf::Font& font, const std::string& txt, const sf::Color& color,
-			const unsigned int& size, const Vector2& screenOffset)
+			const unsigned int& size, Vector2 offset, bool useWorldOffset)
 		{
 			sf::Text text;
 			text.setFont(font);
@@ -926,9 +926,15 @@ namespace STEditor
 			text.setFillColor(color);
 			sf::FloatRect text_rect = text.getLocalBounds();
 			text.setOrigin(text_rect.left + text_rect.width / 2.0f, text_rect.top + text_rect.height / 2.0f);
-			Vector2 offset = screenOffset;
-			if (camera.meterToPixel() > camera.defaultMeterToPixel())
-				offset /= camera.meterToPixel() / camera.defaultMeterToPixel();
+
+			if (useWorldOffset)
+			{
+				if (camera.meterToPixel() > camera.defaultMeterToPixel())
+					offset /= camera.meterToPixel() / camera.defaultMeterToPixel();
+			}
+			else
+				offset *= camera.pixelToMeter();
+			
 
 			auto pos = toVector2f(camera.worldToScreen(position + offset));
 
@@ -936,6 +942,7 @@ namespace STEditor
 
 			window.draw(text);
 		}
+
 
 		void RenderSFMLImpl::renderFloat(sf::RenderWindow& window, Camera2D& camera, const Vector2& position,
 			const sf::Font& font,
@@ -982,10 +989,10 @@ namespace STEditor
 
 		void RenderSFMLImpl::renderPosition(sf::RenderWindow& window, Camera2D& camera, const Vector2& position,
 			const sf::Color& color, const sf::Font& font, const unsigned int& size,
-			const Vector2& screenOffset)
+			const Vector2& worldOffset)
 		{
 			std::string str1 = std::format("({:.3f}, {:.3f})", position.x, position.y);
-			renderText(window, camera, position, font, str1, color, size, screenOffset);
+			renderText(window, camera, position, font, str1, color, size, worldOffset);
 		}
 	
 }

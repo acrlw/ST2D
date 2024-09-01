@@ -32,8 +32,8 @@ namespace STEditor
 		m_queryAABB.width = 6;
 		m_queryAABB.height = 6;
 
-		m_queryRayOrigin.set(-10.0f, -10.0f);
-		m_queryRayDirection.set(1.0f, 1.0f).normalize();
+		m_queryRayOrigin.set(-9.85f, -9.5f);
+		m_queryRayDirection.set(1.0f, 1.5f).normalize();
 
 
 
@@ -93,14 +93,20 @@ namespace STEditor
 		{
 			auto color = RenderConstant::Yellow;
 			color.a = 50;
-			for (const auto& key : m_grid.m_usedCells | std::views::keys)
+			for (const auto& [key, value] : m_grid.m_usedCells)
 			{
+				if (value.empty())
+					continue;
+
 				real row = static_cast<real>(key.row);
 				real col = static_cast<real>(key.col);
 
-				Vector2 start = m_grid.m_gridTopLeft + Vector2(col * m_grid.m_cellWidth, -row * m_grid.m_cellHeight);
-				Vector2 end = m_grid.m_gridTopLeft + Vector2((col + 1.0f) * m_grid.m_cellWidth, -(row + 1.0f) * m_grid.m_cellHeight);
-				AABB aabb = AABB::fromBox(start, end);
+				Vector2 start = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+				Vector2 end = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+				AABB aabb;
+				aabb.position = (start + end) * 0.5f;
+				aabb.width = m_grid.m_cellWidth;
+				aabb.height = m_grid.m_cellHeight;
 
 				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, color);
 
@@ -160,7 +166,7 @@ namespace STEditor
 					if (index == m_dbvt.m_rootIndex)
 						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
 					else if (m_dbvt.m_nodes[index].isLeaf())
-						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
+						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Green);
 					else
 						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
 				}
@@ -172,6 +178,97 @@ namespace STEditor
 			}
 
 		}
+
+		Vector2 start = m_queryRayOrigin;
+
+		Vector2 end = m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance;
+
+		CellIndex rStart, rEnd, cStart, cEnd;
+
+		m_grid.getGridIndicesFromVector(start, rStart, cStart);
+		m_grid.getGridIndicesFromVector(end, rEnd, cEnd);
+
+		int dR = std::abs(rEnd - rStart);
+		int dC = std::abs(cEnd - cStart);
+
+		int stepR = rStart < rEnd ? 1 : -1;
+		int stepC = cStart < cEnd ? 1 : -1;
+
+		std::unordered_set<CellPosition, CellPositionHash> uniqueCells;
+
+		uniqueCells.insert(CellPosition(rStart, cStart));
+
+		if(dC != 0)
+		{
+			for (CellIndex c = cStart + stepC; ; c += stepC)
+			{
+				real x = m_grid.m_gridShift.x + static_cast<real>(c) * m_grid.m_cellWidth;
+				real t = (x - start.x) / m_queryRayDirection.x;
+
+				if (std::abs(t) > m_rayMaxDistance)
+					break;
+				
+
+				Vector2 p = start + m_queryRayDirection * t;
+				CellPosition cp;
+				cp.row = static_cast<CellIndex>(std::floor((p.y - m_grid.m_gridShift.y) / m_grid.m_cellHeight));
+				cp.col = c;
+				uniqueCells.insert(cp);
+			}
+		}
+
+		if (dR != 0)
+		{
+			for (CellIndex r = rStart + stepR; ; r += stepR)
+			{
+				real y = m_grid.m_gridShift.y + static_cast<real>(r) * m_grid.m_cellHeight;
+				real t = (y - start.y) / m_queryRayDirection.y;
+
+				if (std::abs(t) > m_rayMaxDistance)
+					break;
+
+				Vector2 p = start + m_queryRayDirection * t;
+				CellPosition cp;
+				cp.row = r;
+				cp.col = static_cast<CellIndex>(std::floor((p.x - m_grid.m_gridShift.x) / m_grid.m_cellWidth));
+				uniqueCells.insert(cp);
+			}
+		}
+
+
+		RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance, RenderConstant::Yellow);
+
+		for(auto&& elem: uniqueCells)
+		{
+			real row = static_cast<real>(elem.row);
+			real col = static_cast<real>(elem.col);
+
+			Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+			Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+			AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+			RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Orange);
+		}
+
+		real row = static_cast<real>(rStart);
+		real col = static_cast<real>(cStart);
+
+		Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+		Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+		AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+		RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
+
+
+		 row = static_cast<real>(rEnd);
+		 col = static_cast<real>(cEnd);
+
+		 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+		 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+		 aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+		RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
+
 
 		if(m_idsObject.size() > 0)
 		{
@@ -195,8 +292,6 @@ namespace STEditor
 
 		if(m_idsRaycast.size() > 0)
 		{
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * 30.0f, RenderConstant::Yellow);
-
 			for (auto&& id : m_idsRaycast)
 			{
 				AABB aabb = m_aabbs[id];
@@ -229,6 +324,17 @@ namespace STEditor
 
 		ImGui::SliderInt("Render BVH Height", &m_currentHeight, 0, m_maxHeight);
 		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
+
+		float maxDist = static_cast<float>(m_rayMaxDistance);
+		ImGui::DragFloat("Ray Max Distance", &maxDist, 0.1f, 1.0f, 100.0f);
+		m_rayMaxDistance = maxDist;
+
+		float theta = m_theta;
+		ImGui::DragFloat("Theta", &theta, 0.1f, -180.0f, 180.0f);
+		m_theta = theta;
+
+		m_queryRayDirection.set(Math::cosx(Math::radians(m_theta)), Math::sinx(Math::radians(m_theta)));
+
 
 		if (m_dbvt.m_rootIndex != -1)
 			m_maxHeight = std::max(0, m_dbvt.m_nodes[m_dbvt.m_rootIndex].height);
@@ -292,7 +398,7 @@ namespace STEditor
 		ImGui::SameLine();
 		if(ImGui::Button("Query Raycast(DBVT)"))
 		{
-			m_idsRaycast = m_dbvt.queryRay(m_queryRayOrigin, m_queryRayDirection, 30.0f);
+			m_idsRaycast = m_dbvt.queryRay(m_queryRayOrigin, m_queryRayDirection, m_rayMaxDistance);
 		}
 
 		if(ImGui::Button("Query Overlaps(Grid)"))

@@ -178,6 +178,7 @@ namespace ST
 		stack.push_back(m_rootIndex);
 
 		int counter = 0;
+		const real maxSquare = maxDistance * maxDistance;
 
 		while (!stack.empty())
 		{
@@ -191,8 +192,22 @@ namespace ST
 
 			AABB aabb = m_nodes[currentIndex].aabb;
 
-			bool raycastHit = aabb.raycast(origin, direction);
-			if (!raycastHit)
+			auto raycastResult = GeometryAlgorithm2D::raycastAABB(origin, direction, aabb.topLeft(), aabb.bottomRight());
+			if (!raycastResult.has_value())
+				continue;
+
+			auto [p1, p2] = raycastResult.value();
+
+			Vector2 v1 = origin - p1;
+			Vector2 v2 = origin - p2;
+
+			if (v1.lengthSquare() > maxSquare && v2.lengthSquare() > maxDistance)
+				continue;
+
+			bool isP1Inside = GeometryAlgorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight());
+			bool isP2Inside = GeometryAlgorithm2D::checkPointOnAABB(p2, aabb.topLeft(), aabb.bottomRight());
+
+			if (!(isP1Inside && isP2Inside))
 				continue;
 
 			if (m_nodes[currentIndex].isLeaf())
