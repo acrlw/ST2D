@@ -8,15 +8,10 @@
 
 namespace ST
 {
-	void DynamicGrid::initializeGrid()
+	void DynamicGrid::clearAllObjects()
 	{
 		m_objects.clear();
 		m_usedCells.clear();
-	}
-
-	void DynamicGrid::clearAllObjects()
-	{
-		initializeGrid();
 	}
 
 	void DynamicGrid::addObject(const BroadphaseObjectBinding& binding)

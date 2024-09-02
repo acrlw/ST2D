@@ -56,7 +56,7 @@ namespace STEditor
 		DynamicBVT m_dbvt;
 		DynamicGrid m_grid;
 
-		int m_count = 5;
+		int m_count = 6;
 		int m_maxHeight = 0;
 		int m_currentHeight = 0;
 		float m_expandRatio = 0.03f;

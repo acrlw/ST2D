@@ -74,7 +74,6 @@ namespace ST
 	{
 	public:
 
-		void initializeGrid();
 		void clearAllObjects() override;
 		void addObject(const BroadphaseObjectBinding& binding) override;
 		void removeObject(int objectId) override;
@@ -82,6 +81,8 @@ namespace ST
 		std::vector<ObjectPair> queryOverlaps() override;
 		std::vector<int> queryAABB(const AABB& aabb) override;
 		std::vector<int> queryRay(const Vector2& origin, const Vector2& direction, float maxDistance) override;
+
+
 		void getGridIndicesFromAABB(const AABB& aabb, CellIndex& rowStart, CellIndex& rowEnd, CellIndex& colStart, CellIndex& colEnd) const;
 		void getGridIndicesFromAABB(const AABB& aabb, CellPosition& start, CellPosition& end) const;
 		void getGridIndicesFromVector(const Vector2& position, CellIndex& row, CellIndex& col) const;

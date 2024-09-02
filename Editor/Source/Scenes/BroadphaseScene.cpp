@@ -15,8 +15,6 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Load");
 
-		m_grid.initializeGrid();
-
 		m_rectangle.set(0.2f, 0.2f);
 		m_circle.setRadius(0.15f);
 		m_capsule.set(0.4f, 0.2f);
@@ -327,7 +325,7 @@ namespace STEditor
 		ImGui::Begin("Broad-phase");
 
 		int count = m_count;
-		ImGui::DragInt("Count", &count, 2, 5, 5000);
+		ImGui::DragInt("Count", &count, 2, 4, 5000);
 		if (m_count != count)
 		{
 			m_count = count;
