@@ -179,95 +179,112 @@ namespace STEditor
 
 		}
 
-		Vector2 start = m_queryRayOrigin;
 
-		Vector2 end = m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance;
+		//Vector2 start = m_queryRayOrigin;
 
-		CellIndex rStart, rEnd, cStart, cEnd;
+		//Vector2 end = m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance;
 
-		m_grid.getGridIndicesFromVector(start, rStart, cStart);
-		m_grid.getGridIndicesFromVector(end, rEnd, cEnd);
+		//CellIndex rStart, rEnd, cStart, cEnd;
 
-		int dR = std::abs(rEnd - rStart);
-		int dC = std::abs(cEnd - cStart);
+		//m_grid.getGridIndicesFromVector(start, rStart, cStart);
+		//m_grid.getGridIndicesFromVector(end, rEnd, cEnd);
 
-		int stepR = rStart < rEnd ? 1 : -1;
-		int stepC = cStart < cEnd ? 1 : -1;
+		//int dR = std::abs(rEnd - rStart);
+		//int dC = std::abs(cEnd - cStart);
 
-		std::unordered_set<CellPosition, CellPositionHash> uniqueCells;
+		//int stepR = rStart < rEnd ? 1 : -1;
+		//int stepC = cStart < cEnd ? 1 : -1;
 
-		uniqueCells.insert(CellPosition(rStart, cStart));
+		//bool addNew = stepR * stepC > 0;
 
-		if(dC != 0)
-		{
-			for (CellIndex c = cStart + stepC; ; c += stepC)
-			{
-				real x = m_grid.m_gridShift.x + static_cast<real>(c) * m_grid.m_cellWidth;
-				real t = (x - start.x) / m_queryRayDirection.x;
+		//std::unordered_set<CellPosition, CellPositionHash> uniqueCells;
 
-				if (std::abs(t) > m_rayMaxDistance)
-					break;
-				
+		//if(dC != 0)
+		//{
+		//	for (CellIndex c = cStart; ; c += stepC)
+		//	{
+		//		real x = m_grid.m_gridShift.x + static_cast<real>(c) * m_grid.m_cellWidth;
+		//		real t = (x - start.x) / m_queryRayDirection.x;
 
-				Vector2 p = start + m_queryRayDirection * t;
-				CellPosition cp;
-				cp.row = static_cast<CellIndex>(std::floor((p.y - m_grid.m_gridShift.y) / m_grid.m_cellHeight));
-				cp.col = c;
-				uniqueCells.insert(cp);
-			}
-		}
+		//		if(t < 0.0f)
+		//			continue;
 
-		if (dR != 0)
-		{
-			for (CellIndex r = rStart + stepR; ; r += stepR)
-			{
-				real y = m_grid.m_gridShift.y + static_cast<real>(r) * m_grid.m_cellHeight;
-				real t = (y - start.y) / m_queryRayDirection.y;
+		//		if (std::abs(t) > m_rayMaxDistance)
+		//			break;
 
-				if (std::abs(t) > m_rayMaxDistance)
-					break;
+		//		Vector2 p = start + m_queryRayDirection * t;
+		//		CellPosition cp;
+		//		cp.row = static_cast<CellIndex>(std::floor((p.y - m_grid.m_gridShift.y) / m_grid.m_cellHeight));
+		//		cp.col = c;
+		//		uniqueCells.insert(cp);
 
-				Vector2 p = start + m_queryRayDirection * t;
-				CellPosition cp;
-				cp.row = r;
-				cp.col = static_cast<CellIndex>(std::floor((p.x - m_grid.m_gridShift.x) / m_grid.m_cellWidth));
-				uniqueCells.insert(cp);
-			}
-		}
+		//		if (stepR > 0 && stepC < 0)
+		//		{
+		//			cp.col += stepC;
+		//			uniqueCells.insert(cp);
+		//		}
+		//		else if (stepR < 0 && stepC > 0)
+		//		{
+		//			cp.col -= stepC;
+		//			uniqueCells.insert(cp);
+		//		}
+		//	}
+		//}
+
+		//if (dR != 0)
+		//{
+		//	for (CellIndex r = rStart; ; r += stepR)
+		//	{
+		//		real y = m_grid.m_gridShift.y + static_cast<real>(r) * m_grid.m_cellHeight;
+		//		real t = (y - start.y) / m_queryRayDirection.y;
+
+		//		if (t < 0.0f)
+		//			continue;
+
+		//		if (std::abs(t) > m_rayMaxDistance)
+		//			break;
+
+		//		Vector2 p = start + m_queryRayDirection * t;
+		//		CellPosition cp;
+		//		cp.row = r;
+		//		cp.col = static_cast<CellIndex>(std::floor((p.x - m_grid.m_gridShift.x) / m_grid.m_cellWidth));
+		//		uniqueCells.insert(cp);
+
+		//	}
+		//}
+
+		//uniqueCells.insert(CellPosition{ rEnd, cEnd });
+
+		//for(auto&& elem: uniqueCells)
+		//{
+		//	real row = static_cast<real>(elem.row);
+		//	real col = static_cast<real>(elem.col);
+
+		//	Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+		//	Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+		//	AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+		//	RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Orange);
+		//}
+
+		//real row = static_cast<real>(rStart);
+		//real col = static_cast<real>(cStart);
+
+		//Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+		//Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+		//AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+		//RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
 
 
-		RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance, RenderConstant::Yellow);
+		//row = static_cast<real>(rEnd);
+		//col = static_cast<real>(cEnd);
 
-		for(auto&& elem: uniqueCells)
-		{
-			real row = static_cast<real>(elem.row);
-			real col = static_cast<real>(elem.col);
+		//rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+		//rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+		//aabb = AABB::fromBox(rayTopLeft, rayBottom);
 
-			Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-			Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-			AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
-
-			RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Orange);
-		}
-
-		real row = static_cast<real>(rStart);
-		real col = static_cast<real>(cStart);
-
-		Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-		Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-		AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
-
-		RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
-
-
-		 row = static_cast<real>(rEnd);
-		 col = static_cast<real>(cEnd);
-
-		 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-		 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-		 aabb = AABB::fromBox(rayTopLeft, rayBottom);
-
-		RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
+		//RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
 
 
 		if(m_idsObject.size() > 0)
@@ -292,6 +309,8 @@ namespace STEditor
 
 		if(m_idsRaycast.size() > 0)
 		{
+			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance, RenderConstant::Yellow);
+
 			for (auto&& id : m_idsRaycast)
 			{
 				AABB aabb = m_aabbs[id];
@@ -441,7 +460,7 @@ namespace STEditor
 
 		if (ImGui::Button("Query Raycast(Grid)"))
 		{
-			m_idsRaycast = m_grid.queryRay(m_queryRayOrigin, m_queryRayDirection, 30.0f);
+			m_idsRaycast = m_grid.queryRay(m_queryRayOrigin, m_queryRayDirection, m_rayMaxDistance);
 		}
 
 		if(ImGui::Button("Update Object"))

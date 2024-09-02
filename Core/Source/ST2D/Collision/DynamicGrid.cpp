@@ -4,6 +4,7 @@
 #include <unordered_set>
 
 #include "ST2D/Log.h"
+#include "ST2D/Algorithms/Algorithm2D.h"
 
 namespace ST
 {
@@ -183,6 +184,7 @@ namespace ST
 	std::vector<int> DynamicGrid::queryRay(const Vector2& origin, const Vector2& direction, float maxDistance)
 	{
 		std::vector<int> result;
+		std::unordered_set<int> uniqueObjects;
 
 		if (m_usedCells.empty())
 			return result;
@@ -197,29 +199,108 @@ namespace ST
 		getGridIndicesFromVector(start, rStart, cStart);
 		getGridIndicesFromVector(end, rEnd, cEnd);
 
-		CellIndex dx = rEnd - rStart;
-		CellIndex dy = cEnd - cStart;
+		int dR = std::abs(rEnd - rStart);
+		int dC = std::abs(cEnd - cStart);
 
-		if (rStart == rEnd && cStart == cEnd)
+		int stepR = rStart < rEnd ? 1 : -1;
+		int stepC = cStart < cEnd ? 1 : -1;
+
+		std::unordered_set<CellPosition, CellPositionHash> uniqueCells;
+
+		real maxSquare = maxDistance * maxDistance;
+
+		if (dC != 0)
 		{
-			//ray is in a single cell
-			CellPosition cellPos(rStart, cStart);
-
-			if (!m_usedCells.contains(cellPos))
-				return result;
-
-			for (auto&& elem : m_usedCells[cellPos])
+			for (CellIndex c = cStart; ; c += stepC)
 			{
-				if (elem.binding.aabb.raycast(start, direction))
-					result.push_back(elem.binding.objectId);
-			}
+				real x = m_gridShift.x + static_cast<real>(c) * m_cellWidth;
+				real t = (x - start.x) / direction.x;
 
-			return result;
+				if (t < 0.0f)
+					continue;
+
+				if (std::abs(t) > maxDistance)
+					break;
+
+				Vector2 p = start + direction * t;
+				CellPosition cp;
+				cp.row = static_cast<CellIndex>(std::floor((p.y - m_gridShift.y) / m_cellHeight));
+				cp.col = c;
+				uniqueCells.insert(cp);
+
+				if (stepR > 0 && stepC < 0)
+				{
+					cp.col += stepC;
+					uniqueCells.insert(cp);
+				}
+				else if (stepR < 0 && stepC > 0)
+				{
+					cp.col -= stepC;
+					uniqueCells.insert(cp);
+				}
+			}
 		}
 
-		std::vector<CellPosition> rayCells;
+		if (dR != 0)
+		{
+			for (CellIndex r = rStart; ; r += stepR)
+			{
+				real y = m_gridShift.y + static_cast<real>(r) * m_cellHeight;
+				real t = (y - start.y) / direction.y;
 
+				if (t < 0.0f)
+					continue;
 
+				if (std::abs(t) > maxDistance)
+					break;
+
+				Vector2 p = start + direction * t;
+				CellPosition cp;
+				cp.row = r;
+				cp.col = static_cast<CellIndex>(std::floor((p.x - m_gridShift.x) / m_cellWidth));
+				uniqueCells.insert(cp);
+
+			}
+		}
+
+		uniqueCells.insert(CellPosition{ rEnd, cEnd });
+
+		for (auto&& elem : uniqueCells)
+		{
+			if (!m_usedCells.contains(elem))
+				continue;
+
+			for (auto&& obj : m_usedCells[elem])
+			{
+				counter++;
+				
+				AABB aabb = obj.binding.aabb;
+
+				auto raycastResult = GeometryAlgorithm2D::raycastAABB(origin, direction, aabb.topLeft(), aabb.bottomRight());
+				if (!raycastResult.has_value())
+					continue;
+
+				auto [p1, p2] = raycastResult.value();
+
+				Vector2 v1 = origin - p1;
+				Vector2 v2 = origin - p2;
+
+				if (v1.lengthSquare() > maxSquare && v2.lengthSquare() > maxDistance)
+					continue;
+
+				bool isP1Inside = GeometryAlgorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight());
+				bool isP2Inside = GeometryAlgorithm2D::checkPointOnAABB(p2, aabb.topLeft(), aabb.bottomRight());
+
+				if (!(isP1Inside && isP2Inside))
+					continue;
+
+				if (!uniqueObjects.contains(obj.binding.objectId))
+				{
+					uniqueObjects.insert(obj.binding.objectId);
+					result.push_back(obj.binding.objectId);
+				}
+			}
+		}
 
 		CORE_INFO("[Grid] Ray Query Counter: {}", counter);
 
