@@ -1,8 +1,9 @@
 ﻿#include "ST2DEditor.h"
 
-#include "imgui.h"
+
+
 #include "imgui-SFML.h"
-#include "Render.h"
+#include "RenderSFMLImpl.h"
 
 
 namespace STEditor
@@ -12,36 +13,21 @@ namespace STEditor
 		m_sceneList = {
 			{
 				[&](const SceneSettings& settings)
-				{
-					return std::make_unique<HelloWorldScene>(settings);
-				},
+				{ return std::make_unique<HelloWorldScene>(settings); },
 				[&](const SceneSettings& settings)
-				{
-					return std::make_unique<CurveScene>(settings);
-				},
+				{ return std::make_unique<CurveScene>(settings); },
 				[&](const SceneSettings& settings)
-				{
-					return std::make_unique<BroadphaseScene>(settings);
-				},
+				{ return std::make_unique<BroadphaseScene>(settings); },
 				[&](const SceneSettings& settings)
-				{
-					return std::make_unique<NarrowphaseScene>(settings);
-				},
+				{ return std::make_unique<NarrowphaseScene>(settings); },
 				[&](const SceneSettings& settings)
-				{
-					return std::make_unique<EmptyScene>(settings);
-				},
+				{ return std::make_unique<EmptyScene>(settings); },
 				[&](const SceneSettings& settings)
-				{
-					return std::make_unique<SplineScene>(settings);
-				},
+				{ return std::make_unique<SplineScene>(settings); },
 				[&](const SceneSettings& settings)
-				{
-					return std::make_unique<SpiralScene>(settings);
-				}
+				{ return std::make_unique<SpiralScene>(settings); }
 			}
 		};
-
 
 		m_camera.setViewport(Viewport(Vector2(0, 0), Vector2(1920, 1080)));
 
@@ -54,114 +40,221 @@ namespace STEditor
 
 	void ST2DEditor::exec()
 	{
-		// create the window
-		sf::ContextSettings settings;
-		settings.antialiasingLevel = 8;
-		m_window = std::make_unique<sf::RenderWindow>(sf::VideoMode(1920, 1080), "Testbed", sf::Style::Default,
-			settings);
-		bool success = ImGui::SFML::Init(*m_window);
-		APP_ASSERT(success, "Failed to create window")
+		glfwInit();
 
-		m_window->setActive(false);
-		m_window->setFramerateLimit(120);
+		
 
-		auto& io = ImGui::GetIO();
-		io.Fonts->AddFontFromFileTTF("Resource/Fonts/MiSans-Medium.ttf", 18.0f);
-		io.FontDefault = io.Fonts->Fonts[1];
-		success = ImGui::SFML::UpdateFontTexture();
-		APP_ASSERT(success, "Failed to create font asset")
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-		if (!m_font.loadFromFile("Resource/Fonts/MiSans-Medium.ttf"))
+		m_window = glfwCreateWindow(1920, 1080, "Testbed", NULL, NULL);
+		if (m_window == NULL)
 		{
-			APP_ERROR("Cannot load font for SFML")
+			APP_ERROR("Failed to create GLFW window");
+			glfwTerminate();
 			return;
 		}
+		glfwMakeContextCurrent(m_window);
+		glfwSwapInterval(1); // Enable vsync
 
-		m_window->setVerticalSyncEnabled(true);
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+		{
+			APP_ERROR("Failed to initialize GLAD");
+			return;
+		}
+		glViewport(0, 0, 1920, 1080);
+		//set frame buffer size callback and use type trait to adapt
 
-		m_camera.setFont(&m_font);
+		glfwSetWindowUserPointer(m_window, this);
+		glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
+			{
+				if (auto app = static_cast<ST2DEditor*>(glfwGetWindowUserPointer(window)))
+					app->onFrameBufferResize(window, width, height);
+			});
+		glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos)
+			{
+				if (auto app = static_cast<ST2DEditor*>(glfwGetWindowUserPointer(window)))
+					app->onMouseMove(window, xpos, ypos);
+			});
+		glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset)
+			{
+				if (auto app = static_cast<ST2DEditor*>(glfwGetWindowUserPointer(window)))
+					app->onMouseScroll(window, xoffset, yoffset);
+			});
+		//set mouse button callback
+		glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods)
+			{
+				if (auto app = static_cast<ST2DEditor*>(glfwGetWindowUserPointer(window)))
+					app->onMouseButton(window, button, action, mods);
+			});
+		//set key callback
+		glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+			{
+				if (auto app = static_cast<ST2DEditor*>(glfwGetWindowUserPointer(window)))
+					app->onKeyButton(window, key, scancode, action, mods);
+			});
 
+		// Setup Dear ImGui context
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+		io.Fonts->AddFontFromFileTTF("./Resource/Fonts/MiSans-Medium.ttf", 20);
+		// Setup Dear ImGui style
 		styleUI();
 
-		sf::Clock deltaClock;
-		while (m_window->isOpen())
+		// Setup Platform/Renderer backends
+		ImGui_ImplGlfw_InitForOpenGL(m_window, true);
+
+		ImGui_ImplOpenGL3_Init("#version 330");
+
+		while (!glfwWindowShouldClose(m_window))
 		{
-			sf::Time elapsed = deltaClock.restart();
-			float deltaTime = elapsed.asSeconds();
+			// polling and handling events
+			glfwPollEvents();
 
-			sf::Event event{};
-			while (m_window->pollEvent(event))
-			{
-				ImGui::SFML::ProcessEvent(event);
+			// clear
 
-				switch (event.type)
-				{
-				case sf::Event::Closed:
-				{
-					onClosed(event);
-					break;
-				}
-				case sf::Event::KeyReleased:
-				{
-					onKeyReleased(event);
-					break;
-				}
-				case sf::Event::MouseButtonPressed:
-				{
-					onMousePressed(event);
-					break;
-				}
-				case sf::Event::MouseButtonReleased:
-				{
-					onMouseReleased(event);
-					break;
-				}
-				case sf::Event::MouseMoved:
-				{
-					onMouseMoved(event);
-					break;
-				}
-				case sf::Event::MouseWheelScrolled:
-				{
-					onWheelScrolled(event);
-					break;
-				}
-				case sf::Event::Resized:
-				{
-					onResized(event);
-					break;
-				}
-				case sf::Event::KeyPressed:
-				{
-					onKeyPressed(event);
-					break;
-				}
-				default:
-					break;
-				}
-			}
+			glClearColor(0.16f, 0.16f, 0.16f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			onUpdate(deltaTime);
-			m_camera.onUpdate(deltaTime);
+			//render
+			onRender();
 
-			//draw background
-			m_window->clear(sf::Color(40, 40, 40));
+			// Start the Dear ImGui frame
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
 
-			m_camera.onRender(*m_window);
+			onRenderUI();
 
-			const bool show = m_currentScene != nullptr && m_userDrawVisible;
+			// ImGUI Rendering
+			ImGui::Render();
 
-			if (show)
-				m_currentScene->onRender(*m_window);
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-			render(*m_window);
-
-			renderGUI(*m_window, deltaClock);
-
-
-			m_window->display();
+			glfwSwapBuffers(m_window);
 		}
-		ImGui::SFML::Shutdown();
+
+		onDestroy();
+
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+		glfwTerminate();
+
+		//// create the window
+		//sf::ContextSettings settings;
+		//settings.antialiasingLevel = 8;
+		//m_renderWindow = std::make_unique<sf::RenderWindow>(sf::VideoMode(1920, 1080), "Testbed", sf::Style::Default,
+		//	settings);
+		//bool success = ImGui::SFML::Init(*m_renderWindow);
+		//APP_ASSERT(success, "Failed to create window")
+
+		//m_renderWindow->setActive(false);
+		//m_renderWindow->setFramerateLimit(120);
+
+		//auto& io = ImGui::GetIO();
+		//io.Fonts->AddFontFromFileTTF("Resource/Fonts/MiSans-Medium.ttf", 18.0f);
+		//io.FontDefault = io.Fonts->Fonts[1];
+		//success = ImGui::SFML::UpdateFontTexture();
+		//APP_ASSERT(success, "Failed to create font asset")
+
+		//if (!m_font.loadFromFile("Resource/Fonts/MiSans-Medium.ttf"))
+		//{
+		//	APP_ERROR("Cannot load font for SFML")
+		//	return;
+		//}
+
+		//m_renderWindow->setVerticalSyncEnabled(true);
+
+		//m_camera.setFont(&m_font);
+
+		//styleUI();
+
+		//sf::Clock deltaClock;
+		//while (m_renderWindow->isOpen())
+		//{
+		//	sf::Time elapsed = deltaClock.restart();
+		//	float deltaTime = elapsed.asSeconds();
+
+		//	sf::Event event{};
+		//	while (m_renderWindow->pollEvent(event))
+		//	{
+		//		ImGui::SFML::ProcessEvent(event);
+
+		//		switch (event.type)
+		//		{
+		//		case sf::Event::Closed:
+		//		{
+		//			onClosed(event);
+		//			break;
+		//		}
+		//		case sf::Event::KeyReleased:
+		//		{
+		//			onKeyReleased(event);
+		//			break;
+		//		}
+		//		case sf::Event::MouseButtonPressed:
+		//		{
+		//			onMousePressed(event);
+		//			break;
+		//		}
+		//		case sf::Event::MouseButtonReleased:
+		//		{
+		//			onMouseReleased(event);
+		//			break;
+		//		}
+		//		case sf::Event::MouseMoved:
+		//		{
+		//			onMouseMoved(event);
+		//			break;
+		//		}
+		//		case sf::Event::MouseWheelScrolled:
+		//		{
+		//			onWheelScrolled(event);
+		//			break;
+		//		}
+		//		case sf::Event::Resized:
+		//		{
+		//			onResized(event);
+		//			break;
+		//		}
+		//		case sf::Event::KeyPressed:
+		//		{
+		//			onKeyPressed(event);
+		//			break;
+		//		}
+		//		default:
+		//			break;
+		//		}
+		//	}
+
+		//	onUpdate(deltaTime);
+		//	m_camera.onUpdate(deltaTime);
+
+		//	//draw background
+		//	m_renderWindow->clear(sf::Color(40, 40, 40));
+
+		//	m_camera.onRender(*m_renderWindow);
+
+		//	const bool show = m_currentScene != nullptr && m_userDrawVisible;
+
+		//	if (show)
+		//		m_currentScene->onRender(*m_renderWindow);
+
+		//	render(*m_renderWindow);
+
+		//	renderGUI(*m_renderWindow, deltaClock);
+
+		//	m_renderWindow->display();
+		//}
+		//ImGui::SFML::Shutdown();
 	}
 
 	void ST2DEditor::styleUI()
@@ -254,12 +347,12 @@ namespace STEditor
 		Viewport viewport = m_camera.viewport();
 		viewport.set(static_cast<real>(event.size.width), static_cast<real>(event.size.height));
 		m_camera.setViewport(viewport);
-		m_window->setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
+		m_renderWindow->setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
 	}
 
 	void ST2DEditor::onClosed(sf::Event& event)
 	{
-		m_window->close();
+		m_renderWindow->close();
 	}
 
 	void ST2DEditor::onKeyReleased(sf::Event& event)
@@ -351,6 +444,31 @@ namespace STEditor
 		
 	}
 
+	void ST2DEditor::onFrameBufferResize(GLFWwindow* window, int width, int height)
+	{
+
+	}
+
+	void ST2DEditor::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
+	{
+
+	}
+
+	void ST2DEditor::onMouseButton(GLFWwindow* window, int button, int action, int mods)
+	{
+
+	}
+
+	void ST2DEditor::onMouseMove(GLFWwindow* window, double xpos, double ypos)
+	{
+
+	}
+
+	void ST2DEditor::onMouseScroll(GLFWwindow* window, double xoffset, double yoffset)
+	{
+
+	}
+
 	void ST2DEditor::renderGUI(sf::RenderWindow& window, sf::Clock& clock)
 	{
 		ImGui::SFML::Update(window, clock.restart());
@@ -439,6 +557,17 @@ namespace STEditor
 		}
 	}
 
+	void ST2DEditor::onRenderUI()
+	{
+
+
+	}
+
+	void ST2DEditor::onRender()
+	{
+
+	}
+
 	void ST2DEditor::restart()
 	{
 		if(m_currentScene != nullptr)
@@ -475,5 +604,10 @@ namespace STEditor
 			m_currentScene->onUnLoad();
 			m_currentScene.reset();
 		}
+	}
+
+	void ST2DEditor::onDestroy()
+	{
+		clearAll();
 	}
 }

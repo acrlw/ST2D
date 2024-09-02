@@ -170,36 +170,6 @@ namespace STEditor
 		ImGui::End();
 	}
 
-	void SpiralScene::onMousePress(sf::Event& event)
-	{
-		AbstractScene::onMousePress(event);
-	}
-
-	void SpiralScene::onMouseRelease(sf::Event& event)
-	{
-		AbstractScene::onMouseRelease(event);
-	}
-
-	void SpiralScene::onMouseMove(sf::Event& event)
-	{
-		AbstractScene::onMouseMove(event);
-	}
-
-	void SpiralScene::onMouseDoubleClick(sf::Event& event)
-	{
-		AbstractScene::onMouseDoubleClick(event);
-	}
-
-	void SpiralScene::onKeyRelease(sf::Event& event)
-	{
-		AbstractScene::onKeyRelease(event);
-	}
-
-	void SpiralScene::onKeyPressed(sf::Event& event)
-	{
-		AbstractScene::onKeyPressed(event);
-	}
-
 	void SpiralScene::computeReference()
 	{
 		m_p00.set(0, m_halfHeight);

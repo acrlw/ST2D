@@ -7,11 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-find_package(glad CONFIG REQUIRED)
-find_package(glfw3 CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
-find_package(Stb REQUIRED)
-find_package(glm CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(Tracy CONFIG REQUIRED)
 
@@ -37,14 +32,10 @@ target_include_directories(ST2DCore PUBLIC
 )
 
 
-target_link_libraries(ST2DCore PUBLIC        
-        glad::glad
-        glfw
-        imgui::imgui
-        glm::glm-header-only
-        spdlog::spdlog_header_only
-        ${Stb_INCLUDE_DIR}
-        Tracy::TracyClient
+target_link_libraries(ST2DCore PUBLIC
+    spdlog::spdlog_header_only
+    ${Stb_INCLUDE_DIR}
+    Tracy::TracyClient
 )
 
 target_precompile_headers(ST2DCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Source/pch.h)

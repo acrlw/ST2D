@@ -76,41 +76,6 @@ namespace STEditor
 		RenderSFMLImpl::renderArrow(window, *m_settings.camera, Vector2(0.0f, 0.0f), arrow, RenderConstant::Green, 0.25f);
 	}
 
-	void HelloWorldScene::onRenderUI()
-	{
-		AbstractScene::onRenderUI();
-	}
-
-	void HelloWorldScene::onMousePress(sf::Event& event)
-	{
-		AbstractScene::onMousePress(event);
-	}
-
-	void HelloWorldScene::onMouseRelease(sf::Event& event)
-	{
-		AbstractScene::onMouseRelease(event);
-	}
-
-	void HelloWorldScene::onMouseMove(sf::Event& event)
-	{
-		AbstractScene::onMouseMove(event);
-	}
-
-	void HelloWorldScene::onMouseDoubleClick(sf::Event& event)
-	{
-		AbstractScene::onMouseDoubleClick(event);
-	}
-
-	void HelloWorldScene::onKeyRelease(sf::Event& event)
-	{
-		AbstractScene::onKeyRelease(event);
-	}
-
-	void HelloWorldScene::onKeyPressed(sf::Event& event)
-	{
-		AbstractScene::onKeyPressed(event);
-	}
-
 }
 
 

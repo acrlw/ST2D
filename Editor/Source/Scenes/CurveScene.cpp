@@ -1,5 +1,5 @@
 #include "CurveScene.h"
-#include "Render.h"
+#include "RenderSFMLImpl.h"
 
 namespace STEditor
 {
@@ -193,36 +193,6 @@ namespace STEditor
 		ImGui::Checkbox("Show G3 Curvature", &m_showG3Curvature);
 
 		ImGui::End();
-	}
-
-	void CurveScene::onMousePress(sf::Event& event)
-	{
-		AbstractScene::onMousePress(event);
-	}
-
-	void CurveScene::onMouseRelease(sf::Event& event)
-	{
-		AbstractScene::onMouseRelease(event);
-	}
-
-	void CurveScene::onMouseMove(sf::Event& event)
-	{
-		AbstractScene::onMouseMove(event);
-	}
-
-	void CurveScene::onMouseDoubleClick(sf::Event& event)
-	{
-		AbstractScene::onMouseDoubleClick(event);
-	}
-
-	void CurveScene::onKeyRelease(sf::Event& event)
-	{
-		AbstractScene::onKeyRelease(event);
-	}
-
-	void CurveScene::onKeyPressed(sf::Event& event)
-	{
-		AbstractScene::onKeyPressed(event);
 	}
 
 	void CurveScene::drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve, const sf::Color& color) const

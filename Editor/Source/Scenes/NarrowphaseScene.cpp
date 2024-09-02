@@ -43,11 +43,6 @@ namespace STEditor
 
 	}
 
-	void NarrowphaseScene::onRenderUI()
-	{
-		AbstractScene::onRenderUI();
-	}
-
 	void NarrowphaseScene::onMousePress(sf::Event& event)
 	{
 		if(event.mouseButton.button == sf::Mouse::Left)
@@ -84,21 +79,5 @@ namespace STEditor
 
 			selectedTransform->position = oldTransform.position + (currentMousePos - mouseStart);
 		}
-	}
-
-	void NarrowphaseScene::onMouseDoubleClick(sf::Event& event)
-	{
-		AbstractScene::onMouseDoubleClick(event);
-	}
-
-
-	void NarrowphaseScene::onKeyRelease(sf::Event& event)
-	{
-		AbstractScene::onKeyRelease(event);
-	}
-
-	void NarrowphaseScene::onKeyPressed(sf::Event& event)
-	{
-		AbstractScene::onKeyPressed(event);
 	}
 }

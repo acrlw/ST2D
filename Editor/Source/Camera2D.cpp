@@ -1,6 +1,6 @@
 #include "Camera2D.h"
 
-#include "Render.h"
+#include "RenderSFMLImpl.h"
 
 namespace STEditor
 {

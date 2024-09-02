@@ -7,10 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+find_package(glad CONFIG REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
+find_package(Stb REQUIRED)
+find_package(GSL REQUIRED)
+
 find_package(SFML CONFIG REQUIRED COMPONENTS graphics system window)
 find_package(ImGui-SFML CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(GSL REQUIRED)
 
 link_directories(${CMAKE_BINARY_DIR}/lib)
 
@@ -37,9 +42,12 @@ target_compile_definitions(ST2DEditor PRIVATE
 
 target_link_libraries(ST2DEditor PRIVATE 
     ST2DCore
+    glad::glad
+    glfw
+    glm::glm-header-only
+    imgui::imgui
     sfml-system sfml-network sfml-graphics sfml-window
     ImGui-SFML::ImGui-SFML
-    Eigen3::Eigen
     GSL::gsl GSL::gslcblas
 )
 

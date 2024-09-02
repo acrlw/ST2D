@@ -8,10 +8,6 @@ namespace STEditor
 {
 	using namespace ST;
 
-
-
-
-
 	class SpiralShapeBase
 	{
 	public:

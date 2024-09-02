@@ -19,39 +19,19 @@ namespace ST
 		};
 		CellKey key = 0;
 
-		CellPosition(const CellKey& k)
-			: key(k)
-		{
-		}
-		CellPosition(const CellIndex& r = 0, const CellIndex& c = 0)
-			: row(r), col(c)
-		{
-		}
+		CellPosition(const CellKey& k) : key(k) {}
 
-		bool operator==(const CellPosition& other) const
-		{
-			return key == other.key;
-		}
+		CellPosition(const CellIndex& r = 0, const CellIndex& c = 0) : row(r), col(c) {}
 
-		bool operator<(const CellPosition& other) const
-		{
-			return key < other.key;
-		}
+		bool operator==(const CellPosition& other) const { return key == other.key; }
 
-		bool operator>(const CellPosition& other) const
-		{
-			return key > other.key;
-		}
+		bool operator<(const CellPosition& other) const  { return key < other.key; }
 
-		bool operator<=(const CellPosition& other) const
-		{
-			return key <= other.key;
-		}
+		bool operator>(const CellPosition& other) const  { return key > other.key; }
 
-		bool operator>=(const CellPosition& other) const
-		{
-			return key >= other.key;
-		}
+		bool operator<=(const CellPosition& other) const { return key <= other.key; }
+
+		bool operator>=(const CellPosition& other) const { return key >= other.key; }
 	};
 
 	struct CellPositionHash
@@ -81,7 +61,6 @@ namespace ST
 		std::vector<ObjectPair> queryOverlaps() override;
 		std::vector<int> queryAABB(const AABB& aabb) override;
 		std::vector<int> queryRay(const Vector2& origin, const Vector2& direction, float maxDistance) override;
-
 
 		void getGridIndicesFromAABB(const AABB& aabb, CellIndex& rowStart, CellIndex& rowEnd, CellIndex& colStart, CellIndex& colEnd) const;
 		void getGridIndicesFromAABB(const AABB& aabb, CellPosition& start, CellPosition& end) const;

@@ -1,5 +1,14 @@
 ﻿#pragma once
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "Scenes/CurveScene.h"
 #include "Scenes/NarrowphaseScene.h"
@@ -33,9 +42,20 @@ namespace STEditor
 		void onMouseMoved(sf::Event& event);
 		void onMousePressed(sf::Event& event);
 		void onWheelScrolled(sf::Event& event);
+
+		void onFrameBufferResize(GLFWwindow* window, int width, int height);
+		void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods);
+		void onMouseButton(GLFWwindow* window, int button, int action, int mods);
+		void onMouseMove(GLFWwindow* window, double xpos, double ypos);
+		void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset);
+
 		//render
 		void renderGUI(sf::RenderWindow& window, sf::Clock& clock);
 		void render(sf::RenderWindow& window);
+
+		void onRenderUI();
+		void onRender();
+
 		//simulation
 
 		void restart();
@@ -44,6 +64,9 @@ namespace STEditor
 
 		void switchScene(int index);
 		void clearAll();
+
+		void onDestroy();
+
 
 		bool m_userDrawVisible = true;
 
@@ -58,7 +81,10 @@ namespace STEditor
 		std::array<const char*, 7> m_sceneName = { "HelloWorld", "Curve", "Broadphase", "Narrowphase", "Empty", "Spline", "Spiral" };
 
 		std::array<std::function<std::unique_ptr<AbstractScene> (const SceneSettings& settings)>, 7> m_sceneList;
-		std::unique_ptr<sf::RenderWindow> m_window;
+		std::unique_ptr<sf::RenderWindow> m_renderWindow;
+
+		GLFWwindow* m_window;
+
 
 		float m_zoomFactor = 0.3f;
 		bool m_enableDistanceCheck = true;

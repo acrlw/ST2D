@@ -294,7 +294,7 @@ namespace STEditor
 				Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
 				AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
 
-				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Orange);
+				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
 			}
 
 			real row = static_cast<real>(rStart);
