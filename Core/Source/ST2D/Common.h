@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -16,7 +15,38 @@
 namespace ST
 {
 	using Index = uint32_t;
-	using real = double;
+	using real = float;
+
+	union ST_API ObjectPair
+	{
+		struct
+		{
+			int32_t objectIdA;
+			int32_t objectIdB;
+		};
+		int64_t key = 0;
+
+		ObjectPair() : key(0) {}
+		ObjectPair(int32_t a, int32_t b)
+		{
+			objectIdA = std::min(a, b);
+			objectIdB = std::max(a, b);
+		}
+
+		bool operator==(const ObjectPair& other) const
+		{
+			return key == other.key;
+		}
+
+	};
+
+	struct ObjectPairHash
+	{
+		std::size_t operator()(const ObjectPair& p) const
+		{
+			return static_cast<std::size_t>(p.key);
+		}
+	};
 
 	namespace Constant
 	{
@@ -31,7 +61,7 @@ namespace ST
 		constexpr real DoublePi = Pi * 2.0f;
 		constexpr real ReciprocalOf180 = 1.0f / 180.0f;
 		constexpr real ReciprocalOfPi = 0.3183098861f;
-		constexpr real GeometryEpsilon = 1e-8f;
+		constexpr real GeometryEpsilon = 1e-5f;
 		constexpr real TrignometryEpsilon = 1e-3f;
 		constexpr real CCDMinVelocity = 100.0f;
 		constexpr real MaxVelocity = 1000.0f;

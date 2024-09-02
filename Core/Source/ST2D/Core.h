@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Common.h"
-
 #ifdef _WIN32
 #define ST_PLATFORM_WINDOWS
 #else
@@ -37,6 +35,7 @@
 
 #endif
 
+#include "Common.h"
 
 namespace ST
 {

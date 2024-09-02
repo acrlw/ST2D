@@ -280,7 +280,7 @@ namespace ST
 				Vector2 v1 = origin - p1;
 				Vector2 v2 = origin - p2;
 
-				if (v1.lengthSquare() > maxSquare && v2.lengthSquare() > maxDistance)
+				if (v1.lengthSquare() > maxSquare && v2.lengthSquare() > maxSquare)
 					continue;
 
 				bool isP1Inside = GeometryAlgorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight());
@@ -339,14 +339,14 @@ namespace ST
 
 	void DynamicGrid::getVectorFromGridIndices(const CellIndex& row, const CellIndex& col, Vector2& position) const
 	{
-		position.x = m_gridShift.x + col * m_cellWidth;
-		position.y = m_gridShift.y + row * m_cellHeight;
+		position.x = m_gridShift.x + static_cast<real>(col) * m_cellWidth;
+		position.y = m_gridShift.y + static_cast<real>(row) * m_cellHeight;
 	}
 
 	void DynamicGrid::getVectorFromGridIndices(const CellPosition& cell, Vector2& position) const
 	{
-		position.x = m_gridShift.x + cell.col * m_cellWidth;
-		position.y = m_gridShift.y + cell.row * m_cellHeight;
+		position.x = m_gridShift.x + static_cast<real>(cell.col) * m_cellWidth;
+		position.y = m_gridShift.y + static_cast<real>(cell.row) * m_cellHeight;
 	}
 
 	void DynamicGrid::incrementalUpdate(const BroadphaseObjectBinding& binding)

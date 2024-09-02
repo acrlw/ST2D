@@ -12,38 +12,6 @@ namespace ST
 		void* userData = nullptr;
 	};
 
-	union ST_API ObjectPair
-	{
-		struct
-		{
-			int32_t objectIdA;
-			int32_t objectIdB;
-		};
-		int64_t key = 0;
-
-		ObjectPair() : key(0) {}
-		ObjectPair(int32_t a, int32_t b)
-		{
-			objectIdA = std::min(a, b);
-			objectIdB = std::max(a, b);
-		}
-
-		bool operator==(const ObjectPair& other) const
-		{
-			return key == other.key;
-		}
-
-	};
-
-	struct ObjectPairHash
-	{
-		std::size_t operator()(const ObjectPair& p) const
-		{
-			return static_cast<std::size_t>(p.key);
-		}
-	};
-
-
 	class ST_API AbstractBroadphase
 	{
 	public:

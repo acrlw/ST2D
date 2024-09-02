@@ -81,7 +81,7 @@ namespace STEditor
 				//points.emplace_back(m_aabbs[i].bottomLeft());
 				//points.emplace_back(m_aabbs[i].topLeft());
 				//RenderSFMLImpl::renderPolyDashedLine(window, *m_settings.camera, points, RenderConstant::Yellow);
-				RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_aabbs[i], RenderConstant::Cyan);
+				RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_aabbs[i], RenderConstant::Green);
 
 			}
 
@@ -163,8 +163,6 @@ namespace STEditor
 				{
 					if (index == m_dbvt.m_rootIndex)
 						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
-					else if (m_dbvt.m_nodes[index].isLeaf())
-						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Green);
 					else
 						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
 				}
@@ -178,112 +176,7 @@ namespace STEditor
 		}
 
 
-		//Vector2 start = m_queryRayOrigin;
-
-		//Vector2 end = m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance;
-
-		//CellIndex rStart, rEnd, cStart, cEnd;
-
-		//m_grid.getGridIndicesFromVector(start, rStart, cStart);
-		//m_grid.getGridIndicesFromVector(end, rEnd, cEnd);
-
-		//int dR = std::abs(rEnd - rStart);
-		//int dC = std::abs(cEnd - cStart);
-
-		//int stepR = rStart < rEnd ? 1 : -1;
-		//int stepC = cStart < cEnd ? 1 : -1;
-
-		//bool addNew = stepR * stepC > 0;
-
-		//std::unordered_set<CellPosition, CellPositionHash> uniqueCells;
-
-		//if(dC != 0)
-		//{
-		//	for (CellIndex c = cStart; ; c += stepC)
-		//	{
-		//		real x = m_grid.m_gridShift.x + static_cast<real>(c) * m_grid.m_cellWidth;
-		//		real t = (x - start.x) / m_queryRayDirection.x;
-
-		//		if(t < 0.0f)
-		//			continue;
-
-		//		if (std::abs(t) > m_rayMaxDistance)
-		//			break;
-
-		//		Vector2 p = start + m_queryRayDirection * t;
-		//		CellPosition cp;
-		//		cp.row = static_cast<CellIndex>(std::floor((p.y - m_grid.m_gridShift.y) / m_grid.m_cellHeight));
-		//		cp.col = c;
-		//		uniqueCells.insert(cp);
-
-		//		if (stepR > 0 && stepC < 0)
-		//		{
-		//			cp.col += stepC;
-		//			uniqueCells.insert(cp);
-		//		}
-		//		else if (stepR < 0 && stepC > 0)
-		//		{
-		//			cp.col -= stepC;
-		//			uniqueCells.insert(cp);
-		//		}
-		//	}
-		//}
-
-		//if (dR != 0)
-		//{
-		//	for (CellIndex r = rStart; ; r += stepR)
-		//	{
-		//		real y = m_grid.m_gridShift.y + static_cast<real>(r) * m_grid.m_cellHeight;
-		//		real t = (y - start.y) / m_queryRayDirection.y;
-
-		//		if (t < 0.0f)
-		//			continue;
-
-		//		if (std::abs(t) > m_rayMaxDistance)
-		//			break;
-
-		//		Vector2 p = start + m_queryRayDirection * t;
-		//		CellPosition cp;
-		//		cp.row = r;
-		//		cp.col = static_cast<CellIndex>(std::floor((p.x - m_grid.m_gridShift.x) / m_grid.m_cellWidth));
-		//		uniqueCells.insert(cp);
-
-		//	}
-		//}
-
-		//uniqueCells.insert(CellPosition{ rEnd, cEnd });
-
-		//for(auto&& elem: uniqueCells)
-		//{
-		//	real row = static_cast<real>(elem.row);
-		//	real col = static_cast<real>(elem.col);
-
-		//	Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-		//	Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-		//	AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
-
-		//	RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Orange);
-		//}
-
-		//real row = static_cast<real>(rStart);
-		//real col = static_cast<real>(cStart);
-
-		//Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-		//Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-		//AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
-
-		//RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
-
-
-		//row = static_cast<real>(rEnd);
-		//col = static_cast<real>(cEnd);
-
-		//rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-		//rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-		//aabb = AABB::fromBox(rayTopLeft, rayBottom);
-
-		//RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
-
+		
 
 		if(m_idsObject.size() > 0)
 		{
@@ -295,8 +188,6 @@ namespace STEditor
 
 		if (m_idsAABB.size() > 0)
 		{
-			RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_queryAABB, RenderConstant::Yellow);
-
 			for (auto&& id : m_idsAABB)
 			{
 				AABB aabb = m_aabbs[id];
@@ -307,8 +198,6 @@ namespace STEditor
 
 		if(m_idsRaycast.size() > 0)
 		{
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance, RenderConstant::Yellow);
-
 			for (auto&& id : m_idsRaycast)
 			{
 				AABB aabb = m_aabbs[id];
@@ -316,6 +205,124 @@ namespace STEditor
 				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
 			}
 		}
+
+		if (m_showQueryRay)
+		{
+			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance, RenderConstant::Yellow);
+
+			Vector2 start = m_queryRayOrigin;
+
+			Vector2 end = m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance;
+
+			CellIndex rStart, rEnd, cStart, cEnd;
+
+			m_grid.getGridIndicesFromVector(start, rStart, cStart);
+			m_grid.getGridIndicesFromVector(end, rEnd, cEnd);
+
+			int dR = std::abs(rEnd - rStart);
+			int dC = std::abs(cEnd - cStart);
+
+			int stepR = rStart < rEnd ? 1 : -1;
+			int stepC = cStart < cEnd ? 1 : -1;
+
+			bool addNew = stepR * stepC > 0;
+
+			std::unordered_set<CellPosition, CellPositionHash> uniqueCells;
+
+			if (dC != 0)
+			{
+				for (CellIndex c = cStart; ; c += stepC)
+				{
+					real x = m_grid.m_gridShift.x + static_cast<real>(c) * m_grid.m_cellWidth;
+					real t = (x - start.x) / m_queryRayDirection.x;
+
+					if (t < 0.0f)
+						continue;
+
+					if (std::abs(t) > m_rayMaxDistance)
+						break;
+
+					Vector2 p = start + m_queryRayDirection * t;
+					CellPosition cp;
+					cp.row = static_cast<CellIndex>(std::floor((p.y - m_grid.m_gridShift.y) / m_grid.m_cellHeight));
+					cp.col = c;
+					uniqueCells.insert(cp);
+
+					if (stepR > 0 && stepC < 0)
+					{
+						cp.col += stepC;
+						uniqueCells.insert(cp);
+					}
+					else if (stepR < 0 && stepC > 0)
+					{
+						cp.col -= stepC;
+						uniqueCells.insert(cp);
+					}
+				}
+			}
+
+			if (dR != 0)
+			{
+				for (CellIndex r = rStart; ; r += stepR)
+				{
+					real y = m_grid.m_gridShift.y + static_cast<real>(r) * m_grid.m_cellHeight;
+					real t = (y - start.y) / m_queryRayDirection.y;
+
+					if (t < 0.0f)
+						continue;
+
+					if (std::abs(t) > m_rayMaxDistance)
+						break;
+
+					Vector2 p = start + m_queryRayDirection * t;
+					CellPosition cp;
+					cp.row = r;
+					cp.col = static_cast<CellIndex>(std::floor((p.x - m_grid.m_gridShift.x) / m_grid.m_cellWidth));
+					uniqueCells.insert(cp);
+
+				}
+			}
+
+			uniqueCells.insert(CellPosition{ rEnd, cEnd });
+
+			for (auto&& elem : uniqueCells)
+			{
+				real row = static_cast<real>(elem.row);
+				real col = static_cast<real>(elem.col);
+
+				Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+				Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+				AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Orange);
+			}
+
+			real row = static_cast<real>(rStart);
+			real col = static_cast<real>(cStart);
+
+			Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+			Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+			AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+			RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
+
+
+			row = static_cast<real>(rEnd);
+			col = static_cast<real>(cEnd);
+
+			rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+			rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+			aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+			RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
+
+		}
+
+		if (m_showQueryAABB)
+		{
+			RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_queryAABB, RenderConstant::Yellow);
+		}
+
 	}
 
 	void BroadphaseScene::onRenderUI()
@@ -338,6 +345,8 @@ namespace STEditor
 		ImGui::Checkbox("Show BVT", &m_showBVT);
 		ImGui::Checkbox("Show Transform", &m_showTransform);
 		ImGui::Checkbox("Show Object Id", &m_showObjectId);
+		ImGui::Checkbox("Show Query Ray", &m_showQueryRay);
+		ImGui::Checkbox("Show Query AABB", &m_showQueryAABB);
 
 		ImGui::SliderInt("Render BVH Height", &m_currentHeight, 0, m_maxHeight);
 		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
@@ -383,7 +392,6 @@ namespace STEditor
 		{
 			auto pairs = m_dbvt.queryOverlaps();
 
-
 			std::ranges::sort(pairs, [](const auto& a, const auto& b)
 				{
 					if (a.objectIdA < b.objectIdA)
@@ -422,23 +430,40 @@ namespace STEditor
 		{
 			m_idsObject.clear();
 			auto pairs = m_grid.queryOverlaps();
-			std::unordered_set<int> uniqueObjects;
 
+			std::ranges::sort(pairs, [](const auto& a, const auto& b)
+				{
+					if (a.objectIdA < b.objectIdA)
+						return true;
+					if (a.objectIdA == b.objectIdA)
+						return a.objectIdB < b.objectIdB;
+
+					return false;
+				});
+
+			std::string str;
 			for (auto&& elem : pairs)
-			{
-				if (!uniqueObjects.contains(elem.objectIdA))
-				{
-					uniqueObjects.insert(elem.objectIdA);
-					m_idsObject.push_back(elem.objectIdA);
-				}
+				str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
 
-				if (!uniqueObjects.contains(elem.objectIdB))
-				{
-					uniqueObjects.insert(elem.objectIdB);
-					m_idsObject.push_back(elem.objectIdB);
-				}
+			CORE_INFO("Overlaps: {}", str);
 
-			}
+			//std::unordered_set<int> uniqueObjects;
+
+			//for (auto&& elem : pairs)
+			//{
+			//	if (!uniqueObjects.contains(elem.objectIdA))
+			//	{
+			//		uniqueObjects.insert(elem.objectIdA);
+			//		m_idsObject.push_back(elem.objectIdA);
+			//	}
+
+			//	if (!uniqueObjects.contains(elem.objectIdB))
+			//	{
+			//		uniqueObjects.insert(elem.objectIdB);
+			//		m_idsObject.push_back(elem.objectIdB);
+			//	}
+
+			//}
 		}
 
 		ImGui::SameLine();

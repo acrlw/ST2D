@@ -99,14 +99,14 @@ namespace STEditor
 			m_spiralCurve.setSpiralShape(&m_oneWeight);
 			real L = m_oneWeight.computeArcLength();
 			real Cf = 1.0f / m_currentRadius;
-			m_bezier.setPoints({}, { m_weight * L, 0 }, { (1.0 - m_weight) * L, Cf }, { L, Cf });
+			m_bezier.setPoints({}, { m_weight * L, 0 }, { (1.0f - m_weight) * L, Cf }, { L, Cf });
 		}
 		else if(m_currentShapeIndex == 7)
 		{
 			m_spiralCurve.setSpiralShape(&m_twoWeight);
 			real L = m_twoWeight.computeArcLength();
 			real Cf = 1.0f / m_currentRadius;
-			m_bezier.setPoints({}, { m_weight1 * L, 0 }, { (1.0 - m_weight2) * L, Cf }, { L, Cf });
+			m_bezier.setPoints({}, { m_weight1 * L, 0 }, { (1.0f - m_weight2) * L, Cf }, { L, Cf });
 		}
 
 		ImGui::SeparatorText("One Weight Bezier");

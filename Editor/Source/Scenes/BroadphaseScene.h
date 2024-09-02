@@ -33,6 +33,9 @@ namespace STEditor
 	private:
 		void createShapes();
 
+		bool m_showQueryRay = false;
+		bool m_showQueryAABB = false;
+
 		bool m_showObject = true;
 		bool m_showAABB = false;
 		bool m_showGrid = true;
