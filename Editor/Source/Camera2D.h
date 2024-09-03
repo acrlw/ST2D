@@ -39,8 +39,7 @@ namespace STEditor
 		Camera2D();
 
 		void onUpdate(float deltaTime);
-		void onRender(sf::RenderWindow& window);
-
+		void onDraw(sf::RenderWindow& window);
 
 		bool& gridScaleLineVisible();
 		bool& visible();

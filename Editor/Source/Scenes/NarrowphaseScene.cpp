@@ -26,7 +26,7 @@ namespace STEditor
 	{
 	}
 
-	void NarrowphaseScene::onRender(sf::RenderWindow& window)
+	void NarrowphaseScene::onDraw(sf::RenderWindow& window)
 	{
 
 		RenderSFMLImpl::renderShape(window, *m_settings.camera, tf1, &rect, RenderConstant::Yellow);

@@ -301,7 +301,7 @@ namespace STEditor
 		}
 
 
-		void RenderSFMLImpl::renderAngleLine(sf::RenderWindow& window, Camera2D& camera, const Transform& transform)
+		void RenderSFMLImpl::renderOrientation(sf::RenderWindow& window, Camera2D& camera, const Transform& transform)
 		{
 			Vector2 xP(0.15f, 0);
 			Vector2 yP(0, 0.15f);

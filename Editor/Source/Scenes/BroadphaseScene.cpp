@@ -51,7 +51,7 @@ namespace STEditor
 
 	}
 
-	void BroadphaseScene::onRender(sf::RenderWindow& window)
+	void BroadphaseScene::onDraw(sf::RenderWindow& window)
 	{
 		ZoneScopedN("[BroadphaseScene] On Render");
 
@@ -66,7 +66,7 @@ namespace STEditor
 			if(m_showTransform)
 			{
 				RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_transforms[i].position, RenderConstant::Yellow, 2.0f);
-				RenderSFMLImpl::renderAngleLine(window, *m_settings.camera, m_transforms[i]);
+				RenderSFMLImpl::renderOrientation(window, *m_settings.camera, m_transforms[i]);
 			}
 
 			if(m_showObject)
@@ -325,6 +325,13 @@ namespace STEditor
 
 	}
 
+	void BroadphaseScene::onRender(GLFWwindow* window, Renderer2D* renderer)
+	{
+		ZoneScopedN("[BroadphaseScene] On Render");
+
+
+	}
+
 	void BroadphaseScene::onRenderUI()
 	{
 		ZoneScopedN("[BroadphaseScene] On RenderUI");
@@ -507,36 +514,6 @@ namespace STEditor
 
 
 		ImGui::End();
-	}
-
-	void BroadphaseScene::onMousePress(sf::Event& event)
-	{
-		AbstractScene::onMousePress(event);
-	}
-
-	void BroadphaseScene::onMouseRelease(sf::Event& event)
-	{
-		AbstractScene::onMouseRelease(event);
-	}
-
-	void BroadphaseScene::onMouseMove(sf::Event& event)
-	{
-		AbstractScene::onMouseMove(event);
-	}
-
-	void BroadphaseScene::onMouseDoubleClick(sf::Event& event)
-	{
-		AbstractScene::onMouseDoubleClick(event);
-	}
-
-	void BroadphaseScene::onKeyRelease(sf::Event& event)
-	{
-		AbstractScene::onKeyRelease(event);
-	}
-
-	void BroadphaseScene::onKeyPressed(sf::Event& event)
-	{
-		AbstractScene::onKeyPressed(event);
 	}
 
 	void BroadphaseScene::createShapes()

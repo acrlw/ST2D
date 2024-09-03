@@ -52,7 +52,7 @@ namespace STEditor
 		pList.push_back(p);
 	}
 
-	void HelloWorldScene::onRender(sf::RenderWindow& window)
+	void HelloWorldScene::onDraw(sf::RenderWindow& window)
 	{
 		sf::Color color = RenderConstant::Pink;
 		color.a = 0;

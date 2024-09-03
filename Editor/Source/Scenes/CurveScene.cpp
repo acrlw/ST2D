@@ -28,7 +28,7 @@ namespace STEditor
 		computeG3Vertices();
 	}
 
-	void CurveScene::onRender(sf::RenderWindow& window)
+	void CurveScene::onDraw(sf::RenderWindow& window)
 	{
 		if(m_showReferenceLine)
 		{

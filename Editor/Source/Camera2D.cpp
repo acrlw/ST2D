@@ -63,7 +63,7 @@ namespace STEditor
 		}
 	}
 
-	void Camera2D::onRender(sf::RenderWindow& window)
+	void Camera2D::onDraw(sf::RenderWindow& window)
 	{
 		if (m_visible)
 		{

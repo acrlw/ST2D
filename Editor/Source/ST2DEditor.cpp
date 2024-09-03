@@ -1,7 +1,5 @@
 ﻿#include "ST2DEditor.h"
 
-
-
 #include "imgui-SFML.h"
 #include "RenderSFMLImpl.h"
 
@@ -34,15 +32,9 @@ namespace STEditor
 		switchScene(m_currentSceneIndex);
 	}
 
-	ST2DEditor::~ST2DEditor()
-	{
-	}
-
 	void ST2DEditor::exec()
 	{
 		glfwInit();
-
-		
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -75,7 +67,7 @@ namespace STEditor
 		glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos)
 			{
 				if (auto app = static_cast<ST2DEditor*>(glfwGetWindowUserPointer(window)))
-					app->onMouseMove(window, xpos, ypos);
+					app->onMouseMoved(window, xpos, ypos);
 			});
 		glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset)
 			{
@@ -113,10 +105,24 @@ namespace STEditor
 
 		ImGui_ImplOpenGL3_Init("#version 330");
 
+		m_renderer2D = std::make_unique<Renderer2D>();
+
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+
+		glDepthFunc(GL_LEQUAL);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		while (!glfwWindowShouldClose(m_window))
 		{
 			// polling and handling events
 			glfwPollEvents();
+
+			double currentTime = glfwGetTime();
+			double deltaTime = currentTime - m_previousTime;
+			m_previousTime = currentTime;
+
+			onUpdate(deltaTime);
 
 			// clear
 
@@ -133,6 +139,8 @@ namespace STEditor
 
 			onRenderUI();
 
+			m_renderer2D->flush();
+
 			// ImGUI Rendering
 			ImGui::Render();
 
@@ -146,6 +154,7 @@ namespace STEditor
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
+
 		glfwTerminate();
 
 		//// create the window
@@ -241,12 +250,12 @@ namespace STEditor
 		//	//draw background
 		//	m_renderWindow->clear(sf::Color(40, 40, 40));
 
-		//	m_camera.onRender(*m_renderWindow);
+		//	m_camera.onDraw(*m_renderWindow);
 
 		//	const bool show = m_currentScene != nullptr && m_userDrawVisible;
 
 		//	if (show)
-		//		m_currentScene->onRender(*m_renderWindow);
+		//		m_currentScene->onDraw(*m_renderWindow);
 
 		//	render(*m_renderWindow);
 
@@ -342,137 +351,172 @@ namespace STEditor
 
 	}
 
-	void ST2DEditor::onResized(sf::Event& event)
-	{
-		Viewport viewport = m_camera.viewport();
-		viewport.set(static_cast<real>(event.size.width), static_cast<real>(event.size.height));
-		m_camera.setViewport(viewport);
-		m_renderWindow->setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
-	}
+	//void ST2DEditor::onResized(sf::Event& event)
+	//{
+	//	Viewport viewport = m_camera.viewport();
+	//	viewport.set(static_cast<real>(event.size.width), static_cast<real>(event.size.height));
+	//	m_camera.setViewport(viewport);
+	//	m_renderWindow->setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
+	//}
 
-	void ST2DEditor::onClosed(sf::Event& event)
-	{
-		m_renderWindow->close();
-	}
+	//void ST2DEditor::onClosed(sf::Event& event)
+	//{
+	//	m_renderWindow->close();
+	//}
 
-	void ST2DEditor::onKeyReleased(sf::Event& event)
-	{
-		//combo
-		if (event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::LControl && m_onDistanceCheck)
-		{
-			m_onDistanceCheck = false;
-			m_mouseArray[0].clear();
-			m_mouseArray[1].clear();
-		}
+	//void ST2DEditor::onKeyReleased(sf::Event& event)
+	//{
+	//	//combo
+	//	if (event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::LControl && m_onDistanceCheck)
+	//	{
+	//		m_onDistanceCheck = false;
+	//		m_mouseArray[0].clear();
+	//		m_mouseArray[1].clear();
+	//	}
 
-		if (m_currentScene != nullptr)
-			m_currentScene->onKeyRelease(event);
-	}
+	//	if (m_currentScene != nullptr)
+	//		m_currentScene->onKeyRelease(event);
+	//}
 
-	void ST2DEditor::onKeyPressed(sf::Event& event)
-	{
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
-			m_enableDistanceCheck)
-			m_onDistanceCheck = true;
+	//void ST2DEditor::onKeyPressed(sf::Event& event)
+	//{
+	//	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
+	//		m_enableDistanceCheck)
+	//		m_onDistanceCheck = true;
 
-		if (m_currentScene != nullptr)
-			m_currentScene->onKeyPressed(event);
-	}
+	//	if (m_currentScene != nullptr)
+	//		m_currentScene->onKeyPressed(event);
+	//}
 
-	void ST2DEditor::onMouseReleased(sf::Event& event)
-	{
-		Vector2 pos(event.mouseButton.x, event.mouseButton.y);
-		m_mousePos = m_camera.screenToWorld(pos);
-		m_screenMousePos = pos;
+	//void ST2DEditor::onMouseReleased(sf::Event& event)
+	//{
+	//	Vector2 pos(event.mouseButton.x, event.mouseButton.y);
+	//	m_mousePos = m_camera.screenToWorld(pos);
+	//	m_screenMousePos = pos;
 
-		if (m_currentScene != nullptr)
-			m_currentScene->onMouseRelease(event);
+	//	if (m_currentScene != nullptr)
+	//		m_currentScene->onMouseRelease(event);
 
-		m_cameraViewportMovement = false;
-	}
+	//	m_cameraViewportMovement = false;
+	//}
 
-	void ST2DEditor::onMouseMoved(sf::Event& event)
-	{
-		Vector2 pos(event.mouseMove.x, event.mouseMove.y);
-		m_screenMousePos = pos;
+	//void ST2DEditor::onMouseMoved(sf::Event& event)
+	//{
+	//	Vector2 pos(event.mouseMove.x, event.mouseMove.y);
+	//	m_screenMousePos = pos;
 
-		Vector2 cameraPos = m_camera.screenToWorld(pos);
+	//	Vector2 cameraPos = m_camera.screenToWorld(pos);
 
-		Vector2 tf = cameraPos - m_mousePos;
-		if (m_cameraViewportMovement)
-		{
-			tf *= m_camera.meterToPixel();
-			m_camera.setTransform(m_camera.transform() + tf);
-			cameraPos = m_camera.screenToWorld(pos);
-		}
-		m_mousePos = cameraPos;
+	//	Vector2 tf = cameraPos - m_mousePos;
+	//	if (m_cameraViewportMovement)
+	//	{
+	//		tf *= m_camera.meterToPixel();
+	//		m_camera.setTransform(m_camera.transform() + tf);
+	//		cameraPos = m_camera.screenToWorld(pos);
+	//	}
+	//	m_mousePos = cameraPos;
 
-		if (m_onDistanceCheck)
-		{
-			if (m_mouseArray[0].isOrigin())
-				m_mouseArray[0] = m_mousePos;
-			else
-				m_mouseArray[1] = m_mousePos;
-		}
+	//	if (m_onDistanceCheck)
+	//	{
+	//		if (m_mouseArray[0].isOrigin())
+	//			m_mouseArray[0] = m_mousePos;
+	//		else
+	//			m_mouseArray[1] = m_mousePos;
+	//	}
 
-		if (m_currentScene != nullptr)
-			m_currentScene->onMouseMove(event);
-	}
+	//	if (m_currentScene != nullptr)
+	//		m_currentScene->onMouseMove(event);
+	//}
 
-	void ST2DEditor::onMousePressed(sf::Event& event)
-	{
-		Vector2 pos(event.mouseButton.x, event.mouseButton.y);
-		m_screenMousePos = pos;
-		m_mousePos = m_camera.screenToWorld(pos);
+	//void ST2DEditor::onMousePressed(sf::Event& event)
+	//{
+	//	Vector2 pos(event.mouseButton.x, event.mouseButton.y);
+	//	m_screenMousePos = pos;
+	//	m_mousePos = m_camera.screenToWorld(pos);
 
-		if (event.mouseButton.button == sf::Mouse::Right)
-			m_cameraViewportMovement = true;
+	//	if (event.mouseButton.button == sf::Mouse::Right)
+	//		m_cameraViewportMovement = true;
 
-		if (m_currentScene != nullptr)
-			m_currentScene->onMousePress(event);
-	}
+	//	if (m_currentScene != nullptr)
+	//		m_currentScene->onMousePress(event);
+	//}
 
-	void ST2DEditor::onWheelScrolled(sf::Event& event)
-	{
-		auto x = event.mouseWheelScroll.x;
-		auto y = event.mouseWheelScroll.y;
-		m_camera.setPreScrollScreenMousePos(Vector2(static_cast<float>(x), static_cast<float>(y)));
-		if (event.mouseWheelScroll.delta > 0)
-			m_camera.setMeterToPixel(m_camera.meterToPixel() + m_camera.meterToPixel() * m_zoomFactor);
-		else
-			m_camera.setMeterToPixel(m_camera.meterToPixel() - m_camera.meterToPixel() * m_zoomFactor);
-		
-	}
+	//void ST2DEditor::onWheelScrolled(sf::Event& event)
+	//{
+	//	auto x = event.mouseWheelScroll.x;
+	//	auto y = event.mouseWheelScroll.y;
+	//	m_camera.setPreScrollScreenMousePos(Vector2(static_cast<float>(x), static_cast<float>(y)));
+	//	if (event.mouseWheelScroll.delta > 0)
+	//		m_camera.setMeterToPixel(m_camera.meterToPixel() + m_camera.meterToPixel() * m_zoomFactor);
+	//	else
+	//		m_camera.setMeterToPixel(m_camera.meterToPixel() - m_camera.meterToPixel() * m_zoomFactor);
+	//	
+	//}
 
 	void ST2DEditor::onFrameBufferResize(GLFWwindow* window, int width, int height)
 	{
-
+		if (m_currentScene != nullptr)
+			m_currentScene->onFrameBufferResize(width, height);
 	}
 
 	void ST2DEditor::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
-
+		if (m_currentScene != nullptr)
+			m_currentScene->onKeyButton(key, scancode, action, mods);
 	}
 
 	void ST2DEditor::onMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
-
+		if (m_currentScene != nullptr)
+			m_currentScene->onMouseButton(button, action, mods);
 	}
 
-	void ST2DEditor::onMouseMove(GLFWwindow* window, double xpos, double ypos)
+	void ST2DEditor::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
 	{
-
+		if (m_currentScene != nullptr)
+			m_currentScene->onMouseMoved(xpos, ypos);
 	}
 
 	void ST2DEditor::onMouseScroll(GLFWwindow* window, double xoffset, double yoffset)
 	{
-
+		if (m_currentScene != nullptr)
+			m_currentScene->onMouseScroll(xoffset, yoffset);
 	}
 
-	void ST2DEditor::renderGUI(sf::RenderWindow& window, sf::Clock& clock)
-	{
-		ImGui::SFML::Update(window, clock.restart());
+	//void ST2DEditor::render(sf::RenderWindow& window)
+	//{
+	//	if (m_onDistanceCheck)
+	//	{
+	//		if (m_mouseArray[0].isOrigin() || m_mouseArray[1].isOrigin())
+	//			return;
+	//		Vector2 v = m_mouseArray[1] - m_mouseArray[0];
+	//		real length = v.length();
+	//		if (realEqual(length, 0))
+	//			return;
+	//		Vector2 normal = v / length;
+	//		RenderSFMLImpl::renderPoint(window, m_camera, m_mouseArray[0], RenderConstant::Green);
+	//		RenderSFMLImpl::renderPoint(window, m_camera, m_mouseArray[1], RenderConstant::Green);
+	//		RenderSFMLImpl::renderLine(window, m_camera, m_mouseArray[0], m_mouseArray[1], RenderConstant::Green);
+	//		std::string str = std::format("{:.7f}", length);
+	//		sf::Text text;
+	//		text.setFont(m_font);
+	//		text.setString(str);
+	//		text.setCharacterSize(16);
+	//		text.setFillColor(RenderConstant::Green);
+	//		sf::FloatRect text_rect = text.getLocalBounds();
+	//		text.setOrigin(text_rect.left + text_rect.width / 2.0f, text_rect.top + text_rect.height / 2.0f);
+	//		const Vector2 t = normal.perpendicular();
+	//		Vector2 half(text_rect.width / 2.0f, text_rect.height / 2.0f);
+	//		half *= m_camera.pixelToMeter();
+	//		Vector2 offset = t * half.x * 1.5f - normal * half.y * 1.5f;
+	//		text.setPosition(RenderSFMLImpl::toVector2f(m_camera.worldToScreen(m_mouseArray[1] + offset)));
+	//		text.rotate(Math::degree(-t.theta()));
+	//		window.draw(text);
+	//	}
+	//}
 
+	void ST2DEditor::onRenderUI()
+	{
 		ImGui::SetWindowPos("Panel", ImVec2(0, 0));
 
 		ImGui::Begin("Panel", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
@@ -480,7 +524,6 @@ namespace STEditor
 		ImGuiStyle& style = ImGui::GetStyle();
 		style.WindowRounding = 5.0f;
 		style.Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 0.55f);
-
 
 		ImGui::SeparatorText("Scenes");
 
@@ -520,52 +563,15 @@ namespace STEditor
 
 		if (m_currentScene != nullptr && m_userDrawVisible)
 			m_currentScene->onRenderUI();
-
-		ImGui::SFML::Render(window);
-
-	}
-
-	void ST2DEditor::render(sf::RenderWindow& window)
-	{
-		if (m_onDistanceCheck)
-		{
-			if (m_mouseArray[0].isOrigin() || m_mouseArray[1].isOrigin())
-				return;
-			Vector2 v = m_mouseArray[1] - m_mouseArray[0];
-			real length = v.length();
-			if (realEqual(length, 0))
-				return;
-			Vector2 normal = v / length;
-			RenderSFMLImpl::renderPoint(window, m_camera, m_mouseArray[0], RenderConstant::Green);
-			RenderSFMLImpl::renderPoint(window, m_camera, m_mouseArray[1], RenderConstant::Green);
-			RenderSFMLImpl::renderLine(window, m_camera, m_mouseArray[0], m_mouseArray[1], RenderConstant::Green);
-			std::string str = std::format("{:.7f}", length);
-			sf::Text text;
-			text.setFont(m_font);
-			text.setString(str);
-			text.setCharacterSize(16);
-			text.setFillColor(RenderConstant::Green);
-			sf::FloatRect text_rect = text.getLocalBounds();
-			text.setOrigin(text_rect.left + text_rect.width / 2.0f, text_rect.top + text_rect.height / 2.0f);
-			const Vector2 t = normal.perpendicular();
-			Vector2 half(text_rect.width / 2.0f, text_rect.height / 2.0f);
-			half *= m_camera.pixelToMeter();
-			Vector2 offset = t * half.x * 1.5f - normal * half.y * 1.5f;
-			text.setPosition(RenderSFMLImpl::toVector2f(m_camera.worldToScreen(m_mouseArray[1] + offset)));
-			text.rotate(Math::degree(-t.theta()));
-			window.draw(text);
-		}
-	}
-
-	void ST2DEditor::onRenderUI()
-	{
-
-
 	}
 
 	void ST2DEditor::onRender()
 	{
-
+		m_referenceLayer.onRender(m_renderer2D.get());
+		
+		if (m_currentScene != nullptr)
+			m_currentScene->onRender(m_window, m_renderer2D.get());
+		
 	}
 
 	void ST2DEditor::restart()
@@ -578,9 +584,8 @@ namespace STEditor
 		}
 	}
 
-	void ST2DEditor::onUpdate(float deltaTime)
+	void ST2DEditor::onUpdate(float deltaTime) const
 	{
-
 		if (m_currentScene != nullptr)
 			m_currentScene->onUpdate(deltaTime);
 	}
@@ -609,5 +614,6 @@ namespace STEditor
 	void ST2DEditor::onDestroy()
 	{
 		clearAll();
+		m_renderer2D.reset();
 	}
 }

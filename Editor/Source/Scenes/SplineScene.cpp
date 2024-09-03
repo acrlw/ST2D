@@ -23,7 +23,7 @@ namespace STEditor
 
 	}
 
-	void SplineScene::onRender(sf::RenderWindow& window)
+	void SplineScene::onDraw(sf::RenderWindow& window)
 	{
 
 

@@ -28,7 +28,7 @@ namespace STEditor
 
 	}
 
-	void SpiralScene::onRender(sf::RenderWindow& window)
+	void SpiralScene::onDraw(sf::RenderWindow& window)
 	{
 		drawReference(window);
 		if(m_showG1Continuity)

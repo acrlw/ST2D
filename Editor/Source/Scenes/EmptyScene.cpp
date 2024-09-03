@@ -23,7 +23,7 @@ namespace STEditor
 
 	}
 
-	void EmptyScene::onRender(sf::RenderWindow& window)
+	void EmptyScene::onDraw(sf::RenderWindow& window)
 	{
 
 	}

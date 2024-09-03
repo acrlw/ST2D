@@ -18,7 +18,8 @@
 #include "Scenes/EmptyScene.h"
 #include "Scenes/SplineScene.h"
 #include <SFML/Graphics/Font.hpp>
-#include "ST2DCore.h"
+
+#include "ReferenceLayer.h"
 
 namespace STEditor
 {
@@ -28,44 +29,42 @@ namespace STEditor
 	{
 	public:
 		ST2DEditor();
-		~ST2DEditor();
+		~ST2DEditor() = default;
 		void exec();
 
 	private:
-		void styleUI();
 		//events
-		void onResized(sf::Event& event);
-		void onClosed(sf::Event& event);
-		void onKeyReleased(sf::Event& event);
-		void onKeyPressed(sf::Event& event);
-		void onMouseReleased(sf::Event& event);
-		void onMouseMoved(sf::Event& event);
-		void onMousePressed(sf::Event& event);
-		void onWheelScrolled(sf::Event& event);
+		//void onResized(sf::Event& event);
+		//void onClosed(sf::Event& event);
+		//void onKeyReleased(sf::Event& event);
+		//void onKeyPressed(sf::Event& event);
+		//void onMouseReleased(sf::Event& event);
+		//void onMouseMoved(sf::Event& event);
+		//void onMousePressed(sf::Event& event);
+		//void onWheelScrolled(sf::Event& event);
 
 		void onFrameBufferResize(GLFWwindow* window, int width, int height);
 		void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods);
 		void onMouseButton(GLFWwindow* window, int button, int action, int mods);
-		void onMouseMove(GLFWwindow* window, double xpos, double ypos);
+		void onMouseMoved(GLFWwindow* window, double xpos, double ypos);
 		void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset);
 
 		//render
-		void renderGUI(sf::RenderWindow& window, sf::Clock& clock);
-		void render(sf::RenderWindow& window);
-
 		void onRenderUI();
 		void onRender();
 
-		//simulation
+		//running
+		void onUpdate(float deltaTime) const;
 
+		//destroy
+		void onDestroy();
+
+		//misc
+		void styleUI();
 		void restart();
-
-		void onUpdate(float deltaTime);
-
 		void switchScene(int index);
 		void clearAll();
 
-		void onDestroy();
 
 
 		bool m_userDrawVisible = true;
@@ -96,5 +95,11 @@ namespace STEditor
 		sf::Font m_font;
 
 		std::array<Vector2, 2> m_mouseArray;
+
+		std::unique_ptr<Renderer2D> m_renderer2D;
+
+		double m_previousTime;
+
+		ReferenceLayer m_referenceLayer;
 	};
 }
