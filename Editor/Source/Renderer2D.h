@@ -68,6 +68,7 @@ namespace STEditor
 		void onRenderEnd();
 
 		//screen space
+		void line(int x1, int y1, int x2, int y2, const Color& color);
 		void line(int x1, int y1, int x2, int y2, int r, int g, int b, int a);
 
 		//world space
@@ -81,6 +82,7 @@ namespace STEditor
 		void dashedLine(const Vector2& start, const Vector2& end, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
 
 		void polyLines(const std::vector<Vector2>& points, const Color& color);
+		void closeLines(const std::vector<Vector2>& points, const Color& color);
 		void polyDashedLines(const std::vector<Vector2>& points, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
 		void polyThickLine(const std::vector<Vector2>& points, const Color& color, float thickness = 2.0f);
 		void polyDashedThickLine(const std::vector<Vector2>& points, const Color& color, float thickness = 2.0f, float dashLength = 0.1f, float gapLength = 0.1f);
@@ -118,12 +120,26 @@ namespace STEditor
 			bool showIndex = true);
 
 
-		void flush();
+		void onRender();
+
+		void resizeFrameBuffer(int width, int height);
 
 	private:
+
+		int m_frameBufferWidth = 1920;
+		int m_frameBufferHeight = 1080;
+
+		void linePushVector(const Vector2& vec);
+		void linePushColor(const Color& color);
+
+		void initRenderSettings();
+
 		std::vector<float> m_lines;
 
 		ShaderProgram m_shaderProgram;
+
+		unsigned int m_vao;
+		unsigned int m_vbo;
 	};
 
 	

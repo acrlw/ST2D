@@ -6,7 +6,7 @@ namespace STEditor
 	{
 		if (renderer == nullptr)
 			return;
-
-		renderer->line({ -1.0f, -1.0f }, { 1.0f, 1.0f }, DarkPalette::Red);
+		
+		renderer->line(100, 100, 500, 500, DarkPalette::Green);
 	}
 }

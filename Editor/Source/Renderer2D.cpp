@@ -39,26 +39,75 @@ namespace STEditor
 		m_shaderProgram.addGeometryShader(geometryShader);
 		m_shaderProgram.compileShader();
 		m_shaderProgram.link();
+
+		initRenderSettings();
 	}
 
 	Renderer2D::~Renderer2D()
 	{
+		APP_INFO("Delete VAO ({}) and VBO ({}) ", m_vao, m_vbo);
+
+		glDeleteVertexArrays(1, &m_vao);
+		glDeleteBuffers(1, &m_vbo);
+
 		m_shaderProgram.destroy();
+	}
+
+	void Renderer2D::initRenderSettings()
+	{
+		glGenVertexArrays(1, &m_vao);
+		glBindVertexArray(m_vao);
+
+		glGenBuffers(1, &m_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		m_shaderProgram.use();
+
+		APP_INFO("Created VAO({}) and VBO({})", m_vao, m_vbo);
 	}
 
 	void Renderer2D::onRenderStart()
 	{
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+		glBufferData(GL_ARRAY_BUFFER, m_lines.size() * sizeof(float), m_lines.data(), GL_STATIC_DRAW);
 
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(2 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	void Renderer2D::onRenderEnd()
 	{
+		m_lines.clear();
+	}
 
+	void Renderer2D::line(int x1, int y1, int x2, int y2, const Color& color)
+	{
+		float ndcX1 = (2.0f * static_cast<float>(x1) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
+		float ndcY1 = 1.0f - (2.0f * static_cast<float>(y1) / static_cast<float>(m_frameBufferHeight));
+		float ndcX2 = (2.0f * static_cast<float>(x2) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
+		float ndcY2 = 1.0f - (2.0f * static_cast<float>(y2) / static_cast<float>(m_frameBufferHeight));
+
+		line({ ndcX1, ndcY1 }, { ndcX2, ndcY2 }, color);
 	}
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, int r, int g, int b, int a)
 	{
+		float ndcX1 = (2.0f * static_cast<float>(x1) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
+		float ndcY1 = 1.0f - (2.0f * static_cast<float>(y1) / static_cast<float>(m_frameBufferHeight));
+		float ndcX2 = (2.0f * static_cast<float>(x2) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
+		float ndcY2 = 1.0f - (2.0f * static_cast<float>(y2) / static_cast<float>(m_frameBufferHeight));
 
+		line({ ndcX1, ndcY1 }, { ndcX2, ndcY2 }, r, g, b, a);
 	}
 
 	void Renderer2D::line(const Vector2& start, const Vector2& end, int r, int g, int b, int a)
@@ -73,15 +122,20 @@ namespace STEditor
 
 	void Renderer2D::line(const Vector2& start, const Vector2& end, const Color& color)
 	{
-
+		linePushVector(start);
+		linePushColor(color);
+		linePushVector(end);
+		linePushColor(color);
 	}
 
 	void Renderer2D::fill(const std::vector<Vector2>& points, const Color& color)
 	{
+
 	}
 
 	void Renderer2D::thickLine(const Vector2& start, const Vector2& end, const Color& color, float thickness)
 	{
+
 	}
 
 	void Renderer2D::dashedLine(const Vector2& start, const Vector2& end, const Color& color, float dashLength,
@@ -247,10 +301,68 @@ namespace STEditor
 
 	void Renderer2D::polyLines(const std::vector<Vector2>& points, const Color& color)
 	{
+		if (points.size() < 2)
+			return;
+
+		for (size_t i = 1; i < points.size() - 1; i++)
+			line(points[i - 1], points[i], color);
+
+
 	}
 
-	void Renderer2D::flush()
+	void Renderer2D::closeLines(const std::vector<Vector2>& points, const Color& color)
 	{
+		if (points.size() < 2)
+			return;
 
+		for (size_t i = 1; i < points.size(); i++)
+			line(points[i - 1], points[i], color);
+
+		line(points.back(), points.front(), color);
+	}
+
+	void Renderer2D::onRender()
+	{
+		onRenderStart();
+
+		if(m_lines.empty())
+			return;
+
+		GLint previousDepthFunc;
+		glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
+
+		glDepthFunc(GL_ALWAYS);
+
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+		glDrawArrays(GL_LINES, 0, m_lines.size() / 6);
+
+		glBindVertexArray(0);
+
+		glDepthFunc(previousDepthFunc);
+
+		onRenderEnd();
+	}
+
+	void Renderer2D::resizeFrameBuffer(int width, int height)
+	{
+		m_frameBufferWidth = width;
+		m_frameBufferHeight = height;
+		glViewport(0, 0, width, height);
+	}
+
+	void Renderer2D::linePushVector(const Vector2& vec)
+	{
+		m_lines.push_back(vec.x);
+		m_lines.push_back(vec.y);
+	}
+
+	void Renderer2D::linePushColor(const Color& color)
+	{
+		m_lines.push_back(color.r);
+		m_lines.push_back(color.g);
+		m_lines.push_back(color.b);
+		m_lines.push_back(color.a);
 	}
 }

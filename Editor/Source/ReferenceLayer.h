@@ -10,6 +10,7 @@ namespace STEditor
 	{
 	public:
 
+
 		void onRender(Renderer2D* renderer);
 
 	private:
@@ -19,6 +20,7 @@ namespace STEditor
 		bool m_axisVisible = true;
 
 		int m_axisPointCount = 100;
+
 
 	};
 }

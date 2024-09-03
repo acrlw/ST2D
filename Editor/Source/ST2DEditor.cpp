@@ -39,9 +39,9 @@ namespace STEditor
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+		glfwWindowHint(GLFW_SAMPLES, 4);
 		m_window = glfwCreateWindow(1920, 1080, "Testbed", NULL, NULL);
-		if (m_window == NULL)
+		if (m_window == nullptr)
 		{
 			APP_ERROR("Failed to create GLFW window");
 			glfwTerminate();
@@ -122,7 +122,7 @@ namespace STEditor
 			double deltaTime = currentTime - m_previousTime;
 			m_previousTime = currentTime;
 
-			onUpdate(deltaTime);
+			onUpdate(static_cast<float>(deltaTime));
 
 			// clear
 
@@ -132,6 +132,8 @@ namespace STEditor
 			//render
 			onRender();
 
+			m_renderer2D->onRender();
+
 			// Start the Dear ImGui frame
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
@@ -139,12 +141,11 @@ namespace STEditor
 
 			onRenderUI();
 
-			m_renderer2D->flush();
-
 			// ImGUI Rendering
 			ImGui::Render();
 
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
 			glfwSwapBuffers(m_window);
 		}
@@ -455,7 +456,7 @@ namespace STEditor
 
 	void ST2DEditor::onFrameBufferResize(GLFWwindow* window, int width, int height)
 	{
-		glViewport(0, 0, width, height);
+		m_renderer2D->resizeFrameBuffer(width, height);
 
 		if (m_currentScene != nullptr)
 			m_currentScene->onFrameBufferResize(width, height);
@@ -569,13 +570,10 @@ namespace STEditor
 
 	void ST2DEditor::onRender()
 	{
-		m_renderer2D->onRenderStart();
 		m_referenceLayer.onRender(m_renderer2D.get());
 		
 		if (m_currentScene != nullptr)
 			m_currentScene->onRender(m_window, m_renderer2D.get());
-
-		m_renderer2D->onRenderEnd();
 		
 	}
 

@@ -1,6 +1,5 @@
 #include "ShaderProgram.h"
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+
 
 namespace STEditor
 {
@@ -91,8 +90,8 @@ namespace STEditor
         for (auto&& fragmentShader : m_fragmentShaders)
             glDeleteShader(fragmentShader.id);
 
-		for (auto&& geometryShader : m_geometryShaders)
-			glDeleteShader(geometryShader.id);
+		//for (auto&& geometryShader : m_geometryShaders)
+		//	glDeleteShader(geometryShader.id);
 
         glDeleteProgram(m_id);
 
