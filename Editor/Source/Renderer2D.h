@@ -4,6 +4,7 @@
 #include FT_FREETYPE_H 
 
 #include "ShaderProgram.h"
+#include "glm/glm.hpp"
 
 namespace STEditor
 {
@@ -119,27 +120,65 @@ namespace STEditor
 			const sf::Color& color, float pointSize = 16, const unsigned int& indexSize = 18,
 			bool showIndex = true);
 
+		Vector2 worldToScreen(const Vector2& worldPos) const;
+		Vector2 screenToWorld(const Vector2& screenPos) const;
 
 		void onRender();
 
-		void resizeFrameBuffer(int width, int height);
+		void onFrameBufferResize(int width, int height);
+		void onKeyButton(int key, int scancode, int action, int mods);
+		void onMouseButton(int button, int action, int mods);
+		void onMouseMoved(double xpos, double ypos);
+		void onMouseScroll(double xoffset, double yoffset);
+
 
 	private:
+		void drawGridScaleLines();
+
+		void onScale(float yOffset);
+		void onTranslateView(float x, float y);
+		void buildMVPMatrix();
+
+		void linePushVector(std::vector<float>& lines, const Vector2& vec);
+		void linePushColor(std::vector<float>& lines, const Color& color);
+
+		void initRenderSettings();
 
 		int m_frameBufferWidth = 1920;
 		int m_frameBufferHeight = 1080;
 
-		void linePushVector(const Vector2& vec);
-		void linePushColor(const Color& color);
+		// camera
+		float m_orthoSize = 4.0f;
+		float m_orthoSizeScaleRatio = 0.5f;
 
-		void initRenderSettings();
+		bool m_isTranslateView = false;
+		bool m_translationStart = false;
+		float m_translateSensitivity = 0.5f;
+		Vector2 m_mouseStart = { 0.0f, 0.0f };
+		float m_zNear = 0.1f;
+		float m_zFar = 1000.0f;
+		float m_aspectRatio = 16.0f / 9.0f;
 
+		glm::vec3 m_translationStartPos = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 m_cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
+		glm::vec3 m_cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+		glm::vec3 m_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+		glm::mat4 m_model;
+		glm::mat4 m_view;
+		glm::mat4 m_projection;
+
+		//render
 		std::vector<float> m_lines;
+		std::vector<float> m_ndcLines;
 
 		ShaderProgram m_shaderProgram;
 
-		unsigned int m_vao;
-		unsigned int m_vbo;
+		unsigned int m_lineVao;
+		unsigned int m_lineVbo;
+
+		unsigned int m_ndcLineVao;
+		unsigned int m_ndcLineVbo;
 	};
 
 	

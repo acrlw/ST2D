@@ -39,7 +39,7 @@ namespace STEditor
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-		glfwWindowHint(GLFW_SAMPLES, 4);
+		glfwWindowHint(GLFW_SAMPLES, 8);
 		m_window = glfwCreateWindow(1920, 1080, "Testbed", NULL, NULL);
 		if (m_window == nullptr)
 		{
@@ -456,7 +456,8 @@ namespace STEditor
 
 	void ST2DEditor::onFrameBufferResize(GLFWwindow* window, int width, int height)
 	{
-		m_renderer2D->resizeFrameBuffer(width, height);
+		if (m_renderer2D != nullptr)
+			m_renderer2D->onFrameBufferResize(width, height);
 
 		if (m_currentScene != nullptr)
 			m_currentScene->onFrameBufferResize(width, height);
@@ -464,24 +465,36 @@ namespace STEditor
 
 	void ST2DEditor::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
+		if (m_renderer2D != nullptr)
+			m_renderer2D->onKeyButton(key, scancode, action, mods);
+
 		if (m_currentScene != nullptr)
 			m_currentScene->onKeyButton(key, scancode, action, mods);
 	}
 
 	void ST2DEditor::onMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
+		if (m_renderer2D != nullptr)
+			m_renderer2D->onMouseButton(button, action, mods);
+
 		if (m_currentScene != nullptr)
 			m_currentScene->onMouseButton(button, action, mods);
 	}
 
 	void ST2DEditor::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
 	{
+		if (m_renderer2D != nullptr)
+			m_renderer2D->onMouseMoved(xpos, ypos);
+
 		if (m_currentScene != nullptr)
 			m_currentScene->onMouseMoved(xpos, ypos);
 	}
 
 	void ST2DEditor::onMouseScroll(GLFWwindow* window, double xoffset, double yoffset)
 	{
+		if (m_renderer2D != nullptr)
+			m_renderer2D->onMouseScroll(xoffset, yoffset);
+
 		if (m_currentScene != nullptr)
 			m_currentScene->onMouseScroll(xoffset, yoffset);
 	}
