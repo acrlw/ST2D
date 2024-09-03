@@ -1,8 +1,9 @@
 #pragma once
 
-#include "ST2DCore.h"
 #include <ft2build.h>
 #include FT_FREETYPE_H 
+
+#include "ShaderProgram.h"
 
 namespace STEditor
 {
@@ -17,34 +18,54 @@ namespace STEditor
 			: r(static_cast<float>(red) / 255.0f), g(static_cast<float>(green) / 255.0f), b(static_cast<float>(blue) / 255.0f), a(static_cast<float>(alpha) / 255.0f) {}
 	};
 
-	namespace Palette
+	namespace DarkPalette
 	{
-		const Color Yellow = Color(255, 235, 59);
 		const Color Red = Color(244, 67, 54);
-		const Color LightRed = Color(255, 205, 210);
-		const Color DarkRed = Color(211, 47, 47);
-		const Color Blue = Color(3, 169, 244);
-		const Color LightBlue = Color(0, 188, 212);
-		const Color DarkBlue = Color(2, 136, 209);
-		const Color Cyan = Color(0, 188, 212);
-		const Color LightCyan = Color(178, 235, 242);
 		const Color Green = Color(76, 175, 80);
-		const Color LightGreen = Color(139, 195, 74);
+		const Color Blue = Color(3, 169, 244);
+		const Color Yellow = Color(255, 235, 59);
+		const Color Cyan = Color(0, 188, 212);
 		const Color Pink = Color(233, 30, 99);
-		const Color DarkGreen = Color(44, 113, 48);
-		const Color LightGray = Color(158, 158, 158);
 		const Color Gray = Color(189, 189, 189);
 		const Color Orange = Color(255, 138, 101);
 		const Color Teal = Color(29, 233, 182);
+		const Color Purple = Color(156, 39, 176);
+
+		const Color LightRed = Color(255, 205, 210);
+		const Color LightGreen = Color(139, 195, 74);
+		const Color LightBlue = Color(0, 188, 212);
+		const Color LightCyan = Color(178, 235, 242);
+		const Color LightGray = Color(158, 158, 158);
+
+		const Color DarkRed = Color(211, 47, 47);
+		const Color DarkGreen = Color(44, 113, 48);
+		const Color DarkBlue = Color(2, 136, 209);
+
 	}
 
-
+	namespace LightPalette
+	{
+		const Color Red = Color(183, 28, 28);
+		const Color Green = Color(76, 175, 80);
+		const Color Blue = Color(13, 71, 161);
+		const Color Yellow = Color(249, 168, 37);
+		const Color Cyan = Color(0, 131, 143);
+		const Color Pink = Color(194, 24, 91);
+		const Color Gray = Color(66, 66, 66);
+		const Color Orange = Color(230, 81, 0);
+		const Color Teal = Color(0, 105, 92);
+		const Color Purple = Color(106, 27, 154);
+	}
 
 	class Renderer2D
 	{
 	public:
 
 		Renderer2D();
+		~Renderer2D();
+
+		void onRenderStart();
+		void onRenderEnd();
 
 		//screen space
 		void line(int x1, int y1, int x2, int y2, int r, int g, int b, int a);
@@ -102,6 +123,7 @@ namespace STEditor
 	private:
 		std::vector<float> m_lines;
 
+		ShaderProgram m_shaderProgram;
 	};
 
 	

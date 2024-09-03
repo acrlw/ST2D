@@ -4,6 +4,55 @@ namespace STEditor
 {
 	Renderer2D::Renderer2D()
 	{
+		//read shader source from path res/shaders/vert.glsl
+		auto readShader = [](const std::string& path) -> std::string
+			{
+				std::ifstream file(path);
+				if (!file)
+				{
+					std::cout << std::format("[ERROR] Unable to read shader from {0}", path) << '\n';
+					return "";
+				}
+				std::stringstream buffer;
+				buffer << file.rdbuf();
+				return buffer.str();
+			};
+
+		Shader vertexShader, fragmentShader, geometryShader;
+
+		vertexShader.source = readShader("./Resource/Shaders/vert.glsl");
+		fragmentShader.source = readShader("./Resource/Shaders/frag.glsl");
+		geometryShader.source = readShader("./Resource/Shaders/geom.glsl");
+
+		if (vertexShader.source.empty())
+			APP_WARN("Vertex shader is empty");
+
+		if (fragmentShader.source.empty())
+			APP_WARN("Fragment shader is empty");
+
+		if (geometryShader.source.empty())
+			APP_WARN("Geometry shader is empty");
+
+
+		m_shaderProgram.addVertexShader(vertexShader);
+		m_shaderProgram.addFragmentShader(fragmentShader);
+		m_shaderProgram.addGeometryShader(geometryShader);
+		m_shaderProgram.compileShader();
+		m_shaderProgram.link();
+	}
+
+	Renderer2D::~Renderer2D()
+	{
+		m_shaderProgram.destroy();
+	}
+
+	void Renderer2D::onRenderStart()
+	{
+
+	}
+
+	void Renderer2D::onRenderEnd()
+	{
 
 	}
 

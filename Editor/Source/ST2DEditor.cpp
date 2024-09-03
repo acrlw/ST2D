@@ -74,18 +74,18 @@ namespace STEditor
 				if (auto app = static_cast<ST2DEditor*>(glfwGetWindowUserPointer(window)))
 					app->onMouseScroll(window, xoffset, yoffset);
 			});
-		//set mouse button callback
 		glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods)
 			{
 				if (auto app = static_cast<ST2DEditor*>(glfwGetWindowUserPointer(window)))
 					app->onMouseButton(window, button, action, mods);
 			});
-		//set key callback
 		glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
 			{
 				if (auto app = static_cast<ST2DEditor*>(glfwGetWindowUserPointer(window)))
 					app->onKeyButton(window, key, scancode, action, mods);
 			});
+
+
 
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
@@ -96,7 +96,7 @@ namespace STEditor
 		//io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-		io.Fonts->AddFontFromFileTTF("./Resource/Fonts/MiSans-Medium.ttf", 20);
+		io.Fonts->AddFontFromFileTTF("./Resource/Fonts/MiSans-Medium.ttf", 18);
 		// Setup Dear ImGui style
 		styleUI();
 
@@ -455,6 +455,8 @@ namespace STEditor
 
 	void ST2DEditor::onFrameBufferResize(GLFWwindow* window, int width, int height)
 	{
+		glViewport(0, 0, width, height);
+
 		if (m_currentScene != nullptr)
 			m_currentScene->onFrameBufferResize(width, height);
 	}
@@ -567,10 +569,13 @@ namespace STEditor
 
 	void ST2DEditor::onRender()
 	{
+		m_renderer2D->onRenderStart();
 		m_referenceLayer.onRender(m_renderer2D.get());
 		
 		if (m_currentScene != nullptr)
 			m_currentScene->onRender(m_window, m_renderer2D.get());
+
+		m_renderer2D->onRenderEnd();
 		
 	}
 
