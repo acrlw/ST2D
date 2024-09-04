@@ -26,58 +26,56 @@ namespace STEditor
 	{
 	}
 
-	void NarrowphaseScene::onDraw(sf::RenderWindow& window)
+	void NarrowphaseScene::onRender(Renderer2D& renderer)
 	{
+		//RenderSFMLImpl::renderShape(window, *m_settings.camera, tf1, &rect, RenderConstant::Yellow);
 
-		RenderSFMLImpl::renderShape(window, *m_settings.camera, tf1, &rect, RenderConstant::Yellow);
+		//RenderSFMLImpl::renderShape(window, *m_settings.camera, tf2, &ellipse, RenderConstant::Cyan);
 
-		RenderSFMLImpl::renderShape(window, *m_settings.camera, tf2, &ellipse, RenderConstant::Cyan);
+		//auto info = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
 
-		auto info = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
+		//RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointA, RenderConstant::Yellow);
+		//RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointB, RenderConstant::Cyan);
 
-		RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointA, RenderConstant::Yellow);
-		RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointB, RenderConstant::Cyan);
-
-		RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, info.pair.pointA, info.pair.pointB, RenderConstant::LightGray);
-
+		//RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, info.pair.pointA, info.pair.pointB, RenderConstant::LightGray);
 
 	}
 
-	void NarrowphaseScene::onMousePress(sf::Event& event)
+	void NarrowphaseScene::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
-		if(event.mouseButton.button == sf::Mouse::Left)
-		{
-			Vector2 mousePos = m_settings.camera->screenToWorld(Vector2(event.mouseButton.x, event.mouseButton.y));
-			Vector2 p1 = tf1.inverseTranslatePoint(mousePos);
-			Vector2 p2 = tf2.inverseTranslatePoint(mousePos);
-			if(rect.contains(p1))
-			{
-				selectedTransform = &tf1;
-				oldTransform = tf1;
-				mouseStart = mousePos;
-			}
-			else if(ellipse.contains(p2))
-			{
-				selectedTransform = &tf2;
-				oldTransform = tf2;
-				mouseStart = mousePos;
-			}
-		}
+		//if (event.mouseButton.button == sf::Mouse::Left)
+		//{
+		//	Vector2 mousePos = m_settings.camera->screenToWorld(Vector2(event.mouseButton.x, event.mouseButton.y));
+		//	Vector2 p1 = tf1.inverseTranslatePoint(mousePos);
+		//	Vector2 p2 = tf2.inverseTranslatePoint(mousePos);
+		//	if (rect.contains(p1))
+		//	{
+		//		selectedTransform = &tf1;
+		//		oldTransform = tf1;
+		//		mouseStart = mousePos;
+		//	}
+		//	else if (ellipse.contains(p2))
+		//	{
+		//		selectedTransform = &tf2;
+		//		oldTransform = tf2;
+		//		mouseStart = mousePos;
+		//	}
+		//}
 	}
 
-	void NarrowphaseScene::onMouseRelease(sf::Event& event)
+	void NarrowphaseScene::onMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
-		selectedTransform = nullptr;
+		//selectedTransform = nullptr;
 	}
 
-	void NarrowphaseScene::onMouseMove(sf::Event& event)
+	void NarrowphaseScene::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
 	{
-		if (selectedTransform != nullptr)
-		{
-			Vector2 pos(event.mouseMove.x, event.mouseMove.y);
-			Vector2 currentMousePos = m_settings.camera->screenToWorld(pos);
+		//if (selectedTransform != nullptr)
+		//{
+		//	Vector2 pos(event.mouseMove.x, event.mouseMove.y);
+		//	Vector2 currentMousePos = m_settings.camera->screenToWorld(pos);
 
-			selectedTransform->position = oldTransform.position + (currentMousePos - mouseStart);
-		}
+		//	selectedTransform->position = oldTransform.position + (currentMousePos - mouseStart);
+		//}
 	}
 }

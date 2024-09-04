@@ -17,14 +17,12 @@ namespace STEditor
 		void onLoad() override;
 		void onUnLoad() override;
 		void onUpdate(float deltaTime) override;
-		void onDraw(sf::RenderWindow& window) override;
+		void onRender(Renderer2D& renderer) override;
 		void onRenderUI() override;
-		void onMousePress(sf::Event& event) override;
-		void onMouseRelease(sf::Event& event) override;
-		void onMouseMove(sf::Event& event) override;
-		void onMouseDoubleClick(sf::Event& event) override;
-		void onKeyRelease(sf::Event& event) override;
-		void onKeyPressed(sf::Event& event) override;
+		void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods) override;
+		void onMouseMoved(GLFWwindow* window, double xpos, double ypos) override;
+		void onMouseButton(GLFWwindow* window, int button, int action, int mods) override;
+
 
 	private:
 		Vector2* m_targetPoint = nullptr;

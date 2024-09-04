@@ -51,285 +51,278 @@ namespace STEditor
 
 	}
 
-	void BroadphaseScene::onDraw(sf::RenderWindow& window)
-	{
-		ZoneScopedN("[BroadphaseScene] On Render");
-
-		for(int i = 0; i < m_count; ++i)
-		{
-			if (m_showObjectId)
-			{
-				RenderSFMLImpl::renderInt(window, *m_settings.camera, m_transforms[i].position, 
-					*m_settings.font, m_objectIds[i], RenderConstant::Gray, 12, {});
-			}
-
-			if(m_showTransform)
-			{
-				RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_transforms[i].position, RenderConstant::Yellow, 2.0f);
-				RenderSFMLImpl::renderOrientation(window, *m_settings.camera, m_transforms[i]);
-			}
-
-			if(m_showObject)
-				RenderSFMLImpl::renderShape(window, *m_settings.camera, m_transforms[i], m_shapes[i], RenderConstant::Green);
-
-			if (m_showAABB)
-			{
-				//std::vector<Vector2> points;
-				//points.emplace_back(m_aabbs[i].topLeft());
-				//points.emplace_back(m_aabbs[i].topRight());
-				//points.emplace_back(m_aabbs[i].bottomRight());
-				//points.emplace_back(m_aabbs[i].bottomLeft());
-				//points.emplace_back(m_aabbs[i].topLeft());
-				//RenderSFMLImpl::renderPolyDashedLine(window, *m_settings.camera, points, RenderConstant::Yellow);
-				RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_aabbs[i], RenderConstant::Green);
-
-			}
-
-		}
-
-		if (m_showGrid)
-		{
-			auto color = RenderConstant::Yellow;
-			color.a = 50;
-			for (const auto& [key, value] : m_grid.m_usedCells)
-			{
-				if (value.empty())
-					continue;
-
-				real row = static_cast<real>(key.row);
-				real col = static_cast<real>(key.col);
-
-				Vector2 start = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-				Vector2 end = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-				AABB aabb;
-				aabb.position = (start + end) * 0.5f;
-				aabb.width = m_grid.m_cellWidth;
-				aabb.height = m_grid.m_cellHeight;
-
-				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, color);
-
-			}
-			//color = RenderConstant::Yellow;
-
-			//for(auto&& elem: m_grid.m_objects)
-			//{
-			//	AABB aabb = elem.binding.aabb;
-			//	Vector2 topLeft = aabb.topLeft();
-			//	Vector2 bottomRight = aabb.bottomRight();
-			//	int rowStart = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - topLeft.y) / m_grid.m_cellHeight));
-			//	int rowEnd = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - bottomRight.y) / m_grid.m_cellHeight));
-			//	int colStart = static_cast<int>(std::floor((topLeft.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
-			//	int colEnd = static_cast<int>(std::floor((bottomRight.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
-			//	
-			//	for (int i = rowStart; i <= rowEnd; ++i)
-			//	{
-			//		for (int j = colStart; j <= colEnd; ++j)
-			//		{
-			//			Vector2 start = m_grid.m_gridTopLeft + Vector2(j * m_grid.m_cellWidth, -i * m_grid.m_cellHeight);
-			//			Vector2 end = start + Vector2(m_grid.m_cellWidth, 0.0f);
-			//			RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
-			//			end = start + Vector2(0.0f, -m_grid.m_cellHeight);
-			//			RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
-			//		}
-			//	}
-			//	Vector2 start = m_grid.m_gridTopLeft + Vector2((colEnd + 1) * m_grid.m_cellWidth, -rowStart * m_grid.m_cellHeight);
-			//	Vector2 end = start + Vector2(0.0f, -m_grid.m_cellHeight * (rowEnd - rowStart + 1));
-			//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
-
-			//	start = m_grid.m_gridTopLeft + Vector2(colStart * m_grid.m_cellWidth, -(rowEnd + 1) * m_grid.m_cellHeight);
-			//	end = start + Vector2(m_grid.m_cellWidth * (colEnd - colStart + 1), 0.0f);
-			//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
-			//}
-			
-
-
-		}
-
-		if (m_showBVT)
-		{
-			m_dbvtStack.push_back(m_dbvt.m_rootIndex);
-			while (!m_dbvtStack.empty())
-			{
-				int index = m_dbvtStack.back();
-				m_dbvtStack.pop_back();
-
-				if (index == -1)
-					continue;
-
-				AABB aabb = m_dbvt.m_nodes[index].aabb;
-				aabb.expand(m_expandRatio * static_cast<real>(1 + m_dbvt.m_nodes[index].height));
-
-				if (m_dbvt.m_nodes[index].height <= m_currentHeight)
-				{
-					if (index == m_dbvt.m_rootIndex)
-						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
-					else
-						RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
-				}
-
-
-				m_dbvtStack.push_back(m_dbvt.m_nodes[index].left);
-				m_dbvtStack.push_back(m_dbvt.m_nodes[index].right);
-
-			}
-
-		}
-
-
-		
-
-		if(m_idsObject.size() > 0)
-		{
-			for (auto&& id : m_idsObject)
-			{
-				RenderSFMLImpl::renderShape(window, *m_settings.camera, m_transforms[id], m_shapes[id], RenderConstant::Red);
-			}
-		}
-
-		if (m_idsAABB.size() > 0)
-		{
-			for (auto&& id : m_idsAABB)
-			{
-				AABB aabb = m_aabbs[id];
-				aabb.expand(m_expandRatio * static_cast<real>(1));
-				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
-			}
-		}
-
-		if(m_idsRaycast.size() > 0)
-		{
-			for (auto&& id : m_idsRaycast)
-			{
-				AABB aabb = m_aabbs[id];
-				aabb.expand(m_expandRatio * static_cast<real>(1));
-				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
-			}
-		}
-
-		if (m_showQueryRay)
-		{
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance, RenderConstant::Yellow);
-
-			Vector2 start = m_queryRayOrigin;
-
-			Vector2 end = m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance;
-
-			CellIndex rStart, rEnd, cStart, cEnd;
-
-			m_grid.getGridIndicesFromVector(start, rStart, cStart);
-			m_grid.getGridIndicesFromVector(end, rEnd, cEnd);
-
-			int dR = std::abs(rEnd - rStart);
-			int dC = std::abs(cEnd - cStart);
-
-			int stepR = rStart < rEnd ? 1 : -1;
-			int stepC = cStart < cEnd ? 1 : -1;
-
-			bool addNew = stepR * stepC > 0;
-
-			std::unordered_set<CellPosition, CellPositionHash> uniqueCells;
-
-			if (dC != 0)
-			{
-				for (CellIndex c = cStart; ; c += stepC)
-				{
-					real x = m_grid.m_gridShift.x + static_cast<real>(c) * m_grid.m_cellWidth;
-					real t = (x - start.x) / m_queryRayDirection.x;
-
-					if (t < 0.0f)
-						continue;
-
-					if (std::abs(t) > m_rayMaxDistance)
-						break;
-
-					Vector2 p = start + m_queryRayDirection * t;
-					CellPosition cp;
-					cp.row = static_cast<CellIndex>(std::floor((p.y - m_grid.m_gridShift.y) / m_grid.m_cellHeight));
-					cp.col = c;
-					uniqueCells.insert(cp);
-
-					if (stepR > 0 && stepC < 0)
-					{
-						cp.col += stepC;
-						uniqueCells.insert(cp);
-					}
-					else if (stepR < 0 && stepC > 0)
-					{
-						cp.col -= stepC;
-						uniqueCells.insert(cp);
-					}
-				}
-			}
-
-			if (dR != 0)
-			{
-				for (CellIndex r = rStart; ; r += stepR)
-				{
-					real y = m_grid.m_gridShift.y + static_cast<real>(r) * m_grid.m_cellHeight;
-					real t = (y - start.y) / m_queryRayDirection.y;
-
-					if (t < 0.0f)
-						continue;
-
-					if (std::abs(t) > m_rayMaxDistance)
-						break;
-
-					Vector2 p = start + m_queryRayDirection * t;
-					CellPosition cp;
-					cp.row = r;
-					cp.col = static_cast<CellIndex>(std::floor((p.x - m_grid.m_gridShift.x) / m_grid.m_cellWidth));
-					uniqueCells.insert(cp);
-
-				}
-			}
-
-			uniqueCells.insert(CellPosition{ rEnd, cEnd });
-
-			for (auto&& elem : uniqueCells)
-			{
-				real row = static_cast<real>(elem.row);
-				real col = static_cast<real>(elem.col);
-
-				Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-				Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-				AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
-
-				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
-			}
-
-			real row = static_cast<real>(rStart);
-			real col = static_cast<real>(cStart);
-
-			Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-			Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-			AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
-
-			RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
-
-
-			row = static_cast<real>(rEnd);
-			col = static_cast<real>(cEnd);
-
-			rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-			rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
-			aabb = AABB::fromBox(rayTopLeft, rayBottom);
-
-			RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
-
-		}
-
-		if (m_showQueryAABB)
-		{
-			RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_queryAABB, RenderConstant::Yellow);
-		}
-
-	}
 
 	void BroadphaseScene::onRender(Renderer2D& renderer)
 	{
-		ZoneScopedN("[BroadphaseScene] On Render");
+		//ZoneScopedN("[BroadphaseScene] On Render");
+
+		//for(int i = 0; i < m_count; ++i)
+		//{
+		//	if (m_showObjectId)
+		//	{
+		//		RenderSFMLImpl::renderInt(window, *m_settings.camera, m_transforms[i].position, 
+		//			*m_settings.font, m_objectIds[i], RenderConstant::Gray, 12, {});
+		//	}
+
+		//	if(m_showTransform)
+		//	{
+		//		RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_transforms[i].position, RenderConstant::Yellow, 2.0f);
+		//		RenderSFMLImpl::renderOrientation(window, *m_settings.camera, m_transforms[i]);
+		//	}
+
+		//	if(m_showObject)
+		//		RenderSFMLImpl::renderShape(window, *m_settings.camera, m_transforms[i], m_shapes[i], RenderConstant::Green);
+
+		//	if (m_showAABB)
+		//	{
+		//		//std::vector<Vector2> points;
+		//		//points.emplace_back(m_aabbs[i].topLeft());
+		//		//points.emplace_back(m_aabbs[i].topRight());
+		//		//points.emplace_back(m_aabbs[i].bottomRight());
+		//		//points.emplace_back(m_aabbs[i].bottomLeft());
+		//		//points.emplace_back(m_aabbs[i].topLeft());
+		//		//RenderSFMLImpl::renderPolyDashedLine(window, *m_settings.camera, points, RenderConstant::Yellow);
+		//		RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_aabbs[i], RenderConstant::Green);
+
+		//	}
+
+		//}
+
+		//if (m_showGrid)
+		//{
+		//	auto color = RenderConstant::Yellow;
+		//	color.a = 50;
+		//	for (const auto& [key, value] : m_grid.m_usedCells)
+		//	{
+		//		if (value.empty())
+		//			continue;
+
+		//		real row = static_cast<real>(key.row);
+		//		real col = static_cast<real>(key.col);
+
+		//		Vector2 start = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+		//		Vector2 end = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+		//		AABB aabb;
+		//		aabb.position = (start + end) * 0.5f;
+		//		aabb.width = m_grid.m_cellWidth;
+		//		aabb.height = m_grid.m_cellHeight;
+
+		//		RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, color);
+
+		//	}
+		//	//color = RenderConstant::Yellow;
+
+		//	//for(auto&& elem: m_grid.m_objects)
+		//	//{
+		//	//	AABB aabb = elem.binding.aabb;
+		//	//	Vector2 topLeft = aabb.topLeft();
+		//	//	Vector2 bottomRight = aabb.bottomRight();
+		//	//	int rowStart = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - topLeft.y) / m_grid.m_cellHeight));
+		//	//	int rowEnd = static_cast<int>(std::floor((m_grid.m_gridTopLeft.y - bottomRight.y) / m_grid.m_cellHeight));
+		//	//	int colStart = static_cast<int>(std::floor((topLeft.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
+		//	//	int colEnd = static_cast<int>(std::floor((bottomRight.x - m_grid.m_gridTopLeft.x) / m_grid.m_cellWidth));
+		//	//	
+		//	//	for (int i = rowStart; i <= rowEnd; ++i)
+		//	//	{
+		//	//		for (int j = colStart; j <= colEnd; ++j)
+		//	//		{
+		//	//			Vector2 start = m_grid.m_gridTopLeft + Vector2(j * m_grid.m_cellWidth, -i * m_grid.m_cellHeight);
+		//	//			Vector2 end = start + Vector2(m_grid.m_cellWidth, 0.0f);
+		//	//			RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+		//	//			end = start + Vector2(0.0f, -m_grid.m_cellHeight);
+		//	//			RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+		//	//		}
+		//	//	}
+		//	//	Vector2 start = m_grid.m_gridTopLeft + Vector2((colEnd + 1) * m_grid.m_cellWidth, -rowStart * m_grid.m_cellHeight);
+		//	//	Vector2 end = start + Vector2(0.0f, -m_grid.m_cellHeight * (rowEnd - rowStart + 1));
+		//	//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+
+		//	//	start = m_grid.m_gridTopLeft + Vector2(colStart * m_grid.m_cellWidth, -(rowEnd + 1) * m_grid.m_cellHeight);
+		//	//	end = start + Vector2(m_grid.m_cellWidth * (colEnd - colStart + 1), 0.0f);
+		//	//	RenderSFMLImpl::renderLine(window, *m_settings.camera, start, end, color);
+		//	//}
+		//	
 
 
+		//}
+
+		//if (m_showBVT)
+		//{
+		//	m_dbvtStack.push_back(m_dbvt.m_rootIndex);
+		//	while (!m_dbvtStack.empty())
+		//	{
+		//		int index = m_dbvtStack.back();
+		//		m_dbvtStack.pop_back();
+
+		//		if (index == -1)
+		//			continue;
+
+		//		AABB aabb = m_dbvt.m_nodes[index].aabb;
+		//		aabb.expand(m_expandRatio * static_cast<real>(1 + m_dbvt.m_nodes[index].height));
+
+		//		if (m_dbvt.m_nodes[index].height <= m_currentHeight)
+		//		{
+		//			if (index == m_dbvt.m_rootIndex)
+		//				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
+		//			else
+		//				RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Cyan);
+		//		}
+
+
+		//		m_dbvtStack.push_back(m_dbvt.m_nodes[index].left);
+		//		m_dbvtStack.push_back(m_dbvt.m_nodes[index].right);
+
+		//	}
+
+		//}
+
+
+		//
+
+		//if(m_idsObject.size() > 0)
+		//{
+		//	for (auto&& id : m_idsObject)
+		//	{
+		//		RenderSFMLImpl::renderShape(window, *m_settings.camera, m_transforms[id], m_shapes[id], RenderConstant::Red);
+		//	}
+		//}
+
+		//if (m_idsAABB.size() > 0)
+		//{
+		//	for (auto&& id : m_idsAABB)
+		//	{
+		//		AABB aabb = m_aabbs[id];
+		//		aabb.expand(m_expandRatio * static_cast<real>(1));
+		//		RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
+		//	}
+		//}
+
+		//if(m_idsRaycast.size() > 0)
+		//{
+		//	for (auto&& id : m_idsRaycast)
+		//	{
+		//		AABB aabb = m_aabbs[id];
+		//		aabb.expand(m_expandRatio * static_cast<real>(1));
+		//		RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Red);
+		//	}
+		//}
+
+		//if (m_showQueryRay)
+		//{
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance, RenderConstant::Yellow);
+
+		//	Vector2 start = m_queryRayOrigin;
+
+		//	Vector2 end = m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance;
+
+		//	CellIndex rStart, rEnd, cStart, cEnd;
+
+		//	m_grid.getGridIndicesFromVector(start, rStart, cStart);
+		//	m_grid.getGridIndicesFromVector(end, rEnd, cEnd);
+
+		//	int dR = std::abs(rEnd - rStart);
+		//	int dC = std::abs(cEnd - cStart);
+
+		//	int stepR = rStart < rEnd ? 1 : -1;
+		//	int stepC = cStart < cEnd ? 1 : -1;
+
+		//	bool addNew = stepR * stepC > 0;
+
+		//	std::unordered_set<CellPosition, CellPositionHash> uniqueCells;
+
+		//	if (dC != 0)
+		//	{
+		//		for (CellIndex c = cStart; ; c += stepC)
+		//		{
+		//			real x = m_grid.m_gridShift.x + static_cast<real>(c) * m_grid.m_cellWidth;
+		//			real t = (x - start.x) / m_queryRayDirection.x;
+
+		//			if (t < 0.0f)
+		//				continue;
+
+		//			if (std::abs(t) > m_rayMaxDistance)
+		//				break;
+
+		//			Vector2 p = start + m_queryRayDirection * t;
+		//			CellPosition cp;
+		//			cp.row = static_cast<CellIndex>(std::floor((p.y - m_grid.m_gridShift.y) / m_grid.m_cellHeight));
+		//			cp.col = c;
+		//			uniqueCells.insert(cp);
+
+		//			if (stepR > 0 && stepC < 0)
+		//			{
+		//				cp.col += stepC;
+		//				uniqueCells.insert(cp);
+		//			}
+		//			else if (stepR < 0 && stepC > 0)
+		//			{
+		//				cp.col -= stepC;
+		//				uniqueCells.insert(cp);
+		//			}
+		//		}
+		//	}
+
+		//	if (dR != 0)
+		//	{
+		//		for (CellIndex r = rStart; ; r += stepR)
+		//		{
+		//			real y = m_grid.m_gridShift.y + static_cast<real>(r) * m_grid.m_cellHeight;
+		//			real t = (y - start.y) / m_queryRayDirection.y;
+
+		//			if (t < 0.0f)
+		//				continue;
+
+		//			if (std::abs(t) > m_rayMaxDistance)
+		//				break;
+
+		//			Vector2 p = start + m_queryRayDirection * t;
+		//			CellPosition cp;
+		//			cp.row = r;
+		//			cp.col = static_cast<CellIndex>(std::floor((p.x - m_grid.m_gridShift.x) / m_grid.m_cellWidth));
+		//			uniqueCells.insert(cp);
+
+		//		}
+		//	}
+
+		//	uniqueCells.insert(CellPosition{ rEnd, cEnd });
+
+		//	for (auto&& elem : uniqueCells)
+		//	{
+		//		real row = static_cast<real>(elem.row);
+		//		real col = static_cast<real>(elem.col);
+
+		//		Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+		//		Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+		//		AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+		//		RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
+		//	}
+
+		//	real row = static_cast<real>(rStart);
+		//	real col = static_cast<real>(cStart);
+
+		//	Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+		//	Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+		//	AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+		//	RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
+
+
+		//	row = static_cast<real>(rEnd);
+		//	col = static_cast<real>(cEnd);
+
+		//	rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
+		//	rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+		//	aabb = AABB::fromBox(rayTopLeft, rayBottom);
+
+		//	RenderSFMLImpl::renderAABB(window, *m_settings.camera, aabb, RenderConstant::Blue);
+
+		//}
+
+		//if (m_showQueryAABB)
+		//{
+		//	RenderSFMLImpl::renderAABB(window, *m_settings.camera, m_queryAABB, RenderConstant::Yellow);
+		//}
 	}
 
 	void BroadphaseScene::onRenderUI()

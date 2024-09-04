@@ -28,38 +28,6 @@ namespace STEditor
 
 	}
 
-	void SpiralScene::onDraw(sf::RenderWindow& window)
-	{
-		//drawReference(window);
-		//if(m_showG1Continuity)
-		//	drawG1(window);
-
-		//drawSpiral(window);
-
-		//if(m_showCurvatureBezier)
-		//{
-		//	m_bezier.setCount(N);
-		//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(0), RenderConstant::Gray, 4.0);
-		//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(1), RenderConstant::Gray, 4.0);
-		//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(2), RenderConstant::Gray, 4.0);
-		//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(3), RenderConstant::Gray, 4.0);
-
-		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, m_bezier.pointAt(0), m_bezier.pointAt(1), RenderConstant::Gray);
-		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, m_bezier.pointAt(2), m_bezier.pointAt(3), RenderConstant::Gray);
-		//	RenderSFMLImpl::renderPolyLine(window, *m_settings.camera, m_bezier.curvePoints(), RenderConstant::Blue);
-
-		//	Vector2 x = m_bezier.pointAt(3);
-		//	Vector2 y = m_bezier.pointAt(3);
-		//	x.y = 0;
-		//	y.x = 0;
-		//	RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), x, RenderConstant::Gray);
-		//	RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), y, RenderConstant::Gray);
-		//}
-
-		//if(m_showG2Continuity)
-		//	drawG2(window);
-	}
-
 	void SpiralScene::onRender(Renderer2D& renderer)
 	{
 		drawReference(renderer);
@@ -537,8 +505,8 @@ namespace STEditor
 				Vector2 p0 = m_spiral[0];
 				Vector2 p2 = m_spiralSymmetry[0];
 
-				renderer.line({ 0, -m_halfHeight }, p0, color);
-				renderer.line({ m_halfWidth, 0 }, p2, color);
+				renderer.thickLine({ 0, -m_halfHeight }, p0, color, m_thickness);
+				renderer.thickLine({ m_halfWidth, 0 }, p2, color, m_thickness);
 
 				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color, m_thickness);
 				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color, m_thickness);
@@ -546,16 +514,16 @@ namespace STEditor
 				p0.x = -p0.x;
 				p2.x = -p2.x;
 
-				renderer.line({ 0, -m_halfHeight }, p0, color);
-				renderer.line({ -m_halfWidth, 0 }, p2, color);
+				renderer.thickLine({ 0, -m_halfHeight }, p0, color, m_thickness);
+				renderer.thickLine({ -m_halfWidth, 0 }, p2, color, m_thickness);
 				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color, m_thickness);
 				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color, m_thickness);
 
 				p0.y = -p0.y;
 				p2.y = -p2.y;
 
-				renderer.line({ 0, m_halfHeight }, p0, color);
-				renderer.line({ -m_halfWidth, 0 }, p2, color);
+				renderer.thickLine({ 0, m_halfHeight }, p0, color, m_thickness);
+				renderer.thickLine({ -m_halfWidth, 0 }, p2, color, m_thickness);
 
 				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color, m_thickness);
 				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color, m_thickness);
@@ -563,8 +531,8 @@ namespace STEditor
 				p0.x = -p0.x;
 				p2.x = -p2.x;
 
-				renderer.line({ 0, m_halfHeight }, p0, color);
-				renderer.line({ m_halfWidth, 0 }, p2, color);
+				renderer.thickLine({ 0, m_halfHeight }, p0, color, m_thickness);
+				renderer.thickLine({ m_halfWidth, 0 }, p2, color, m_thickness);
 
 				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color, m_thickness);
 				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color, m_thickness);
@@ -667,7 +635,6 @@ namespace STEditor
 		if (start.size() != end.size())
 			return;
 		std::vector<Vector2> scaleEnd;
-		Vector2 lastEnd;
 		for (size_t i = 0; i < start.size(); ++i)
 		{
 			Vector2 n = end[i] - start[i];
@@ -679,36 +646,24 @@ namespace STEditor
 			Vector2 newEnd = n + start[i];
 
 			renderer.line(start[i], newEnd, color);
-
-			if (i != 0)
-			{
-				renderer.line(lastEnd, newEnd, color);
-			}
 			scaleEnd.push_back(newEnd);
-
-			lastEnd = newEnd;
 		}
-
+		renderer.polyLines(scaleEnd, color);
 	}
 
-	void SpiralScene::drawCurve(Renderer2D& renderer, const std::vector<Vector2>& curve,
-		const Color& color) const
+	void SpiralScene::drawCurve(Renderer2D& renderer, const std::vector<Vector2>& curve, const Color& color) const
 	{
-		for (size_t i = 1; i < curve.size(); ++i)
-		{
-			Vector2 point0 = curve[i];
-			Vector2 point1 = curve[i - 1];
-			renderer.line(point0, point1, color);
-			point0.y = -point0.y;
-			point1.y = -point1.y;
-			renderer.line(point0, point1, color);
-			point0.x = -point0.x;
-			point1.x = -point1.x;
-			renderer.line(point0, point1, color);
-			point0.y = -point0.y;
-			point1.y = -point1.y;
-			renderer.line(point0, point1, color);
-		}
+		std::vector<Vector2> quadrant2 = curve;
+		std::vector<Vector2> quadrant3 = curve;
+		std::vector<Vector2> quadrant4 = curve;
+		std::ranges::transform(quadrant2, quadrant2.begin(), [](const Vector2& v) { return Vector2(-v.x, v.y); });
+		std::ranges::transform(quadrant3, quadrant3.begin(), [](const Vector2& v) { return Vector2(-v.x, -v.y); });
+		std::ranges::transform(quadrant4, quadrant4.begin(), [](const Vector2& v) { return Vector2(v.x, -v.y); });
+
+		renderer.polyThickLine(curve, color, m_thickness);
+		renderer.polyThickLine(quadrant2, color, m_thickness);
+		renderer.polyThickLine(quadrant3, color, m_thickness);
+		renderer.polyThickLine(quadrant4, color, m_thickness);
 	}
 }
 

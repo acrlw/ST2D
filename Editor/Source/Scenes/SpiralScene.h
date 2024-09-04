@@ -17,7 +17,6 @@ namespace STEditor
 		void onLoad() override;
 		void onUnLoad() override;
 		void onUpdate(float deltaTime) override;
-		void onDraw(sf::RenderWindow& window) override;
 		void onRender(Renderer2D& renderer) override;
 		void onRenderUI() override;
 

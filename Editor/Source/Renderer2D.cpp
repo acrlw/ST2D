@@ -136,6 +136,11 @@ namespace STEditor
 		linePushColor(m_ndcLines, color);
 	}
 
+	void Renderer2D::point(const Vector2& position, const Color& color, float size)
+	{
+
+	}
+
 	void Renderer2D::line(const Vector2& start, const Vector2& end, int r, int g, int b, int a)
 	{
 		line(start, end, Color(r, g, b, a));

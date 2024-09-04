@@ -23,44 +23,13 @@ namespace STEditor
 
 	}
 
-	void EmptyScene::onDraw(sf::RenderWindow& window)
+	void EmptyScene::onRender(Renderer2D& renderer)
 	{
-
 	}
+
 
 	void EmptyScene::onRenderUI()
 	{
-		AbstractScene::onRenderUI();
-	}
-
-	void EmptyScene::onMousePress(sf::Event& event)
-	{
-		AbstractScene::onMousePress(event);
-	}
-
-	void EmptyScene::onMouseRelease(sf::Event& event)
-	{
-		AbstractScene::onMouseRelease(event);
-	}
-
-	void EmptyScene::onMouseMove(sf::Event& event)
-	{
-		AbstractScene::onMouseMove(event);
-	}
-
-	void EmptyScene::onMouseDoubleClick(sf::Event& event)
-	{
-		AbstractScene::onMouseDoubleClick(event);
-	}
-
-	void EmptyScene::onKeyRelease(sf::Event& event)
-	{
-		AbstractScene::onKeyRelease(event);
-	}
-
-	void EmptyScene::onKeyPressed(sf::Event& event)
-	{
-		AbstractScene::onKeyPressed(event);
 	}
 
 }

@@ -93,6 +93,7 @@ namespace STEditor
 		void line(int x1, int y1, int x2, int y2, int r, int g, int b, int a);
 
 		//world space
+		void point(const Vector2& position, const Color& color, float size = 1.0f);
 		void line(const Vector2& start, const Vector2& end, int r, int g, int b, int a);
 		void line(const Vector2& start, const Vector2& end, float r, float g, float b, float a);
 		void line(const Vector2& start, const Vector2& end, const Color& color);

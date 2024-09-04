@@ -52,9 +52,9 @@ namespace STEditor
 		pList.push_back(p);
 	}
 
-	void HelloWorldScene::onDraw(sf::RenderWindow& window)
+	void HelloWorldScene::onRender(Renderer2D& renderer)
 	{
-		sf::Color color = RenderConstant::Pink;
+		Color color = DarkPalette::Pink;
 		color.a = 0;
 		float step = 255.0f / static_cast<float>(pList.size());
 		//std::vector<Vector2> list;
@@ -65,17 +65,18 @@ namespace STEditor
 
 		//RenderSFMLImpl::renderPolyDashedThickLine(window, *m_settings.camera, list, RenderConstant::Red, 2.0f, 0.1f, 0.1f);
 
-		for(int i = 1;i < pList.size(); ++i)
+		std::vector<Vector2> list;
+		for (int i = 1; i < pList.size(); ++i)
 		{
-			color.a = i * step;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, pList[i - 1], pList[i], color);
+			color.a = i * step / 255.0f;
+			renderer.thickLine(pList[i - 1], pList[i], color, 2.0f);
+
 			/*RenderSFMLImpl::renderPoint(window, *m_settings.camera, pList[i], color, 3.0f);*/
 		}
 
 		//RenderSFMLImpl::renderArrow(window, *m_settings.camera, Vector2(0.0f, 0.0f), Vector2(1.0f, 1.0f), RenderConstant::Green, 0.25f);
-		RenderSFMLImpl::renderArrow(window, *m_settings.camera, Vector2(0.0f, 0.0f), arrow, RenderConstant::Green, 0.25f);
+		renderer.line({}, arrow, DarkPalette::Green);
 	}
-
 }
 
 

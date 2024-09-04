@@ -11,6 +11,7 @@ namespace STEditor
 	{
 		Camera2D* camera = nullptr;
 		sf::Font* font = nullptr;
+		Renderer2D* renderer = nullptr;
 	};
 
 	class AbstractScene
@@ -28,8 +29,6 @@ namespace STEditor
 
 		virtual void onUpdate(float deltaTime) = 0;
 
-
-		virtual void onDraw(sf::RenderWindow& window) = 0;
 		virtual void onRender(Renderer2D& renderer) {};
 		virtual void onRenderUI() {}
 
@@ -38,14 +37,6 @@ namespace STEditor
 		virtual void onMouseButton(GLFWwindow* window, int button, int action, int mods) {};
 		virtual void onMouseMoved(GLFWwindow* window, double xpos, double ypos) {};
 		virtual void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {};
-
-		//duplicated
-		virtual void onMousePress(sf::Event& event) {}
-		virtual void onMouseRelease(sf::Event& event) {}
-		virtual void onMouseMove(sf::Event& event) {}
-		virtual void onMouseDoubleClick(sf::Event& event) {}
-		virtual void onKeyRelease(sf::Event& event) {}
-		virtual void onKeyPressed(sf::Event& event) {}
 
 	protected:
 		std::string m_name;

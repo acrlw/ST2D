@@ -28,8 +28,6 @@ namespace STEditor
 		};
 
 		m_camera.setViewport(Viewport(Vector2(0, 0), Vector2(1920, 1080)));
-
-		switchScene(m_currentSceneIndex);
 	}
 
 	void ST2DEditor::exec()
@@ -107,6 +105,8 @@ namespace STEditor
 
 		m_renderer2D = std::make_unique<Renderer2D>();
 
+		switchScene(m_currentSceneIndex);
+
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 
@@ -157,114 +157,6 @@ namespace STEditor
 		ImGui::DestroyContext();
 
 		glfwTerminate();
-
-		//// create the window
-		//sf::ContextSettings settings;
-		//settings.antialiasingLevel = 8;
-		//m_renderWindow = std::make_unique<sf::RenderWindow>(sf::VideoMode(1920, 1080), "Testbed", sf::Style::Default,
-		//	settings);
-		//bool success = ImGui::SFML::Init(*m_renderWindow);
-		//APP_ASSERT(success, "Failed to create window")
-
-		//m_renderWindow->setActive(false);
-		//m_renderWindow->setFramerateLimit(120);
-
-		//auto& io = ImGui::GetIO();
-		//io.Fonts->AddFontFromFileTTF("Resource/Fonts/MiSans-Medium.ttf", 18.0f);
-		//io.FontDefault = io.Fonts->Fonts[1];
-		//success = ImGui::SFML::UpdateFontTexture();
-		//APP_ASSERT(success, "Failed to create font asset")
-
-		//if (!m_font.loadFromFile("Resource/Fonts/MiSans-Medium.ttf"))
-		//{
-		//	APP_ERROR("Cannot load font for SFML")
-		//	return;
-		//}
-
-		//m_renderWindow->setVerticalSyncEnabled(true);
-
-		//m_camera.setFont(&m_font);
-
-		//styleUI();
-
-		//sf::Clock deltaClock;
-		//while (m_renderWindow->isOpen())
-		//{
-		//	sf::Time elapsed = deltaClock.restart();
-		//	float deltaTime = elapsed.asSeconds();
-
-		//	sf::Event event{};
-		//	while (m_renderWindow->pollEvent(event))
-		//	{
-		//		ImGui::SFML::ProcessEvent(event);
-
-		//		switch (event.type)
-		//		{
-		//		case sf::Event::Closed:
-		//		{
-		//			onClosed(event);
-		//			break;
-		//		}
-		//		case sf::Event::KeyReleased:
-		//		{
-		//			onKeyReleased(event);
-		//			break;
-		//		}
-		//		case sf::Event::MouseButtonPressed:
-		//		{
-		//			onMousePressed(event);
-		//			break;
-		//		}
-		//		case sf::Event::MouseButtonReleased:
-		//		{
-		//			onMouseReleased(event);
-		//			break;
-		//		}
-		//		case sf::Event::MouseMoved:
-		//		{
-		//			onMouseMoved(event);
-		//			break;
-		//		}
-		//		case sf::Event::MouseWheelScrolled:
-		//		{
-		//			onWheelScrolled(event);
-		//			break;
-		//		}
-		//		case sf::Event::Resized:
-		//		{
-		//			onResized(event);
-		//			break;
-		//		}
-		//		case sf::Event::KeyPressed:
-		//		{
-		//			onKeyPressed(event);
-		//			break;
-		//		}
-		//		default:
-		//			break;
-		//		}
-		//	}
-
-		//	onUpdate(deltaTime);
-		//	m_camera.onUpdate(deltaTime);
-
-		//	//draw background
-		//	m_renderWindow->clear(sf::Color(40, 40, 40));
-
-		//	m_camera.onDraw(*m_renderWindow);
-
-		//	const bool show = m_currentScene != nullptr && m_userDrawVisible;
-
-		//	if (show)
-		//		m_currentScene->onDraw(*m_renderWindow);
-
-		//	render(*m_renderWindow);
-
-		//	renderGUI(*m_renderWindow, deltaClock);
-
-		//	m_renderWindow->display();
-		//}
-		//ImGui::SFML::Shutdown();
 	}
 
 	void ST2DEditor::styleUI()
@@ -352,108 +244,6 @@ namespace STEditor
 
 	}
 
-	//void ST2DEditor::onResized(sf::Event& event)
-	//{
-	//	Viewport viewport = m_camera.viewport();
-	//	viewport.set(static_cast<real>(event.size.width), static_cast<real>(event.size.height));
-	//	m_camera.setViewport(viewport);
-	//	m_renderWindow->setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
-	//}
-
-	//void ST2DEditor::onClosed(sf::Event& event)
-	//{
-	//	m_renderWindow->close();
-	//}
-
-	//void ST2DEditor::onKeyReleased(sf::Event& event)
-	//{
-	//	//combo
-	//	if (event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::LControl && m_onDistanceCheck)
-	//	{
-	//		m_onDistanceCheck = false;
-	//		m_mouseArray[0].clear();
-	//		m_mouseArray[1].clear();
-	//	}
-
-	//	if (m_currentScene != nullptr)
-	//		m_currentScene->onKeyRelease(event);
-	//}
-
-	//void ST2DEditor::onKeyPressed(sf::Event& event)
-	//{
-	//	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
-	//		m_enableDistanceCheck)
-	//		m_onDistanceCheck = true;
-
-	//	if (m_currentScene != nullptr)
-	//		m_currentScene->onKeyPressed(event);
-	//}
-
-	//void ST2DEditor::onMouseReleased(sf::Event& event)
-	//{
-	//	Vector2 pos(event.mouseButton.x, event.mouseButton.y);
-	//	m_mousePos = m_camera.screenToWorld(pos);
-	//	m_screenMousePos = pos;
-
-	//	if (m_currentScene != nullptr)
-	//		m_currentScene->onMouseRelease(event);
-
-	//	m_cameraViewportMovement = false;
-	//}
-
-	//void ST2DEditor::onMouseMoved(sf::Event& event)
-	//{
-	//	Vector2 pos(event.mouseMove.x, event.mouseMove.y);
-	//	m_screenMousePos = pos;
-
-	//	Vector2 cameraPos = m_camera.screenToWorld(pos);
-
-	//	Vector2 tf = cameraPos - m_mousePos;
-	//	if (m_cameraViewportMovement)
-	//	{
-	//		tf *= m_camera.meterToPixel();
-	//		m_camera.setTransform(m_camera.transform() + tf);
-	//		cameraPos = m_camera.screenToWorld(pos);
-	//	}
-	//	m_mousePos = cameraPos;
-
-	//	if (m_onDistanceCheck)
-	//	{
-	//		if (m_mouseArray[0].isOrigin())
-	//			m_mouseArray[0] = m_mousePos;
-	//		else
-	//			m_mouseArray[1] = m_mousePos;
-	//	}
-
-	//	if (m_currentScene != nullptr)
-	//		m_currentScene->onMouseMove(event);
-	//}
-
-	//void ST2DEditor::onMousePressed(sf::Event& event)
-	//{
-	//	Vector2 pos(event.mouseButton.x, event.mouseButton.y);
-	//	m_screenMousePos = pos;
-	//	m_mousePos = m_camera.screenToWorld(pos);
-
-	//	if (event.mouseButton.button == sf::Mouse::Right)
-	//		m_cameraViewportMovement = true;
-
-	//	if (m_currentScene != nullptr)
-	//		m_currentScene->onMousePress(event);
-	//}
-
-	//void ST2DEditor::onWheelScrolled(sf::Event& event)
-	//{
-	//	auto x = event.mouseWheelScroll.x;
-	//	auto y = event.mouseWheelScroll.y;
-	//	m_camera.setPreScrollScreenMousePos(Vector2(static_cast<float>(x), static_cast<float>(y)));
-	//	if (event.mouseWheelScroll.delta > 0)
-	//		m_camera.setMeterToPixel(m_camera.meterToPixel() + m_camera.meterToPixel() * m_zoomFactor);
-	//	else
-	//		m_camera.setMeterToPixel(m_camera.meterToPixel() - m_camera.meterToPixel() * m_zoomFactor);
-	//	
-	//}
-
 	void ST2DEditor::onFrameBufferResize(GLFWwindow* window, int width, int height)
 	{
 		if (m_renderer2D != nullptr)
@@ -498,38 +288,6 @@ namespace STEditor
 		if (m_currentScene != nullptr)
 			m_currentScene->onMouseScroll(window, xoffset, yoffset);
 	}
-
-	//void ST2DEditor::render(sf::RenderWindow& window)
-	//{
-	//	if (m_onDistanceCheck)
-	//	{
-	//		if (m_mouseArray[0].isOrigin() || m_mouseArray[1].isOrigin())
-	//			return;
-	//		Vector2 v = m_mouseArray[1] - m_mouseArray[0];
-	//		real length = v.length();
-	//		if (realEqual(length, 0))
-	//			return;
-	//		Vector2 normal = v / length;
-	//		RenderSFMLImpl::renderPoint(window, m_camera, m_mouseArray[0], RenderConstant::Green);
-	//		RenderSFMLImpl::renderPoint(window, m_camera, m_mouseArray[1], RenderConstant::Green);
-	//		RenderSFMLImpl::renderLine(window, m_camera, m_mouseArray[0], m_mouseArray[1], RenderConstant::Green);
-	//		std::string str = std::format("{:.7f}", length);
-	//		sf::Text text;
-	//		text.setFont(m_font);
-	//		text.setString(str);
-	//		text.setCharacterSize(16);
-	//		text.setFillColor(RenderConstant::Green);
-	//		sf::FloatRect text_rect = text.getLocalBounds();
-	//		text.setOrigin(text_rect.left + text_rect.width / 2.0f, text_rect.top + text_rect.height / 2.0f);
-	//		const Vector2 t = normal.perpendicular();
-	//		Vector2 half(text_rect.width / 2.0f, text_rect.height / 2.0f);
-	//		half *= m_camera.pixelToMeter();
-	//		Vector2 offset = t * half.x * 1.5f - normal * half.y * 1.5f;
-	//		text.setPosition(RenderSFMLImpl::toVector2f(m_camera.worldToScreen(m_mouseArray[1] + offset)));
-	//		text.rotate(Math::degree(-t.theta()));
-	//		window.draw(text);
-	//	}
-	//}
 
 	void ST2DEditor::onRenderUI()
 	{
@@ -613,6 +371,7 @@ namespace STEditor
 		SceneSettings settings;
 		settings.camera = &m_camera;
 		settings.font = &m_font;
+		settings.renderer = m_renderer2D.get();
 
 		m_currentScene = m_sceneList[index](settings);
 		m_currentScene->onLoad();
