@@ -271,22 +271,17 @@ namespace STEditor
 
 	void CurveScene::drawCurve(Renderer2D& renderer, const std::vector<Vector2>& curve, const Color& color) const
 	{
-		//RenderSFMLImpl::renderPolyDashedThickLine(window, *m_settings.camera, curve, color, m_thickness, 0.05f, 0.05f);
-		for (size_t i = 1; i < curve.size(); ++i)
-		{
-			Vector2 point0 = curve[i];
-			Vector2 point1 = curve[i - 1];
-			renderer.line(point0, point1, color);
-			point0.y = -point0.y;
-			point1.y = -point1.y;
-			renderer.line(point0, point1, color);
-			point0.x = -point0.x;
-			point1.x = -point1.x;
-			renderer.line(point0, point1, color);
-			point0.y = -point0.y;
-			point1.y = -point1.y;
-			renderer.line(point0, point1, color);
-		}
+		std::vector<Vector2> quadrant2 = curve;
+		std::vector<Vector2> quadrant3 = curve;
+		std::vector<Vector2> quadrant4 = curve;
+		std::ranges::transform(quadrant2, quadrant2.begin(), [](const Vector2& v) { return Vector2(-v.x, v.y); });
+		std::ranges::transform(quadrant3, quadrant3.begin(), [](const Vector2& v) { return Vector2(-v.x, -v.y); });
+		std::ranges::transform(quadrant4, quadrant4.begin(), [](const Vector2& v) { return Vector2(v.x, -v.y); });
+
+		renderer.polyThickLine(curve, color, m_thickness);
+		renderer.polyThickLine(quadrant2, color, m_thickness);
+		renderer.polyThickLine(quadrant3, color, m_thickness);
+		renderer.polyThickLine(quadrant4, color, m_thickness);
 	}
 
 	void CurveScene::drawCurvature(Renderer2D& renderer, const std::vector<Vector2>& start,

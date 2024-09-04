@@ -61,7 +61,7 @@ namespace STEditor
 	struct PolyLines
 	{
 		std::vector<float> vertices;
-		float m_thickness = 1.0f;
+		float thickness = 1.0f;
 		bool closed = false;
 	};
 
@@ -103,10 +103,11 @@ namespace STEditor
 		void dashedLine(const Vector2& start, const Vector2& end, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
 
 		void polyLines(const std::vector<Vector2>& points, const Color& color);
-		void closeLines(const std::vector<Vector2>& points, const Color& color);
+		void closedLines(const std::vector<Vector2>& points, const Color& color);
 		void polyDashedLines(const std::vector<Vector2>& points, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
 		void polyThickLine(const std::vector<Vector2>& points, const Color& color, float thickness = 2.0f);
 		void polyDashedThickLine(const std::vector<Vector2>& points, const Color& color, float thickness = 2.0f, float dashLength = 0.1f, float gapLength = 0.1f);
+		void polyClosedThickLines(const std::vector<Vector2>& points, const Color& color, float thickness = 2.0f);
 
 		void shape(const Transform& transform, Shape* shape, const sf::Color& color);
 		void polygon(const Transform& transform, Shape* shape, const sf::Color& color);
@@ -174,7 +175,7 @@ namespace STEditor
 
 		bool m_isTranslateView = false;
 		bool m_translationStart = false;
-		float m_translateSensitivity = 0.5f;
+		float m_translateSensitivity = 0.25f;
 		Vector2 m_mouseStart;
 		float m_zNear = 0.1f;
 		float m_zFar = 1000.0f;
@@ -193,8 +194,8 @@ namespace STEditor
 		std::vector<float> m_lines;
 		std::vector<float> m_ndcLines;
 		std::vector<ThickLine> m_thickLines;
-
 		std::vector<PolyLines> m_polyLines;
+
 
 		ShaderProgram m_shaderProgram;
 
