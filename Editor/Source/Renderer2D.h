@@ -13,8 +13,9 @@ namespace STEditor
 	struct Color
 	{
 		float r, g, b, a;
-		Color(float red, float green, float blue, float alpha = 1.0f)
+		Color(float red = 1.0f, float green = 1.0f, float blue = 1.0f, float alpha = 1.0f)
 			: r(red), g(green), b(blue), a(alpha) {}
+
 		Color(int red, int green, int blue, int alpha = 255)
 			: r(static_cast<float>(red) / 255.0f), g(static_cast<float>(green) / 255.0f), b(static_cast<float>(blue) / 255.0f), a(static_cast<float>(alpha) / 255.0f) {}
 	};
@@ -70,6 +71,14 @@ namespace STEditor
 		std::vector<float> vertices;
 	};
 
+	struct FillStroke
+	{
+		std::vector<float> vertices;
+		Color fillColor;
+		Color strokeColor;
+		float thickness = 1.0f;
+	};
+
 	struct ThickLine
 	{
 		std::vector<float> vertices;
@@ -106,6 +115,7 @@ namespace STEditor
 		void line(const Vector2& start, const Vector2& end, const Color& color);
 
 		void fill(const std::vector<Vector2>& points, const Color& color);
+		void fillAndStroke(const std::vector<Vector2>& points, const Color& fillColor, const Color& strokeColor, float thickness = 1.0f);
 
 		void thickLine(const Vector2& start, const Vector2& end, const Color& color, float thickness = 2.0f);
 		void dashedLine(const Vector2& start, const Vector2& end, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
@@ -206,6 +216,9 @@ namespace STEditor
 		std::vector<float> m_points;
 		std::vector<ThickLine> m_thickLines;
 		std::vector<PolyLines> m_polyLines;
+		std::vector<Fill> m_fills;
+		std::vector<FillStroke> m_fillStrokes;
+
 		std::vector<float> m_ndcLines;
 		std::vector<float> m_ndcPoints;
 

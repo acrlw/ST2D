@@ -84,6 +84,12 @@ namespace STEditor
 
 		vertices.insert(vertices.end(), m_points.begin(), m_points.end());
 
+		for(auto&& elem: m_fills)
+			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
+
+		for (auto&& elem : m_fillStrokes)
+			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
+
 		vertices.insert(vertices.end(), m_ndcLines.begin(), m_ndcLines.end());
 
 		vertices.insert(vertices.end(), m_ndcPoints.begin(), m_ndcPoints.end());
@@ -111,6 +117,8 @@ namespace STEditor
 		m_points.clear();
 		m_thickLines.clear();
 		m_polyLines.clear();
+		m_fills.clear();
+		m_fillStrokes.clear();
 		m_ndcLines.clear();
 		m_ndcPoints.clear();
 	}
@@ -177,7 +185,27 @@ namespace STEditor
 
 	void Renderer2D::fill(const std::vector<Vector2>& points, const Color& color)
 	{
+		Fill shape;
+		for(auto&& elem: points)
+		{
+			pushVector(shape.vertices, elem);
+			pushColor(shape.vertices, color);
+		}
+		m_fills.push_back(shape);
+	}
 
+	void Renderer2D::fillAndStroke(const std::vector<Vector2>& points, const Color& fillColor, const Color& strokeColor,
+		float thickness)
+	{
+		FillStroke shape;
+		for (auto&& elem : points)
+		{
+			pushVector(shape.vertices, elem);
+			pushColor(shape.vertices, strokeColor);
+		}
+		shape.fillColor = fillColor;
+		shape.thickness = thickness;
+		m_fillStrokes.emplace_back(shape);
 	}
 
 	void Renderer2D::thickLine(const Vector2& start, const Vector2& end, const Color& color, float thickness)
@@ -584,6 +612,34 @@ namespace STEditor
 			glPointSize(8.0f);
 			glDrawArrays(GL_POINTS, offset, m_points.size() / 7);
 			offset += m_points.size() / 7;
+		}
+
+		if (!m_fills.empty())
+		{
+			for (auto&& elem : m_fills)
+			{
+				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+				offset += elem.vertices.size() / 7;
+			}
+		}
+
+		if (!m_fillStrokes.empty())
+		{
+			for (auto&& elem : m_fillStrokes)
+			{
+				m_shaderProgram.setUniform1i("isFillMode", 0);
+
+				glLineWidth(elem.thickness);
+				glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
+
+				m_shaderProgram.setUniform1i("isFillMode", 1);
+				m_shaderProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+
+				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+
+				offset += elem.vertices.size() / 7;
+			}
+			m_shaderProgram.setUniform1i("isFillMode", 0);
 		}
 
 		if (!m_ndcLines.empty())
