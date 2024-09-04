@@ -4,7 +4,7 @@ namespace STEditor
 {
 	void ReferenceLayer::onRender(Renderer2D& renderer)
 	{
-
+		renderer.point({ 1.0f, 1.0f }, DarkPalette::Pink);
 		//renderer.thickLine({ -1.0f, -1.0f }, { 1.0f, 1.0f }, DarkPalette::Teal, 2.0f);
 		//renderer.thickLine({ -2.0f, -1.0f }, { 0.0f, 1.0f }, DarkPalette::Purple, 8.0f);
 		//renderer.line(100, 500, 500, 800, DarkPalette::Purple);

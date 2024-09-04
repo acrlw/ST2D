@@ -107,11 +107,14 @@ namespace STEditor
 
 		switchScene(m_currentSceneIndex);
 
+		glPointSize(10.0f);
 		glEnable(GL_DEPTH_TEST);
+
 		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glDepthFunc(GL_LEQUAL);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
 		while (!glfwWindowShouldClose(m_window))
 		{

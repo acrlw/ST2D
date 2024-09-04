@@ -48,10 +48,10 @@ namespace STEditor
 
 	Renderer2D::~Renderer2D()
 	{
-		APP_INFO("Delete VAO ({}) and VBO ({}) ", m_lineVao, m_lineVbo);
+		APP_INFO("Delete VAO ({}) and VBO ({}) ", m_verticesVao, m_verticesVbo);
 
-		glDeleteVertexArrays(1, &m_lineVao);
-		glDeleteBuffers(1, &m_lineVbo);
+		glDeleteVertexArrays(1, &m_verticesVao);
+		glDeleteBuffers(1, &m_verticesVbo);
 
 		m_shaderProgram.destroy();
 	}
@@ -60,33 +60,37 @@ namespace STEditor
 	{
 		m_shaderProgram.use();
 
-		glGenVertexArrays(1, &m_lineVao);
-		glBindVertexArray(m_lineVao);
+		glGenVertexArrays(1, &m_verticesVao);
+		glBindVertexArray(m_verticesVao);
 
-		glGenBuffers(1, &m_lineVbo);
-		glBindBuffer(GL_ARRAY_BUFFER, m_lineVbo);
+		glGenBuffers(1, &m_verticesVbo);
+		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		APP_INFO("Created Line VAO({}) and VBO({})", m_lineVao, m_lineVbo);
+		APP_INFO("Created Line VAO({}) and VBO({})", m_verticesVao, m_verticesVbo);
 	}
 
 	void Renderer2D::onRenderStart()
 	{
-		std::vector<float> lines = m_lines;
+		std::vector<float> vertices = m_lines;
 
 		for (auto&& elem : m_thickLines)
-			lines.insert(lines.end(), elem.vertices.begin(), elem.vertices.end());
+			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
 
 		for (auto&& elem : m_polyLines)
-			lines.insert(lines.end(), elem.vertices.begin(), elem.vertices.end());
+			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
 
-		lines.insert(lines.end(), m_ndcLines.begin(), m_ndcLines.end());
+		vertices.insert(vertices.end(), m_points.begin(), m_points.end());
 
-		glBindVertexArray(m_lineVao);
-		glBindBuffer(GL_ARRAY_BUFFER, m_lineVbo);
-		glBufferData(GL_ARRAY_BUFFER, lines.size() * sizeof(float), lines.data(), GL_STATIC_DRAW);
+		vertices.insert(vertices.end(), m_ndcLines.begin(), m_ndcLines.end());
+
+		vertices.insert(vertices.end(), m_ndcPoints.begin(), m_ndcPoints.end());
+
+		glBindVertexArray(m_verticesVao);
+		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 		
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
@@ -104,9 +108,11 @@ namespace STEditor
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		m_lines.clear();
+		m_points.clear();
 		m_thickLines.clear();
 		m_polyLines.clear();
 		m_ndcLines.clear();
+		m_ndcPoints.clear();
 	}
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, const Color& color)
@@ -116,10 +122,10 @@ namespace STEditor
 		float ndcX2 = (2.0f * static_cast<float>(x2) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
 		float ndcY2 = 1.0f - (2.0f * static_cast<float>(y2) / static_cast<float>(m_frameBufferHeight));
 
-		linePushVector(m_ndcLines, { ndcX1, ndcY1 });
-		linePushColor(m_ndcLines, color);
-		linePushVector(m_ndcLines, { ndcX2, ndcY2 });
-		linePushColor(m_ndcLines, color);
+		pushVector(m_ndcLines, { ndcX1, ndcY1 });
+		pushColor(m_ndcLines, color);
+		pushVector(m_ndcLines, { ndcX2, ndcY2 });
+		pushColor(m_ndcLines, color);
 	}
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, int r, int g, int b, int a)
@@ -130,15 +136,25 @@ namespace STEditor
 		float ndcY2 = 1.0f - (2.0f * static_cast<float>(y2) / static_cast<float>(m_frameBufferHeight));
 		Color color(r, g, b, a);
 
-		linePushVector(m_ndcLines, { ndcX1, ndcY1 });
-		linePushColor(m_ndcLines, color);
-		linePushVector(m_ndcLines, { ndcX2, ndcY2 });
-		linePushColor(m_ndcLines, color);
+		pushVector(m_ndcLines, { ndcX1, ndcY1 });
+		pushColor(m_ndcLines, color);
+		pushVector(m_ndcLines, { ndcX2, ndcY2 });
+		pushColor(m_ndcLines, color);
+	}
+
+	void Renderer2D::point(int x, int y, const Color& color, float size)
+	{
+		float ndcX = (2.0f * static_cast<float>(x) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
+		float ndcY = 1.0f - (2.0f * static_cast<float>(y) / static_cast<float>(m_frameBufferHeight));
+
+		pushVector(m_ndcPoints, { ndcX, ndcY });
+		pushColor(m_ndcPoints, color);
 	}
 
 	void Renderer2D::point(const Vector2& position, const Color& color, float size)
 	{
-
+		pushVector(m_points, position);
+		pushColor(m_points, color);
 	}
 
 	void Renderer2D::line(const Vector2& start, const Vector2& end, int r, int g, int b, int a)
@@ -153,10 +169,10 @@ namespace STEditor
 
 	void Renderer2D::line(const Vector2& start, const Vector2& end, const Color& color)
 	{
-		linePushVector(m_lines, start);
-		linePushColor(m_lines, color);
-		linePushVector(m_lines, end);
-		linePushColor(m_lines, color);
+		pushVector(m_lines, start);
+		pushColor(m_lines, color);
+		pushVector(m_lines, end);
+		pushColor(m_lines, color);
 	}
 
 	void Renderer2D::fill(const std::vector<Vector2>& points, const Color& color)
@@ -167,10 +183,10 @@ namespace STEditor
 	void Renderer2D::thickLine(const Vector2& start, const Vector2& end, const Color& color, float thickness)
 	{
 		ThickLine line;
-		linePushVector(line.vertices, start);
-		linePushColor(line.vertices, color);
-		linePushVector(line.vertices, end);
-		linePushColor(line.vertices, color);
+		pushVector(line.vertices, start);
+		pushColor(line.vertices, color);
+		pushVector(line.vertices, end);
+		pushColor(line.vertices, color);
 		line.thickness = thickness;
 		m_thickLines.push_back(line);
 	}
@@ -289,8 +305,8 @@ namespace STEditor
 		PolyLines lines;
 		for (auto&& elem : points)
 		{
-			linePushVector(lines.vertices, elem);
-			linePushColor(lines.vertices, color);
+			pushVector(lines.vertices, elem);
+			pushColor(lines.vertices, color);
 		}
 		lines.thickness = thickness;
 		m_polyLines.emplace_back(lines);
@@ -307,8 +323,8 @@ namespace STEditor
 		PolyLines lines;
 		for (auto&& elem : points)
 		{
-			linePushVector(lines.vertices, elem);
-			linePushColor(lines.vertices, color);
+			pushVector(lines.vertices, elem);
+			pushColor(lines.vertices, color);
 		}
 		lines.closed = true;
 		lines.thickness = thickness;
@@ -494,8 +510,8 @@ namespace STEditor
 		PolyLines lines;
 		for(auto&& elem: points)
 		{
-			linePushVector(lines.vertices, elem);
-			linePushColor(lines.vertices, color);
+			pushVector(lines.vertices, elem);
+			pushColor(lines.vertices, color);
 		}
 		m_polyLines.emplace_back(lines);
 	}
@@ -508,8 +524,8 @@ namespace STEditor
 		PolyLines lines;
 		for (auto&& elem : points)
 		{
-			linePushVector(lines.vertices, elem);
-			linePushColor(lines.vertices, color);
+			pushVector(lines.vertices, elem);
+			pushColor(lines.vertices, color);
 		}
 		lines.closed = true;
 		m_polyLines.emplace_back(lines);
@@ -527,15 +543,15 @@ namespace STEditor
 		glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
 		glDepthFunc(GL_ALWAYS);
 
-		glBindVertexArray(m_lineVao);
-		glBindBuffer(GL_ARRAY_BUFFER, m_lineVbo);
+		glBindVertexArray(m_verticesVao);
+		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
 
 		m_shaderProgram.setUniformMat4f("model", m_model);
 		m_shaderProgram.setUniformMat4f("view", m_view);
 		m_shaderProgram.setUniformMat4f("projection", m_projection);
 
-		int lineSize = m_lines.size() / 7;
-		int offset = lineSize;
+		size_t lineSize = m_lines.size() / 7;
+		size_t offset = lineSize;
 		if(!m_lines.empty())
 			glDrawArrays(GL_LINES, 0, lineSize);
 		
@@ -563,15 +579,38 @@ namespace STEditor
 			}
 		}
 
+		if(!m_points.empty())
+		{
+			glPointSize(8.0f);
+			glDrawArrays(GL_POINTS, offset, m_points.size() / 7);
+			offset += m_points.size() / 7;
+		}
+
 		if (!m_ndcLines.empty())
 		{
 			glm::mat4 identity = glm::mat4(1.0f);
+
+			glLineWidth(1.0f);
 
 			m_shaderProgram.setUniformMat4f("model", identity);
 			m_shaderProgram.setUniformMat4f("view", identity);
 			m_shaderProgram.setUniformMat4f("projection", identity);
 
 			glDrawArrays(GL_LINES, offset, m_ndcLines.size() / 7);
+			offset += m_ndcLines.size() / 7;
+		}
+
+		if(!m_ndcPoints.empty())
+		{
+			glm::mat4 identity = glm::mat4(1.0f);
+
+			glPointSize(8.0f);
+			m_shaderProgram.setUniformMat4f("model", identity);
+			m_shaderProgram.setUniformMat4f("view", identity);
+			m_shaderProgram.setUniformMat4f("projection", identity);
+
+			glDrawArrays(GL_POINTS, offset, m_ndcPoints.size() / 7);
+			offset += m_ndcPoints.size() / 7;
 		}
 
 		glDepthFunc(previousDepthFunc);
@@ -653,8 +692,15 @@ namespace STEditor
 
 	void Renderer2D::onScale(GLFWwindow* window, float yOffset)
 	{
-		m_orthoSize -= yOffset * m_orthoSizeScaleRatio;
-		m_orthoSize = std::clamp(m_orthoSize, 0.1f, 100.0f);
+		m_meterToPixel += yOffset * m_scaleRatio;
+		m_meterToPixel = std::clamp(m_meterToPixel, 1.0f, 1000.0f);
+
+		m_orthoSize = 0.5f * ((m_zNear - m_zFar) / (2.0f * m_zFar)) *
+			static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_meterToPixel);
+
+
+		//m_orthoSize -= yOffset * m_orthoSizeScaleRatio;
+		//m_orthoSize = std::clamp(m_orthoSize, 0.1f, 100.0f);
 
 		float h = m_orthoSize;
 		float w = m_aspectRatio * h;
@@ -700,20 +746,23 @@ namespace STEditor
 	{
 		m_view = glm::lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
 
+		m_orthoSize = 0.5f * ((m_zNear - m_zFar) / (2.0f * m_zFar)) *
+			static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_meterToPixel);
+
 		float h = m_orthoSize;
 		float w = m_aspectRatio * h;
 
 		m_projection = glm::ortho(-w, w, -h, h, m_zNear, m_zFar);
 	}
 
-	void Renderer2D::linePushVector(std::vector<float>& lines, const Vector2& vec)
+	void Renderer2D::pushVector(std::vector<float>& lines, const Vector2& vec)
 	{
 		lines.push_back(vec.x);
 		lines.push_back(vec.y);
 		lines.push_back(0.0f);
 	}
 
-	void Renderer2D::linePushColor(std::vector<float>& lines, const Color& color)
+	void Renderer2D::pushColor(std::vector<float>& lines, const Color& color)
 	{
 		lines.push_back(color.r);
 		lines.push_back(color.g);

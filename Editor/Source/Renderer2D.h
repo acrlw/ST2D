@@ -76,6 +76,12 @@ namespace STEditor
 		float thickness = 1.0f;
 	};
 
+	struct Points
+	{
+		std::vector<float> vertices;
+		float size = 1.0f;
+	};
+
 
 
 	class Renderer2D
@@ -91,6 +97,7 @@ namespace STEditor
 		//screen space
 		void line(int x1, int y1, int x2, int y2, const Color& color);
 		void line(int x1, int y1, int x2, int y2, int r, int g, int b, int a);
+		void point(int x, int y, const Color& color, float size = 1.0f);
 
 		//world space
 		void point(const Vector2& position, const Color& color, float size = 1.0f);
@@ -161,8 +168,8 @@ namespace STEditor
 		void onTranslateView(GLFWwindow* window, float x, float y);
 		void buildMVPMatrix();
 
-		void linePushVector(std::vector<float>& lines, const Vector2& vec);
-		void linePushColor(std::vector<float>& lines, const Color& color);
+		void pushVector(std::vector<float>& lines, const Vector2& vec);
+		void pushColor(std::vector<float>& lines, const Color& color);
 
 		void initRenderSettings();
 
@@ -182,6 +189,9 @@ namespace STEditor
 		float m_zFar = 1000.0f;
 		float m_aspectRatio = 16.0f / 9.0f;
 
+		float m_meterToPixel = 100.0f;
+		float m_scaleRatio = 5.0f;
+
 		glm::vec3 m_translationStartPos = glm::vec3(0.0f, 0.0f, 0.0f);
 		glm::vec3 m_cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
 		glm::vec3 m_cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -193,15 +203,17 @@ namespace STEditor
 
 		//render
 		std::vector<float> m_lines;
-		std::vector<float> m_ndcLines;
+		std::vector<float> m_points;
 		std::vector<ThickLine> m_thickLines;
 		std::vector<PolyLines> m_polyLines;
+		std::vector<float> m_ndcLines;
+		std::vector<float> m_ndcPoints;
 
 
 		ShaderProgram m_shaderProgram;
 
-		unsigned int m_lineVao;
-		unsigned int m_lineVbo;
+		unsigned int m_verticesVao;
+		unsigned int m_verticesVbo;
 	};
 
 	
