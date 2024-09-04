@@ -117,25 +117,25 @@ namespace STEditor
 		void polyDashedThickLine(const std::vector<Vector2>& points, const Color& color, float thickness = 2.0f, float dashLength = 0.1f, float gapLength = 0.1f);
 		void polyClosedThickLines(const std::vector<Vector2>& points, const Color& color, float thickness = 2.0f);
 
-		void shape(const Transform& transform, Shape* shape, const sf::Color& color);
-		void polygon(const Transform& transform, Shape* shape, const sf::Color& color);
-		void edge(const Transform& transform, Shape* shape, const sf::Color& color);
-		void rectangle(const Transform& transform, Shape* shape, const sf::Color& color);
-		void circle(const Transform& transform, Shape* shape, const sf::Color& color);
-		void capsule(const Transform& transform, Shape* shape, const sf::Color& color);
-		void ellipse(const Transform& transform, Shape* shape, const sf::Color& color);
+		void shape(const Transform& transform, Shape* shape, const Color& color);
+		void polygon(const Transform& transform, Shape* shape, const Color& color);
+		void edge(const Transform& transform, Shape* shape, const Color& color);
+		void rectangle(const Transform& transform, Shape* shape, const Color& color);
+		void circle(const Transform& transform, Shape* shape, const Color& color);
+		void capsule(const Transform& transform, Shape* shape, const Color& color);
+		void ellipse(const Transform& transform, Shape* shape, const Color& color);
 		void orientation(const Transform& transform);
 
 		void aabb(const AABB& aabb, const Color& color);
 		void dashedAABB(const AABB& aabb, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
 
-		void dashedShape(const Transform& transform, Shape* shape, const sf::Color& color);
-		void dashedPolygon(const Transform& transform, Shape* shape, const sf::Color& color);
-		void dashedEdge(const Transform& transform, Shape* shape, const sf::Color& color);
-		void dashedRectangle(const Transform& transform, Shape* shape, const sf::Color& color);
-		void dashedCircle(const Transform& transform, Shape* shape, const sf::Color& color);
-		void dashedCapsule(const Transform& transform, Shape* shape, const sf::Color& color);
-		void dashedEllipse(const Transform& transform, Shape* shape, const sf::Color& color);
+		void dashedShape(const Transform& transform, Shape* shape, const Color& color);
+		void dashedPolygon(const Transform& transform, Shape* shape, const Color& color);
+		void dashedEdge(const Transform& transform, Shape* shape, const Color& color);
+		void dashedRectangle(const Transform& transform, Shape* shape, const Color& color);
+		void dashedCircle(const Transform& transform, Shape* shape, const Color& color);
+		void dashedCapsule(const Transform& transform, Shape* shape, const Color& color);
+		void dashedEllipse(const Transform& transform, Shape* shape, const Color& color);
 
 		void arrow(const Color& color, const float& size = 0.2f, const float& degree = 45);
 
@@ -144,9 +144,9 @@ namespace STEditor
 		void text(const Vector2& position, const Color& color, float value, const unsigned int& size = 16, const Vector2& offset = { 0.0f, 0.0f }, bool centered = true);
 		void text(const Vector2& position, const Color& color, unsigned int value, const unsigned int& size = 16, const Vector2& offset = { 0.0f, 0.0f }, bool centered = true);
 
-		void simplex(const Simplex& simplex, const sf::Color& color, bool showIndex = true, const unsigned int& fontSize = 18);
+		void simplex(const Simplex& simplex, const Color& color, bool showIndex = true, const unsigned int& fontSize = 18);
 		void polytope(const std::vector<Vector2>& points,
-			const sf::Color& color, float pointSize = 16, const unsigned int& indexSize = 18,
+			const Color& color, float pointSize = 16, const unsigned int& indexSize = 18,
 			bool showIndex = true);
 
 		Vector2 worldToScreen(const Vector2& worldPos) const;
@@ -183,14 +183,14 @@ namespace STEditor
 
 		bool m_isTranslateView = false;
 		bool m_translationStart = false;
-		float m_translateSensitivity = 0.25f;
+		float m_translateSensitivity = 0.8f;
 		Vector2 m_mouseStart;
 		float m_zNear = 0.1f;
 		float m_zFar = 1000.0f;
 		float m_aspectRatio = 16.0f / 9.0f;
 
 		float m_meterToPixel = 100.0f;
-		float m_scaleRatio = 5.0f;
+		float m_scaleRatio = 0.1f;
 
 		glm::vec3 m_translationStartPos = glm::vec3(0.0f, 0.0f, 0.0f);
 		glm::vec3 m_cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);

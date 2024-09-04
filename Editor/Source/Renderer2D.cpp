@@ -331,7 +331,7 @@ namespace STEditor
 		m_polyLines.emplace_back(lines);
 	}
 
-	void Renderer2D::shape(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::shape(const Transform& transform, Shape* shape, const Color& color)
 	{
 		CORE_ASSERT(shape != nullptr, "Null reference of shape");
 
@@ -355,27 +355,27 @@ namespace STEditor
 		}
 	}
 
-	void Renderer2D::polygon(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::polygon(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::edge(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::edge(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::rectangle(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::rectangle(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::circle(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::circle(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::capsule(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::capsule(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::ellipse(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::ellipse(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
@@ -385,7 +385,7 @@ namespace STEditor
 
 	void Renderer2D::aabb(const AABB& aabb, const Color& color)
 	{
-		polyLines({ aabb.topLeft(), aabb.topRight(), aabb.bottomRight(), aabb.bottomLeft(),aabb.topLeft() }, color);
+		closedLines({ aabb.topLeft(), aabb.topRight(), aabb.bottomRight(), aabb.bottomLeft() }, color);
 	}
 
 	void Renderer2D::dashedAABB(const AABB& aabb, const Color& color, float dashLength, float gapLength)
@@ -393,7 +393,7 @@ namespace STEditor
 		polyDashedLines({ aabb.topLeft(), aabb.topRight(), aabb.bottomRight(), aabb.bottomLeft(),aabb.topLeft() }, color, dashLength, gapLength);
 	}
 
-	void Renderer2D::dashedShape(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::dashedShape(const Transform& transform, Shape* shape, const Color& color)
 	{
 		CORE_ASSERT(shape != nullptr, "Null reference of shape");
 
@@ -417,27 +417,27 @@ namespace STEditor
 		}
 	}
 
-	void Renderer2D::dashedPolygon(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::dashedPolygon(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::dashedEdge(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::dashedEdge(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::dashedRectangle(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::dashedRectangle(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::dashedCircle(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::dashedCircle(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::dashedCapsule(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::dashedCapsule(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
-	void Renderer2D::dashedEllipse(const Transform& transform, Shape* shape, const sf::Color& color)
+	void Renderer2D::dashedEllipse(const Transform& transform, Shape* shape, const Color& color)
 	{
 	}
 
@@ -465,12 +465,12 @@ namespace STEditor
 	{
 	}
 
-	void Renderer2D::simplex(const Simplex& simplex, const sf::Color& color, bool showIndex,
+	void Renderer2D::simplex(const Simplex& simplex, const Color& color, bool showIndex,
 		const unsigned int& fontSize)
 	{
 	}
 
-	void Renderer2D::polytope(const std::vector<Vector2>& points, const sf::Color& color, float pointSize, const unsigned int& indexSize, bool showIndex)
+	void Renderer2D::polytope(const std::vector<Vector2>& points, const Color& color, float pointSize, const unsigned int& indexSize, bool showIndex)
 	{
 
 	}
@@ -692,11 +692,12 @@ namespace STEditor
 
 	void Renderer2D::onScale(GLFWwindow* window, float yOffset)
 	{
-		m_meterToPixel += yOffset * m_scaleRatio;
-		m_meterToPixel = std::clamp(m_meterToPixel, 1.0f, 1000.0f);
+		m_meterToPixel *= 1.0f + yOffset * m_scaleRatio;
+		m_meterToPixel = std::clamp(m_meterToPixel, 0.1f, 5000.0f);
 
-		m_orthoSize = 0.5f * ((m_zNear - m_zFar) / (2.0f * m_zFar)) *
-			static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_meterToPixel);
+		m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_meterToPixel));
+
+		//m_orthoSize *= 1.0f - yOffset * m_orthoSizeScaleRatio;
 
 
 		//m_orthoSize -= yOffset * m_orthoSizeScaleRatio;
@@ -746,8 +747,7 @@ namespace STEditor
 	{
 		m_view = glm::lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
 
-		m_orthoSize = 0.5f * ((m_zNear - m_zFar) / (2.0f * m_zFar)) *
-			static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_meterToPixel);
+		m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_meterToPixel));
 
 		float h = m_orthoSize;
 		float w = m_aspectRatio * h;

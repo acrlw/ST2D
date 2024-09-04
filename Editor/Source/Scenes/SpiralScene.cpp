@@ -508,16 +508,11 @@ namespace STEditor
 				renderer.thickLine({ 0, -m_halfHeight }, p0, color, m_thickness);
 				renderer.thickLine({ m_halfWidth, 0 }, p2, color, m_thickness);
 
-				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color, m_thickness);
-				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color, m_thickness);
-
 				p0.x = -p0.x;
 				p2.x = -p2.x;
 
 				renderer.thickLine({ 0, -m_halfHeight }, p0, color, m_thickness);
 				renderer.thickLine({ -m_halfWidth, 0 }, p2, color, m_thickness);
-				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color, m_thickness);
-				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color, m_thickness);
 
 				p0.y = -p0.y;
 				p2.y = -p2.y;
@@ -525,17 +520,11 @@ namespace STEditor
 				renderer.thickLine({ 0, m_halfHeight }, p0, color, m_thickness);
 				renderer.thickLine({ -m_halfWidth, 0 }, p2, color, m_thickness);
 
-				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color, m_thickness);
-				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color, m_thickness);
-
 				p0.x = -p0.x;
 				p2.x = -p2.x;
 
 				renderer.thickLine({ 0, m_halfHeight }, p0, color, m_thickness);
 				renderer.thickLine({ m_halfWidth, 0 }, p2, color, m_thickness);
-
-				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color, m_thickness);
-				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color, m_thickness);
 			}
 
 			//std::vector<Vector2> curve;
@@ -550,8 +539,6 @@ namespace STEditor
 			//	curve.push_back(*iter);
 
 			//RenderSFMLImpl::renderPolyDashedThickLine(window, *m_settings.camera, curve, color, m_thickness, 0.01f, 0.02f);
-
-
 
 			drawCurve(renderer, m_spiral, color);
 			drawCurve(renderer, m_spiralSymmetry, color);
@@ -575,14 +562,10 @@ namespace STEditor
 				p1 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, p1);
 				p2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, p2);
 			}
-			 
-			//RenderSFMLImpl::renderPoint(window, *m_settings.camera, p0, RenderConstant::Gray, 3);
 
-			//RenderSFMLImpl::renderArrow(window, *m_settings.camera, m_spiralStartRoundedPos, m_spiralStartRoundedPos + (m_spiralStartRoundedPos - m_spiralCircleCenter).normal().perpendicular(), RenderConstant::Red, 0.1);
-			//RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, p0, p1, RenderConstant::Gray, 0.01, 0.01);
-			//RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, p0, p2, RenderConstant::Gray, 0.01, 0.01);
-			renderer.dashedLine(p0, p1, DarkPalette::Gray, 0.01, 0.01);
-			renderer.dashedLine(p0, p2, DarkPalette::Gray, 0.01, 0.01);
+			renderer.point(p0, DarkPalette::Gray, 3);
+			renderer.dashedLine(p0, p1, DarkPalette::Gray, 0.01f, 0.01f);
+			renderer.dashedLine(p0, p2, DarkPalette::Gray, 0.01f, 0.01f);
 			drawCurvature(renderer, m_spiralRoundCurvatureStart, m_spiralRoundCurvatureEnd, color, false);
 		}
 	}

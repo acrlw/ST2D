@@ -28,16 +28,15 @@ namespace STEditor
 
 	void NarrowphaseScene::onRender(Renderer2D& renderer)
 	{
-		//RenderSFMLImpl::renderShape(window, *m_settings.camera, tf1, &rect, RenderConstant::Yellow);
+		auto info = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
 
-		//RenderSFMLImpl::renderShape(window, *m_settings.camera, tf2, &ellipse, RenderConstant::Cyan);
+		renderer.shape(tf1, &rect, DarkPalette::Yellow);
+		renderer.shape(tf2, &ellipse, DarkPalette::Cyan);
 
-		//auto info = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
+		renderer.point(info.pair.pointA, DarkPalette::Yellow);
+		renderer.point(info.pair.pointB, DarkPalette::Cyan);
 
-		//RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointA, RenderConstant::Yellow);
-		//RenderSFMLImpl::renderPoint(window, *m_settings.camera, info.pair.pointB, RenderConstant::Cyan);
-
-		//RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, info.pair.pointA, info.pair.pointB, RenderConstant::LightGray);
+		renderer.dashedLine(info.pair.pointA, info.pair.pointB, DarkPalette::LightGray);
 
 	}
 
