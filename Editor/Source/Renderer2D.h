@@ -58,6 +58,26 @@ namespace STEditor
 		const Color Purple = Color(106, 27, 154);
 	}
 
+	struct PolyLines
+	{
+		std::vector<float> vertices;
+		float m_thickness = 1.0f;
+		bool closed = false;
+	};
+
+	struct Fill
+	{
+		std::vector<float> vertices;
+	};
+
+	struct ThickLine
+	{
+		std::vector<float> vertices;
+		float thickness = 1.0f;
+	};
+
+
+
 	class Renderer2D
 	{
 	public:
@@ -125,18 +145,18 @@ namespace STEditor
 
 		void onRender();
 
-		void onFrameBufferResize(int width, int height);
-		void onKeyButton(int key, int scancode, int action, int mods);
-		void onMouseButton(int button, int action, int mods);
-		void onMouseMoved(double xpos, double ypos);
-		void onMouseScroll(double xoffset, double yoffset);
+		void onFrameBufferResize(GLFWwindow* window, int width, int height);
+		void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods);
+		void onMouseButton(GLFWwindow* window, int button, int action, int mods);
+		void onMouseMoved(GLFWwindow* window, double xpos, double ypos);
+		void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset);
 
 
 	private:
 		void drawGridScaleLines();
 
-		void onScale(float yOffset);
-		void onTranslateView(float x, float y);
+		void onScale(GLFWwindow* window, float yOffset);
+		void onTranslateView(GLFWwindow* window, float x, float y);
 		void buildMVPMatrix();
 
 		void linePushVector(std::vector<float>& lines, const Vector2& vec);
@@ -149,12 +169,13 @@ namespace STEditor
 
 		// camera
 		float m_orthoSize = 4.0f;
-		float m_orthoSizeScaleRatio = 0.5f;
+		float m_orthoSizeScaleRatio = 0.15f;
+		Vector2 m_scrollMouseStart;
 
 		bool m_isTranslateView = false;
 		bool m_translationStart = false;
 		float m_translateSensitivity = 0.5f;
-		Vector2 m_mouseStart = { 0.0f, 0.0f };
+		Vector2 m_mouseStart;
 		float m_zNear = 0.1f;
 		float m_zFar = 1000.0f;
 		float m_aspectRatio = 16.0f / 9.0f;
@@ -171,14 +192,14 @@ namespace STEditor
 		//render
 		std::vector<float> m_lines;
 		std::vector<float> m_ndcLines;
+		std::vector<ThickLine> m_thickLines;
+
+		std::vector<PolyLines> m_polyLines;
 
 		ShaderProgram m_shaderProgram;
 
 		unsigned int m_lineVao;
 		unsigned int m_lineVbo;
-
-		unsigned int m_ndcLineVao;
-		unsigned int m_ndcLineVbo;
 	};
 
 	

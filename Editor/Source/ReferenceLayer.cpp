@@ -2,15 +2,14 @@
 
 namespace STEditor
 {
-	void ReferenceLayer::onRender(Renderer2D* renderer)
+	void ReferenceLayer::onRender(Renderer2D& renderer)
 	{
-		if (renderer == nullptr)
-			return;
+
 		
-		renderer->line(100, 500, 500, 800, DarkPalette::Purple);
-		renderer->closeLines({ {2.0f, 1.0f}, {1.0f, -1.0f}, {-1.0f, -1.0f} }, DarkPalette::Green);
-		renderer->line({ -10.0f, 0.0f }, { 10.0f, 0.0f }, DarkPalette::Green);
-		renderer->line({ 0.0f, -10.0f }, { 0.0f, 10.0f }, DarkPalette::Green);
+		//renderer.line(100, 500, 500, 800, DarkPalette::Purple);
+		//renderer.closeLines({ {2.0f, 1.0f}, {1.0f, -1.0f}, {-1.0f, -1.0f} }, DarkPalette::Green);
+		//renderer.line({ -10.0f, 0.0f }, { 10.0f, 0.0f }, DarkPalette::Green);
+		//renderer.line({ 0.0f, -10.0f }, { 0.0f, 10.0f }, DarkPalette::Green);
 
 		//Vector2 center = renderer->worldToScreen({ 0.0f, 0.0f });
 		//int i = 0;

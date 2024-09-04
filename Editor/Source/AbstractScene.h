@@ -30,14 +30,14 @@ namespace STEditor
 
 
 		virtual void onDraw(sf::RenderWindow& window) = 0;
-		virtual void onRender(GLFWwindow* window, Renderer2D* renderer) {};
+		virtual void onRender(Renderer2D& renderer) {};
 		virtual void onRenderUI() {}
 
-		virtual void onFrameBufferResize(int width, int height) {};
-		virtual void onKeyButton(int key, int scancode, int action, int mods) {};
-		virtual void onMouseButton(int button, int action, int mods) {};
-		virtual void onMouseMoved(double xpos, double ypos) {};
-		virtual void onMouseScroll(double xoffset, double yoffset) {};
+		virtual void onFrameBufferResize(GLFWwindow* window, int width, int height) {};
+		virtual void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods) {};
+		virtual void onMouseButton(GLFWwindow* window, int button, int action, int mods) {};
+		virtual void onMouseMoved(GLFWwindow* window, double xpos, double ypos) {};
+		virtual void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {};
 
 		//duplicated
 		virtual void onMousePress(sf::Event& event) {}

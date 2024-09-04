@@ -53,11 +53,6 @@ namespace STEditor
 		glDeleteVertexArrays(1, &m_lineVao);
 		glDeleteBuffers(1, &m_lineVbo);
 
-		APP_INFO("Delete VAO ({}) and VBO ({}) ", m_ndcLineVao, m_ndcLineVbo);
-
-		glDeleteVertexArrays(1, &m_ndcLineVao);
-		glDeleteBuffers(1, &m_ndcLineVbo);
-
 		m_shaderProgram.destroy();
 	}
 
@@ -74,39 +69,20 @@ namespace STEditor
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-
-		glGenVertexArrays(1, &m_ndcLineVao);
-		glBindVertexArray(m_ndcLineVao);
-
-		glGenBuffers(1, &m_ndcLineVbo);
-		glBindBuffer(GL_ARRAY_BUFFER, m_ndcLineVbo);
-
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 		APP_INFO("Created Line VAO({}) and VBO({})", m_lineVao, m_lineVbo);
-		APP_INFO("Created NDC Line VAO({}) and VBO({})", m_ndcLineVao, m_ndcLineVbo);
 	}
 
 	void Renderer2D::onRenderStart()
 	{
+		std::vector<float> lines = m_lines;
+		lines.insert(lines.end(), m_ndcLines.begin(), m_ndcLines.end());
+
 		glBindVertexArray(m_lineVao);
 		glBindBuffer(GL_ARRAY_BUFFER, m_lineVbo);
-		glBufferData(GL_ARRAY_BUFFER, m_lines.size() * sizeof(float), m_lines.data(), GL_STATIC_DRAW);
-
+		glBufferData(GL_ARRAY_BUFFER, lines.size() * sizeof(float), lines.data(), GL_STATIC_DRAW);
+		
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
-
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
-		glEnableVertexAttribArray(1);
-
-		glBindVertexArray(m_ndcLineVao);
-		glBindBuffer(GL_ARRAY_BUFFER, m_ndcLineVbo);
-		glBufferData(GL_ARRAY_BUFFER, m_ndcLines.size() * sizeof(float), m_ndcLines.data(), GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
 
@@ -116,6 +92,9 @@ namespace STEditor
 
 	void Renderer2D::onRenderEnd()
 	{
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 		m_lines.clear();
 		m_ndcLines.clear();
 	}
@@ -178,20 +157,121 @@ namespace STEditor
 	void Renderer2D::dashedLine(const Vector2& start, const Vector2& end, const Color& color, float dashLength,
 		float gapLength)
 	{
+		Vector2 direction = end - start;
+		real length = direction.length();
+		real lengthStep = dashLength / length;
+		real step = (dashLength + gapLength) / length;
+		for (real i = 0; i <= 1; i += step)
+		{
+			Vector2 dashStart = start + direction * i;
+			Vector2 dashEnd = start + direction * Math::min(i + lengthStep, 1.0f);
+			line(dashStart, dashEnd, color);
+		}
 	}
 
 	void Renderer2D::polyDashedLines(const std::vector<Vector2>& points, const Color& color, float dashLength,
 		float gapLength)
 	{
+		if (points.size() < 2)
+			return;
+
+		real dashResidual = 0.0f;
+		real gapResidual = 0.0f;
+		real dashedAndGap = dashLength + gapLength;
+		for (size_t i = 1; i < points.size(); ++i)
+		{
+			Vector2 p1 = points[i - 1];
+			Vector2 p2 = points[i];
+			Vector2 direction = p2 - p1;
+			real length = direction.length();
+			if (realEqual(length, 0.0f))
+				continue;
+
+			direction /= length;
+
+			Vector2 start = p1;
+
+			if (dashResidual > 0.0f)
+			{
+				if (dashResidual > length)
+				{
+					dashResidual -= length;
+					line(p1, p2, color);
+					continue;
+				}
+
+				Vector2 end = start + direction * dashResidual;
+				line(start, end, color);
+				length -= dashResidual;
+				dashResidual = 0.0f;
+
+				if (length > gapLength)
+				{
+					length -= gapLength;
+					start = end + direction * gapLength;
+				}
+				else
+				{
+					gapResidual = gapLength - length;
+					continue;
+				}
+			}
+
+			if (gapResidual > 0.0f)
+			{
+				if (gapResidual > length)
+				{
+					gapResidual -= length;
+					continue;
+				}
+				start += direction * gapResidual;
+				length -= gapResidual;
+				gapResidual = 0.0f;
+			}
+
+
+			bool finished = false;
+
+			while (!finished)
+			{
+				if (length < dashLength)
+				{
+					line(start, p2, color);
+					dashResidual = dashLength - length;
+					gapResidual = 0.0f;
+					finished = true;
+				}
+				else if (length >= dashLength && length < dashedAndGap)
+				{
+					Vector2 end = start + direction * dashLength;
+					line(start, end, color);
+					dashResidual = 0.0f;
+					gapResidual = dashedAndGap - length;
+					finished = true;
+				}
+				else
+				{
+					Vector2 end = start + direction * dashLength;
+					line(start, end, color);
+					start = end + direction * gapLength;
+					dashResidual = 0.0f;
+					gapResidual = 0.0f;
+					length -= dashedAndGap;
+				}
+
+			}
+		}
 	}
 
 	void Renderer2D::polyThickLine(const std::vector<Vector2>& points, const Color& color, float thickness)
 	{
+
 	}
 
 	void Renderer2D::polyDashedThickLine(const std::vector<Vector2>& points, const Color& color, float thickness,
 		float dashLength, float gapLength)
 	{
+
 	}
 
 	void Renderer2D::shape(const Transform& transform, Shape* shape, const sf::Color& color)
@@ -248,10 +328,12 @@ namespace STEditor
 
 	void Renderer2D::aabb(const AABB& aabb, const Color& color)
 	{
+
 	}
 
 	void Renderer2D::dashedAABB(const AABB& aabb, const Color& color, float dashLength, float gapLength)
 	{
+		polyDashedLines({ aabb.topLeft(), aabb.topRight(), aabb.bottomRight(), aabb.bottomLeft(),aabb.topLeft() }, color, dashLength, gapLength);
 	}
 
 	void Renderer2D::dashedShape(const Transform& transform, Shape* shape, const sf::Color& color)
@@ -395,14 +477,15 @@ namespace STEditor
 		glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
 		glDepthFunc(GL_ALWAYS);
 
+		glBindVertexArray(m_lineVao);
+		glBindBuffer(GL_ARRAY_BUFFER, m_lineVbo);
+
 		if(!m_lines.empty())
 		{
 			m_shaderProgram.setUniformMat4f("model", m_model);
 			m_shaderProgram.setUniformMat4f("view", m_view);
 			m_shaderProgram.setUniformMat4f("projection", m_projection);
 
-			glBindVertexArray(m_lineVao);
-			glBindBuffer(GL_ARRAY_BUFFER, m_lineVbo);
 			glDrawArrays(GL_LINES, 0, m_lines.size() / 7);
 		}
 
@@ -414,9 +497,7 @@ namespace STEditor
 			m_shaderProgram.setUniformMat4f("view", identity);
 			m_shaderProgram.setUniformMat4f("projection", identity);
 
-			glBindVertexArray(m_ndcLineVao);
-			glBindBuffer(GL_ARRAY_BUFFER, m_ndcLineVbo);
-			glDrawArrays(GL_LINES, 0, m_ndcLines.size() / 7);
+			glDrawArrays(GL_LINES, m_lines.size() / 7, m_ndcLines.size() / 7);
 		}
 
 		glDepthFunc(previousDepthFunc);
@@ -424,7 +505,7 @@ namespace STEditor
 		onRenderEnd();
 	}
 
-	void Renderer2D::onFrameBufferResize(int width, int height)
+	void Renderer2D::onFrameBufferResize(GLFWwindow* window, int width, int height)
 	{
 		m_frameBufferWidth = width;
 		m_frameBufferHeight = height;
@@ -432,12 +513,12 @@ namespace STEditor
 		glViewport(0, 0, width, height);
 	}
 
-	void Renderer2D::onKeyButton(int key, int scancode, int action, int mods)
+	void Renderer2D::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 
 	}
 
-	void Renderer2D::onMouseButton(int button, int action, int mods)
+	void Renderer2D::onMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
 		if (button == GLFW_MOUSE_BUTTON_RIGHT)
 		{
@@ -455,27 +536,38 @@ namespace STEditor
 		}
 	}
 
-	void Renderer2D::onMouseMoved(double xpos, double ypos)
+	void Renderer2D::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
 	{
 		float x = static_cast<float>(xpos);
 		float y = static_cast<float>(ypos);
 
 		if (m_isTranslateView)
-			onTranslateView(x, y);
+			onTranslateView(window, x, y);
 	}
 
-	void Renderer2D::onMouseScroll(double xoffset, double yoffset)
+	void Renderer2D::onMouseScroll(GLFWwindow* window, double xoffset, double yoffset)
 	{
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		m_scrollMouseStart = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
+
 		float y = static_cast<float>(yoffset);
-		onScale(y);
+		onScale(window, y);
 	}
 
 	void Renderer2D::drawGridScaleLines()
 	{
 		Color thin = DarkPalette::DarkGreen;
-		thin.a = 100.0f / 255.0f;
 		for (int i = -10; i <= 10; ++i)
 		{
+			if (i == 0)
+				thin = DarkPalette::Green;
+			else
+			{
+				thin = DarkPalette::DarkGreen;
+				thin.a = 100.0f / 255.0f;
+			}
+
 			Vector2 start = { -10.0f, static_cast<float>(i) };
 			Vector2 end = { 10.0f, static_cast<float>(i) };
 			line(start, end, thin);
@@ -485,18 +577,28 @@ namespace STEditor
 		}
 	}
 
-	void Renderer2D::onScale(float yOffset)
+	void Renderer2D::onScale(GLFWwindow* window, float yOffset)
 	{
 		m_orthoSize -= yOffset * m_orthoSizeScaleRatio;
-		m_orthoSize = std::clamp(m_orthoSize, 1.0f, 100.0f);
+		m_orthoSize = std::clamp(m_orthoSize, 0.1f, 100.0f);
 
 		float h = m_orthoSize;
 		float w = m_aspectRatio * h;
 
 		m_projection = glm::ortho(-w, w, -h, h, m_zNear, m_zFar);
+
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		Vector2 after = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
+
+		Vector2 scrollDelta = m_scrollMouseStart - after;
+
+		m_cameraPosition += glm::vec3(scrollDelta.x, scrollDelta.y, 0.0f);
+
+		m_scrollMouseStart.clear();
 	}
 
-	void Renderer2D::onTranslateView(float x, float y)
+	void Renderer2D::onTranslateView(GLFWwindow* window, float x, float y)
 	{
 		if (!m_translationStart)
 		{

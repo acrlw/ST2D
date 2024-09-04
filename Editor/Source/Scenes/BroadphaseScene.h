@@ -23,9 +23,8 @@ namespace STEditor
 		void onUpdate(float deltaTime) override;
 		void onDraw(sf::RenderWindow& window) override;
 
-		void onRender(GLFWwindow* window, Renderer2D* renderer) override;
+		void onRender(Renderer2D& renderer) override;
 		void onRenderUI() override;
-
 
 	private:
 		void createShapes();

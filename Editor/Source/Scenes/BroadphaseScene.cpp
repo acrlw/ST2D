@@ -325,7 +325,7 @@ namespace STEditor
 
 	}
 
-	void BroadphaseScene::onRender(GLFWwindow* window, Renderer2D* renderer)
+	void BroadphaseScene::onRender(Renderer2D& renderer)
 	{
 		ZoneScopedN("[BroadphaseScene] On Render");
 

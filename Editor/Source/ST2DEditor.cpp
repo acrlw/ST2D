@@ -457,46 +457,46 @@ namespace STEditor
 	void ST2DEditor::onFrameBufferResize(GLFWwindow* window, int width, int height)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onFrameBufferResize(width, height);
+			m_renderer2D->onFrameBufferResize(window, width, height);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onFrameBufferResize(width, height);
+			m_currentScene->onFrameBufferResize(window, width, height);
 	}
 
 	void ST2DEditor::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onKeyButton(key, scancode, action, mods);
+			m_renderer2D->onKeyButton(window, key, scancode, action, mods);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onKeyButton(key, scancode, action, mods);
+			m_currentScene->onKeyButton(window, key, scancode, action, mods);
 	}
 
 	void ST2DEditor::onMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onMouseButton(button, action, mods);
+			m_renderer2D->onMouseButton(window, button, action, mods);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onMouseButton(button, action, mods);
+			m_currentScene->onMouseButton(window, button, action, mods);
 	}
 
 	void ST2DEditor::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onMouseMoved(xpos, ypos);
+			m_renderer2D->onMouseMoved(window, xpos, ypos);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onMouseMoved(xpos, ypos);
+			m_currentScene->onMouseMoved(window, xpos, ypos);
 	}
 
 	void ST2DEditor::onMouseScroll(GLFWwindow* window, double xoffset, double yoffset)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onMouseScroll(xoffset, yoffset);
+			m_renderer2D->onMouseScroll(window, xoffset, yoffset);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onMouseScroll(xoffset, yoffset);
+			m_currentScene->onMouseScroll(window, xoffset, yoffset);
 	}
 
 	//void ST2DEditor::render(sf::RenderWindow& window)
@@ -583,10 +583,10 @@ namespace STEditor
 
 	void ST2DEditor::onRender()
 	{
-		m_referenceLayer.onRender(m_renderer2D.get());
+		m_referenceLayer.onRender(*m_renderer2D);
 		
 		if (m_currentScene != nullptr)
-			m_currentScene->onRender(m_window, m_renderer2D.get());
+			m_currentScene->onRender(*m_renderer2D);
 		
 	}
 

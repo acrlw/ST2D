@@ -30,34 +30,66 @@ namespace STEditor
 
 	void SpiralScene::onDraw(sf::RenderWindow& window)
 	{
-		drawReference(window);
-		if(m_showG1Continuity)
-			drawG1(window);
+		//drawReference(window);
+		//if(m_showG1Continuity)
+		//	drawG1(window);
 
-		drawSpiral(window);
+		//drawSpiral(window);
 
-		if(m_showCurvatureBezier)
+		//if(m_showCurvatureBezier)
+		//{
+		//	m_bezier.setCount(N);
+		//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(0), RenderConstant::Gray, 4.0);
+		//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(1), RenderConstant::Gray, 4.0);
+		//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(2), RenderConstant::Gray, 4.0);
+		//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(3), RenderConstant::Gray, 4.0);
+
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, m_bezier.pointAt(0), m_bezier.pointAt(1), RenderConstant::Gray);
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, m_bezier.pointAt(2), m_bezier.pointAt(3), RenderConstant::Gray);
+		//	RenderSFMLImpl::renderPolyLine(window, *m_settings.camera, m_bezier.curvePoints(), RenderConstant::Blue);
+
+		//	Vector2 x = m_bezier.pointAt(3);
+		//	Vector2 y = m_bezier.pointAt(3);
+		//	x.y = 0;
+		//	y.x = 0;
+		//	RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), x, RenderConstant::Gray);
+		//	RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), y, RenderConstant::Gray);
+		//}
+
+		//if(m_showG2Continuity)
+		//	drawG2(window);
+	}
+
+	void SpiralScene::onRender(Renderer2D& renderer)
+	{
+		drawReference(renderer);
+		if (m_showG1Continuity)
+			drawG1(renderer);
+
+		drawSpiral(renderer);
+
+		if (m_showCurvatureBezier)
 		{
 			m_bezier.setCount(N);
-			RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(0), RenderConstant::Gray, 4.0);
-			RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(1), RenderConstant::Gray, 4.0);
-			RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(2), RenderConstant::Gray, 4.0);
-			RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(3), RenderConstant::Gray, 4.0);
+			//RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(0), RenderConstant::Gray, 4.0);
+			//RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(1), RenderConstant::Gray, 4.0);
+			//RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(2), RenderConstant::Gray, 4.0);
+			//RenderSFMLImpl::renderPoint(window, *m_settings.camera, m_bezier.pointAt(3), RenderConstant::Gray, 4.0);
 
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_bezier.pointAt(0), m_bezier.pointAt(1), RenderConstant::Gray);
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_bezier.pointAt(2), m_bezier.pointAt(3), RenderConstant::Gray);
-			RenderSFMLImpl::renderPolyLine(window, *m_settings.camera, m_bezier.curvePoints(), RenderConstant::Blue);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_bezier.pointAt(0), m_bezier.pointAt(1), RenderConstant::Gray);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_bezier.pointAt(2), m_bezier.pointAt(3), RenderConstant::Gray);
+			//RenderSFMLImpl::renderPolyLine(window, *m_settings.camera, m_bezier.curvePoints(), RenderConstant::Blue);
 
 			Vector2 x = m_bezier.pointAt(3);
 			Vector2 y = m_bezier.pointAt(3);
 			x.y = 0;
 			y.x = 0;
-			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), x, RenderConstant::Gray);
-			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), y, RenderConstant::Gray);
+			//RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), x, RenderConstant::Gray);
+			//RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, m_bezier.pointAt(3), y, RenderConstant::Gray);
 		}
 
-		if(m_showG2Continuity)
-			drawG2(window);
+		if (m_showG2Continuity)
+			drawG2(renderer);
 	}
 
 	void SpiralScene::onRenderUI()
@@ -457,30 +489,33 @@ namespace STEditor
 		}
 	}
 
-	void SpiralScene::drawG1(sf::RenderWindow& window)
+	void SpiralScene::drawG1(Renderer2D& renderer)
 	{
-		RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p00, m_p01, RenderConstant::Green);
-		RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p11, m_p10, RenderConstant::Green);
+		renderer.line(m_p00, m_p01, DarkPalette::Green);
+		renderer.line(m_p11, m_p10, DarkPalette::Green);
+		renderer.polyLines(m_roundCurvatureStart, DarkPalette::Green);
+		//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p00, m_p01, RenderConstant::Green);
+		//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p11, m_p10, RenderConstant::Green);
 
-		RenderSFMLImpl::renderPolyLine(window, *m_settings.camera, m_roundCurvatureStart, RenderConstant::Green);
+		//RenderSFMLImpl::renderPolyLine(window, *m_settings.camera, m_roundCurvatureStart, RenderConstant::Green);
 
 
 		if(m_showRoundedCurvature)
-			drawCurvature(window, m_roundCurvatureStart, m_roundCurvatureEnd, RenderConstant::Gray, false);
+			drawCurvature(renderer, m_roundCurvatureStart, m_roundCurvatureEnd, DarkPalette::Gray, false);
 	}
 
-	void SpiralScene::drawG2(sf::RenderWindow& window)
+	void SpiralScene::drawG2(Renderer2D& renderer)
 	{
-		drawCurve(window, m_g2Vertices, RenderConstant::Green);
+		drawCurve(renderer, m_g2Vertices, DarkPalette::Green);
 		if(m_showG2Curvature)
 		{
-			drawCurvature(window, m_cubicBezierCurvatureStart1, m_cubicBezierCurvatureEnd1, RenderConstant::Green, false);
-			drawCurvature(window, m_cubicBezierCurvatureStart2, m_cubicBezierCurvatureEnd2, RenderConstant::Green, true);
-			drawCurvature(window, m_roundCurvatureStart, m_roundCurvatureEnd, RenderConstant::Green, false);
+			drawCurvature(renderer, m_cubicBezierCurvatureStart1, m_cubicBezierCurvatureEnd1, DarkPalette::Green, false);
+			drawCurvature(renderer, m_cubicBezierCurvatureStart2, m_cubicBezierCurvatureEnd2, DarkPalette::Green, true);
+			drawCurvature(renderer, m_roundCurvatureStart, m_roundCurvatureEnd, DarkPalette::Green, false);
 		}
 	}
 
-	void SpiralScene::drawSpiral(sf::RenderWindow& window)
+	void SpiralScene::drawSpiral(Renderer2D& renderer)
 	{
 		if(m_spiral.size() < 2)
 			return;
@@ -492,7 +527,7 @@ namespace STEditor
 		//Vector2 v = -m_endRoundedPos.perpendicular();
 		//RenderSFMLImpl::renderArrow(window, *m_settings.camera, {}, v, RenderConstant::Red);
 
-		auto color = RenderConstant::Yellow;
+		auto color = DarkPalette::Yellow;
 
 		if(m_showSpiral)
 		{
@@ -502,26 +537,37 @@ namespace STEditor
 				Vector2 p0 = m_spiral[0];
 				Vector2 p2 = m_spiralSymmetry[0];
 
-				RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color, m_thickness);
-				RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color, m_thickness);
+				renderer.line({ 0, -m_halfHeight }, p0, color);
+				renderer.line({ m_halfWidth, 0 }, p2, color);
+
+				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color, m_thickness);
+				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color, m_thickness);
 
 				p0.x = -p0.x;
 				p2.x = -p2.x;
 
-				RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color, m_thickness);
-				RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color, m_thickness);
+				renderer.line({ 0, -m_halfHeight }, p0, color);
+				renderer.line({ -m_halfWidth, 0 }, p2, color);
+				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, -m_halfHeight }, p0, color, m_thickness);
+				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color, m_thickness);
 
 				p0.y = -p0.y;
 				p2.y = -p2.y;
 
-				RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color, m_thickness);
-				RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color, m_thickness);
+				renderer.line({ 0, m_halfHeight }, p0, color);
+				renderer.line({ -m_halfWidth, 0 }, p2, color);
+
+				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color, m_thickness);
+				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { -m_halfWidth, 0 }, p2, color, m_thickness);
 
 				p0.x = -p0.x;
 				p2.x = -p2.x;
 
-				RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color, m_thickness);
-				RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color, m_thickness);
+				renderer.line({ 0, m_halfHeight }, p0, color);
+				renderer.line({ m_halfWidth, 0 }, p2, color);
+
+				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { 0, m_halfHeight }, p0, color, m_thickness);
+				//RenderSFMLImpl::renderThickLine(window, *m_settings.camera, { m_halfWidth, 0 }, p2, color, m_thickness);
 			}
 
 			//std::vector<Vector2> curve;
@@ -539,17 +585,17 @@ namespace STEditor
 
 
 
-			drawCurve(window, m_spiral, color);
-			drawCurve(window, m_spiralSymmetry, color);
-			drawCurve(window, m_spiralRoundCurvatureStart, color);
+			drawCurve(renderer, m_spiral, color);
+			drawCurve(renderer, m_spiralSymmetry, color);
+			drawCurve(renderer, m_spiralRoundCurvatureStart, color);
 
 		}
 
 
 		if (m_showSpiralCurvature)
 		{
-			drawCurvature(window, m_spiralCurvatureStart, m_spiralCurvatureEnd, color, false);
-			drawCurvature(window, m_spiralSymmetryCurvatureStart, m_spiralSymmetryCurvatureEnd, color, false);
+			drawCurvature(renderer, m_spiralCurvatureStart, m_spiralCurvatureEnd, color, false);
+			drawCurvature(renderer, m_spiralSymmetryCurvatureStart, m_spiralSymmetryCurvatureEnd, color, false);
 
 			Vector2 p0 = m_spiralCircleCenter;
 			Vector2 p1 = m_spiralStartRoundedPos;
@@ -562,27 +608,31 @@ namespace STEditor
 				p2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, p2);
 			}
 			 
-			RenderSFMLImpl::renderPoint(window, *m_settings.camera, p0, RenderConstant::Gray, 3);
+			//RenderSFMLImpl::renderPoint(window, *m_settings.camera, p0, RenderConstant::Gray, 3);
 
 			//RenderSFMLImpl::renderArrow(window, *m_settings.camera, m_spiralStartRoundedPos, m_spiralStartRoundedPos + (m_spiralStartRoundedPos - m_spiralCircleCenter).normal().perpendicular(), RenderConstant::Red, 0.1);
-			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, p0, p1, RenderConstant::Gray, 0.01, 0.01);
-			RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, p0, p2, RenderConstant::Gray, 0.01, 0.01);
-
-			drawCurvature(window, m_spiralRoundCurvatureStart, m_spiralRoundCurvatureEnd, color, false);
+			//RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, p0, p1, RenderConstant::Gray, 0.01, 0.01);
+			//RenderSFMLImpl::renderDashedLine(window, *m_settings.camera, p0, p2, RenderConstant::Gray, 0.01, 0.01);
+			renderer.dashedLine(p0, p1, DarkPalette::Gray, 0.01, 0.01);
+			renderer.dashedLine(p0, p2, DarkPalette::Gray, 0.01, 0.01);
+			drawCurvature(renderer, m_spiralRoundCurvatureStart, m_spiralRoundCurvatureEnd, color, false);
 		}
 	}
 
-	void SpiralScene::drawReference(sf::RenderWindow& window)
+	void SpiralScene::drawReference(Renderer2D& renderer)
 	{
 		if (m_showReferenceLine)
 		{
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCenter, m_roundCorner, RenderConstant::LightGray);
+			renderer.line(m_roundCenter, m_roundCorner, DarkPalette::LightGray);
+			
 			Vector2 ref1(m_p01.x, (m_halfHeight - m_currentRadius) * m_innerHeightFactor);
 			Vector2 ref2((m_halfWidth - m_currentRadius) * m_innerWidthFactor, m_p10.y);
 			Vector2 ref3, ref4;
 
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p01, ref1, RenderConstant::LightGray);
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p10, ref2, RenderConstant::LightGray);
+			renderer.line(m_p01, ref1, DarkPalette::LightGray);
+			renderer.line(m_p10, ref2, DarkPalette::LightGray);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p01, ref1, RenderConstant::LightGray);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p10, ref2, RenderConstant::LightGray);
 
 
 			ref1 = Vector2(m_halfWidth, m_halfHeight - m_currentRadius);
@@ -590,23 +640,29 @@ namespace STEditor
 			ref3 = Vector2(m_halfWidth - m_currentRadius, m_halfHeight);
 			ref4 = Vector2(m_halfWidth - m_currentRadius, m_p10.y);
 
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, ref1, ref2, RenderConstant::LightGray);
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, ref3, ref4, RenderConstant::LightGray);
+			renderer.line(ref1, ref2, DarkPalette::LightGray);
+			renderer.line(ref3, ref4, DarkPalette::LightGray);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, ref1, ref2, RenderConstant::LightGray);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, ref3, ref4, RenderConstant::LightGray);
 
 			ref1 = Vector2((m_halfWidth - m_currentRadius) * m_innerWidthFactor, m_roundCorner.y);
 			ref2 = Vector2(m_roundCorner.x, (m_halfHeight - m_currentRadius) * m_innerHeightFactor);
 
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCorner, ref1, RenderConstant::LightGray);
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCorner, ref2, RenderConstant::LightGray);
+			renderer.line(m_roundCenter, ref1, DarkPalette::LightGray);
+			renderer.line(m_roundCenter, ref2, DarkPalette::LightGray);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCorner, ref1, RenderConstant::LightGray);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCorner, ref2, RenderConstant::LightGray);
 
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCenter, m_startRoundedPos, RenderConstant::LightGray);
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCenter, m_endRoundedPos, RenderConstant::LightGray);
+			renderer.line(m_roundCenter, m_startRoundedPos, DarkPalette::LightGray);
+			renderer.line(m_roundCenter, m_endRoundedPos, DarkPalette::LightGray);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCenter, m_startRoundedPos, RenderConstant::LightGray);
+			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCenter, m_endRoundedPos, RenderConstant::LightGray);
 
 		}
 	}
 
-	void SpiralScene::drawCurvature(sf::RenderWindow& window, const std::vector<Vector2>& start,
-		const std::vector<Vector2>& end, const sf::Color& color, bool flip)
+	void SpiralScene::drawCurvature(Renderer2D& renderer, const std::vector<Vector2>& start,
+		const std::vector<Vector2>& end, const Color& color, bool flip)
 	{
 		if (start.size() != end.size())
 			return;
@@ -621,13 +677,12 @@ namespace STEditor
 				n = -n;
 
 			Vector2 newEnd = n + start[i];
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, start[i], newEnd, color);
 
+			renderer.line(start[i], newEnd, color);
 
 			if (i != 0)
 			{
-				RenderSFMLImpl::renderLine(window, *m_settings.camera, lastEnd
-				                           , newEnd, color);
+				renderer.line(lastEnd, newEnd, color);
 			}
 			scaleEnd.push_back(newEnd);
 
@@ -636,23 +691,23 @@ namespace STEditor
 
 	}
 
-	void SpiralScene::drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve,
-		const sf::Color& color) const
+	void SpiralScene::drawCurve(Renderer2D& renderer, const std::vector<Vector2>& curve,
+		const Color& color) const
 	{
 		for (size_t i = 1; i < curve.size(); ++i)
 		{
 			Vector2 point0 = curve[i];
 			Vector2 point1 = curve[i - 1];
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			renderer.line(point0, point1, color);
 			point0.y = -point0.y;
 			point1.y = -point1.y;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			renderer.line(point0, point1, color);
 			point0.x = -point0.x;
 			point1.x = -point1.x;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			renderer.line(point0, point1, color);
 			point0.y = -point0.y;
 			point1.y = -point1.y;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			renderer.line(point0, point1, color);
 		}
 	}
 }

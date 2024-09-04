@@ -30,99 +30,173 @@ namespace STEditor
 
 	void CurveScene::onDraw(sf::RenderWindow& window)
 	{
-		if(m_showReferenceLine)
+		//if(m_showReferenceLine)
+		//{
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCenter, roundCorner, RenderConstant::LightGray);
+		//	Vector2 ref1(p01.x, (m_halfHeight - currentRadius) * m_innerHeightFactor);
+		//	Vector2 ref2((m_halfWidth - currentRadius) * m_innerWidthFactor, p10.y);
+		//	Vector2 ref3, ref4;
+
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, p01, ref1, RenderConstant::LightGray);
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, p10, ref2, RenderConstant::LightGray);
+
+
+		//	ref1 = Vector2(m_halfWidth, m_halfHeight - currentRadius);
+		//	ref2 = Vector2(p01.x, m_halfHeight - currentRadius);
+		//	ref3 = Vector2(m_halfWidth - currentRadius, m_halfHeight);
+		//	ref4 = Vector2(m_halfWidth - currentRadius, p10.y);
+
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, ref1, ref2, RenderConstant::LightGray);
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, ref3, ref4, RenderConstant::LightGray);
+
+		//	ref1 = Vector2((m_halfWidth - currentRadius) * m_innerWidthFactor, roundCorner.y);
+		//	ref2 = Vector2(roundCorner.x, (m_halfHeight - currentRadius) * m_innerHeightFactor);
+
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCorner, ref1, RenderConstant::LightGray);
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCorner, ref2, RenderConstant::LightGray);
+		//	
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCenter, startRoundedPos, RenderConstant::LightGray);
+		//	RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCenter, endRoundedPos, RenderConstant::LightGray);
+		//	
+		//}
+
+		//if(m_showG1)
+		//{
+		//	auto color = RenderConstant::Orange;
+		//	//color.a = 100;
+		//	drawCurve(window, g1Vertices, color);
+		//}
+
+		//if(m_showG2)
+		//{
+		//	//for (size_t i = 0; i < g2Vertices.size(); ++i)
+		//	//{
+		//	//	RenderSFMLImpl::renderUInt(window, *m_settings.camera, g2Vertices[i], *m_settings.font,
+		//	//		i, RenderConstant::Green, 18, Vector2(0.0f, 0.0f));
+		//	//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, g2Vertices[i], RenderConstant::Green, 2.0f);
+		//	// 
+		//	//}
+		//	auto color = RenderConstant::Green;
+		//	//color.a = 100;
+		//	drawCurve(window, g2Vertices, color);
+		//	
+		//}
+
+		//if (m_showG3)
+		//{
+		//	//for (size_t i = 0; i < g3Vertices.size(); ++i)
+		//	//{
+		//	//	RenderSFMLImpl::renderUInt(window, *m_settings.camera, g3Vertices[i], *m_settings.font,
+		//	//		i, RenderConstant::Blue, 18, Vector2(0.0f, 0.0f));
+		//	//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, g3Vertices[i], RenderConstant::Blue, 3.0f);
+		//	//	//RenderSFMLImpl::renderPoint(window, *m_settings.camera, elem, RenderConstant::Green, 2.0f);
+		//	//}
+
+		//	auto color = RenderConstant::LightBlue;
+		//	//color.a = 100;
+		//	drawCurve(window, g3Vertices, color);
+
+		//	//Vector2 p = m_rationalCubicBezier1.sample(1.0f);
+		//	//Vector2 tangent = m_rationalCubicBezier1.tangent(1.0f);
+
+		//	//float curvature = m_rationalCubicBezier1.curvatureAt(1.0f);
+
+		//	//Vector2 n = tangent.perpendicular().normal();
+		//	////Vector2 curvaturePoint = p + n * curvature * m_curvatureScaleFactor;
+
+		//	//RenderSFMLImpl::renderArrow(window, *m_settings.camera, p, p + tangent, RenderConstant::Blue, 0.1f);
+		//	//RenderSFMLImpl::renderArrow(window, *m_settings.camera, p, curvaturePoint, RenderConstant::Blue, 0.1f);
+		//}
+
+		//if(m_showRoundedCurvature)
+		//{
+		//	drawCurvature(window, roundCurvatureStart, roundCurvatureEnd, RenderConstant::LightGray);
+		//}
+
+		//if(m_showBezierCurvature)
+		//{
+		//	drawCurvature(window, bezierCurve1, bezierCurvature1, RenderConstant::Green);
+		//	drawCurvature(window, bezierCurve2, bezierCurvature2, RenderConstant::Green, true);
+		//}
+
+		//if(m_showG3Curvature)
+		//{
+		//	drawCurvature(window, rationalBezierCurve1, rationalBezierCurvature1, RenderConstant::Blue);
+		//	drawCurvature(window, rationalBezierCurve2, rationalBezierCurvature2, RenderConstant::Blue, true);
+		//}
+	}
+
+	void CurveScene::onRender(Renderer2D& renderer)
+	{
+		if (m_showReferenceLine)
 		{
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCenter, roundCorner, RenderConstant::LightGray);
+			renderer.line(roundCenter, roundCorner, DarkPalette::LightGray);
+
 			Vector2 ref1(p01.x, (m_halfHeight - currentRadius) * m_innerHeightFactor);
 			Vector2 ref2((m_halfWidth - currentRadius) * m_innerWidthFactor, p10.y);
 			Vector2 ref3, ref4;
 
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, p01, ref1, RenderConstant::LightGray);
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, p10, ref2, RenderConstant::LightGray);
-
+			renderer.line(p01, ref1, DarkPalette::LightGray);
+			renderer.line(p10, ref2, DarkPalette::LightGray);
 
 			ref1 = Vector2(m_halfWidth, m_halfHeight - currentRadius);
 			ref2 = Vector2(p01.x, m_halfHeight - currentRadius);
 			ref3 = Vector2(m_halfWidth - currentRadius, m_halfHeight);
 			ref4 = Vector2(m_halfWidth - currentRadius, p10.y);
 
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, ref1, ref2, RenderConstant::LightGray);
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, ref3, ref4, RenderConstant::LightGray);
+			renderer.line(ref1, ref2, DarkPalette::LightGray);
+			renderer.line(ref3, ref4, DarkPalette::LightGray);
+			
 
 			ref1 = Vector2((m_halfWidth - currentRadius) * m_innerWidthFactor, roundCorner.y);
 			ref2 = Vector2(roundCorner.x, (m_halfHeight - currentRadius) * m_innerHeightFactor);
 
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCorner, ref1, RenderConstant::LightGray);
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCorner, ref2, RenderConstant::LightGray);
-			
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCenter, startRoundedPos, RenderConstant::LightGray);
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, roundCenter, endRoundedPos, RenderConstant::LightGray);
-			
+			renderer.line(roundCorner, ref1, DarkPalette::LightGray);
+			renderer.line(roundCorner, ref2, DarkPalette::LightGray);
+			renderer.line(roundCenter, startRoundedPos, DarkPalette::LightGray);
+			renderer.line(roundCenter, endRoundedPos, DarkPalette::LightGray);
+
+
 		}
 
-		if(m_showG1)
+		if (m_showG1)
 		{
-			auto color = RenderConstant::Orange;
-			//color.a = 100;
-			drawCurve(window, g1Vertices, color);
+			auto color = DarkPalette::Orange;
+			color.a = 100;
+			drawCurve(renderer, g1Vertices, color);
 		}
 
-		if(m_showG2)
+		if (m_showG2)
 		{
-			//for (size_t i = 0; i < g2Vertices.size(); ++i)
-			//{
-			//	RenderSFMLImpl::renderUInt(window, *m_settings.camera, g2Vertices[i], *m_settings.font,
-			//		i, RenderConstant::Green, 18, Vector2(0.0f, 0.0f));
-			//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, g2Vertices[i], RenderConstant::Green, 2.0f);
-			// 
-			//}
-			auto color = RenderConstant::Green;
+			auto color = DarkPalette::Green;
 			//color.a = 100;
-			drawCurve(window, g2Vertices, color);
-			
+			drawCurve(renderer, g2Vertices, color);
+
 		}
 
 		if (m_showG3)
 		{
-			//for (size_t i = 0; i < g3Vertices.size(); ++i)
-			//{
-			//	RenderSFMLImpl::renderUInt(window, *m_settings.camera, g3Vertices[i], *m_settings.font,
-			//		i, RenderConstant::Blue, 18, Vector2(0.0f, 0.0f));
-			//	RenderSFMLImpl::renderPoint(window, *m_settings.camera, g3Vertices[i], RenderConstant::Blue, 3.0f);
-			//	//RenderSFMLImpl::renderPoint(window, *m_settings.camera, elem, RenderConstant::Green, 2.0f);
-			//}
 
-			auto color = RenderConstant::LightBlue;
+			auto color = DarkPalette::LightBlue;
 			//color.a = 100;
-			drawCurve(window, g3Vertices, color);
-
-			//Vector2 p = m_rationalCubicBezier1.sample(1.0f);
-			//Vector2 tangent = m_rationalCubicBezier1.tangent(1.0f);
-
-			//float curvature = m_rationalCubicBezier1.curvatureAt(1.0f);
-
-			//Vector2 n = tangent.perpendicular().normal();
-			////Vector2 curvaturePoint = p + n * curvature * m_curvatureScaleFactor;
-
-			//RenderSFMLImpl::renderArrow(window, *m_settings.camera, p, p + tangent, RenderConstant::Blue, 0.1f);
-			//RenderSFMLImpl::renderArrow(window, *m_settings.camera, p, curvaturePoint, RenderConstant::Blue, 0.1f);
+			drawCurve(renderer, g3Vertices, color);
 		}
 
-		if(m_showRoundedCurvature)
+		if (m_showRoundedCurvature)
 		{
-			drawCurvature(window, roundCurvatureStart, roundCurvatureEnd, RenderConstant::LightGray);
+			drawCurvature(renderer, roundCurvatureStart, roundCurvatureEnd, DarkPalette::LightGray);
 		}
 
-		if(m_showBezierCurvature)
+		if (m_showBezierCurvature)
 		{
-			drawCurvature(window, bezierCurve1, bezierCurvature1, RenderConstant::Green);
-			drawCurvature(window, bezierCurve2, bezierCurvature2, RenderConstant::Green, true);
+			drawCurvature(renderer, bezierCurve1, bezierCurvature1, DarkPalette::Green);
+			drawCurvature(renderer, bezierCurve2, bezierCurvature2, DarkPalette::Green, true);
 		}
 
-		if(m_showG3Curvature)
+		if (m_showG3Curvature)
 		{
-			drawCurvature(window, rationalBezierCurve1, rationalBezierCurvature1, RenderConstant::Blue);
-			drawCurvature(window, rationalBezierCurve2, rationalBezierCurvature2, RenderConstant::Blue, true);
+			drawCurvature(renderer, rationalBezierCurve1, rationalBezierCurvature1, DarkPalette::Blue);
+			drawCurvature(renderer, rationalBezierCurve2, rationalBezierCurvature2, DarkPalette::Blue, true);
 		}
 	}
 
@@ -195,28 +269,28 @@ namespace STEditor
 		ImGui::End();
 	}
 
-	void CurveScene::drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve, const sf::Color& color) const
+	void CurveScene::drawCurve(Renderer2D& renderer, const std::vector<Vector2>& curve, const Color& color) const
 	{
 		//RenderSFMLImpl::renderPolyDashedThickLine(window, *m_settings.camera, curve, color, m_thickness, 0.05f, 0.05f);
 		for (size_t i = 1; i < curve.size(); ++i)
 		{
 			Vector2 point0 = curve[i];
 			Vector2 point1 = curve[i - 1];
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			renderer.line(point0, point1, color);
 			point0.y = -point0.y;
 			point1.y = -point1.y;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			renderer.line(point0, point1, color);
 			point0.x = -point0.x;
 			point1.x = -point1.x;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			renderer.line(point0, point1, color);
 			point0.y = -point0.y;
 			point1.y = -point1.y;
-			RenderSFMLImpl::renderThickLine(window, *m_settings.camera, point0, point1, color, m_thickness);
+			renderer.line(point0, point1, color);
 		}
 	}
 
-	void CurveScene::drawCurvature(sf::RenderWindow& window, const std::vector<Vector2>& start,
-		const std::vector<Vector2>& end, const sf::Color& color, bool flip)
+	void CurveScene::drawCurvature(Renderer2D& renderer, const std::vector<Vector2>& start,
+		const std::vector<Vector2>& end, const Color& color, bool flip)
 	{
 		if(start.size() != end.size())
 			return;
@@ -231,14 +305,11 @@ namespace STEditor
 				n = -n;
 
 			Vector2 newEnd = n + start[i];
-			RenderSFMLImpl::renderLine(window, *m_settings.camera, start[i], newEnd, color);
-
+			renderer.line(start[i], newEnd, color);
 
 			if (i != 0)
-			{
-				RenderSFMLImpl::renderLine(window, *m_settings.camera, lastEnd
-					, newEnd, color);
-			}
+				renderer.line(lastEnd, newEnd, color);
+			
 
 			lastEnd = newEnd;
 		}

@@ -10,7 +10,7 @@ namespace STEditor
 	{
 	public:
 
-		void onRender(Renderer2D* renderer);
+		void onRender(Renderer2D& renderer);
 
 	private:
 

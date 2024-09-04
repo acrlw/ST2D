@@ -19,6 +19,7 @@ namespace STEditor
 		void onUnLoad() override;
 		void onUpdate(float deltaTime) override;
 		void onDraw(sf::RenderWindow& window) override;
+		void onRender(Renderer2D& renderer) override;
 		void onRenderUI() override;
 
 	private:
@@ -26,10 +27,10 @@ namespace STEditor
 		// The single-variable function for which derivatives are needed
 		
 
-		void drawCurve(sf::RenderWindow& window, const std::vector<Vector2>& curve, const sf::Color& color) const;
+		void drawCurve(Renderer2D& renderer, const std::vector<Vector2>& curve, const Color& color) const;
 
-		void drawCurvature(sf::RenderWindow& window, const std::vector<Vector2>& start, 
-			const std::vector<Vector2>& end, const sf::Color& color, bool flip = false);
+		void drawCurvature(Renderer2D& renderer, const std::vector<Vector2>& start,
+			const std::vector<Vector2>& end, const Color& color, bool flip = false);
 
 		void computeBasicParam();
 
