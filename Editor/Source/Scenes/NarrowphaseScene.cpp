@@ -12,7 +12,7 @@ namespace STEditor
 		rect.set(1.0f, 1.0f);
 		ellipse.set(1.0f, 2.0f);
 
-		tf1.position.set(1.0f, 1.5f);
+		tf1.position.set(-0.561019301f, 0.842656434f);
 		tf2.position.set(-1.0f, -1.0f);
 		tf1.rotation = Math::radians(45.0f);
 		tf2.rotation = Math::radians(100.0f);
@@ -24,6 +24,8 @@ namespace STEditor
 
 	void NarrowphaseScene::onUpdate(float deltaTime)
 	{
+		//tf1.rotation += Math::radians(45.0f) * deltaTime;
+		//tf1.rotation = std::fmod(tf1.rotation, Constant::DoublePi);
 	}
 
 	void NarrowphaseScene::onRender(Renderer2D& renderer)
@@ -33,8 +35,8 @@ namespace STEditor
 		renderer.shape(tf1, &rect, DarkPalette::Yellow);
 		renderer.shape(tf2, &ellipse, DarkPalette::Cyan);
 
-		renderer.point(info.pair.pointA, DarkPalette::Yellow);
-		renderer.point(info.pair.pointB, DarkPalette::Cyan);
+		renderer.roundPoint(info.pair.pointA, DarkPalette::Yellow);
+		renderer.roundPoint(info.pair.pointB, DarkPalette::Cyan);
 
 		renderer.dashedLine(info.pair.pointA, info.pair.pointB, DarkPalette::LightGray);
 

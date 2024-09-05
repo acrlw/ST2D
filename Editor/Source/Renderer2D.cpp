@@ -101,9 +101,15 @@ namespace STEditor
 		for (auto&& elem : m_fillStrokes)
 			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
 
+		for(auto&& elem: m_multiCommandsDraws)
+			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
+
 		vertices.insert(vertices.end(), m_ndcLines.begin(), m_ndcLines.end());
 
 		vertices.insert(vertices.end(), m_ndcPoints.begin(), m_ndcPoints.end());
+
+		for (auto&& elem : m_ndcMultiCommandsDraws)
+			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
 
 		glBindVertexArray(m_verticesVao);
 		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
@@ -200,31 +206,85 @@ namespace STEditor
 			m_shaderProgram.setUniform1i("isFillMode", 0);
 		}
 
+		if (!m_multiCommandsDraws.empty())
+		{
+			for (auto&& elem : m_multiCommandsDraws)
+			{
+				glLineWidth(elem.thickness);
+				for (auto&& command : elem.commands)
+				{
+					if(command == GL_TRIANGLE_FAN)
+					{
+						m_shaderProgram.setUniform1i("isFillMode", 1);
+						m_shaderProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+
+						glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+
+						m_shaderProgram.setUniform1i("isFillMode", 0);
+					}
+					else if(command == GL_POINTS)
+					{
+						glPointSize(elem.pointSize);
+						glDrawArrays(GL_POINTS, offset, elem.vertices.size() / 7);
+					}
+					else
+					{
+						glLineWidth(elem.thickness);
+						glDrawArrays(command, offset, elem.vertices.size() / 7);
+					}
+				}
+				offset += elem.vertices.size() / 7;
+			}
+		}
+
+		glm::mat4 identity = glm::mat4(1.0f);
+
+		m_shaderProgram.setUniformMat4f("model", identity);
+		m_shaderProgram.setUniformMat4f("view", identity);
+		m_shaderProgram.setUniformMat4f("projection", identity);
+
 		if (!m_ndcLines.empty())
 		{
-			glm::mat4 identity = glm::mat4(1.0f);
-
 			glLineWidth(1.0f);
-
-			m_shaderProgram.setUniformMat4f("model", identity);
-			m_shaderProgram.setUniformMat4f("view", identity);
-			m_shaderProgram.setUniformMat4f("projection", identity);
-
 			glDrawArrays(GL_LINES, offset, m_ndcLines.size() / 7);
 			offset += m_ndcLines.size() / 7;
 		}
 
 		if (!m_ndcPoints.empty())
 		{
-			glm::mat4 identity = glm::mat4(1.0f);
-
-			glPointSize(8.0f);
-			m_shaderProgram.setUniformMat4f("model", identity);
-			m_shaderProgram.setUniformMat4f("view", identity);
-			m_shaderProgram.setUniformMat4f("projection", identity);
-
 			glDrawArrays(GL_POINTS, offset, m_ndcPoints.size() / 7);
 			offset += m_ndcPoints.size() / 7;
+		}
+
+		if (!m_ndcMultiCommandsDraws.empty())
+		{
+			for (auto&& elem : m_ndcMultiCommandsDraws)
+			{
+				glLineWidth(elem.thickness);
+				for (auto&& command : elem.commands)
+				{
+					if (command == GL_TRIANGLE_FAN)
+					{
+						m_shaderProgram.setUniform1i("isFillMode", 1);
+						m_shaderProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+
+						glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+
+						m_shaderProgram.setUniform1i("isFillMode", 0);
+					}
+					else if (command == GL_POINTS)
+					{
+						glPointSize(elem.pointSize);
+						glDrawArrays(GL_POINTS, offset, elem.vertices.size() / 7);
+					}
+					else
+					{
+						glLineWidth(elem.thickness);
+						glDrawArrays(command, offset, elem.vertices.size() / 7);
+					}
+				}
+				offset += elem.vertices.size() / 7;
+			}
 		}
 
 		glDepthFunc(previousDepthFunc);
@@ -244,6 +304,14 @@ namespace STEditor
 		{
 			double xpos, ypos;
 			glfwGetCursorPos(m_window, &xpos, &ypos);
+
+			m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_easingMeterToPixel.value()));
+
+			float h = m_orthoSize;
+			float w = m_aspectRatio * h;
+
+			m_projection = glm::ortho(-w, w, -h, h, m_zNear, m_zFar);
+
 			Vector2 currentMouse = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
 
 			Vector2 delta = m_scrollMouseStart - currentMouse;
@@ -267,8 +335,10 @@ namespace STEditor
 		m_polyLines.clear();
 		m_fills.clear();
 		m_fillStrokes.clear();
+		m_multiCommandsDraws.clear();
 		m_ndcLines.clear();
 		m_ndcPoints.clear();
+		m_ndcMultiCommandsDraws.clear();
 
 		m_lines.shrink_to_fit();
 		m_points.shrink_to_fit();
@@ -276,8 +346,10 @@ namespace STEditor
 		m_polyLines.shrink_to_fit();
 		m_fills.shrink_to_fit();
 		m_fillStrokes.shrink_to_fit();
+		m_multiCommandsDraws.shrink_to_fit();
 		m_ndcLines.shrink_to_fit();
 		m_ndcPoints.shrink_to_fit();
+		m_ndcMultiCommandsDraws.shrink_to_fit();
 	}
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, const Color& color)
@@ -314,6 +386,26 @@ namespace STEditor
 
 		pushVector(m_ndcPoints, { ndcX, ndcY });
 		pushColor(m_ndcPoints, color);
+	}
+
+	void Renderer2D::roundPoint(int x, int y, const Color& color, float size)
+	{
+		float radius = size * pixelToMeter();
+
+	}
+
+	void Renderer2D::roundPoint(const Vector2& position, const Color& color, float size)
+	{
+		Fill shape;
+		float radius = size * pixelToMeter();
+		for (int i = 0; i < m_roundPointSampleCount; ++i)
+		{
+			float radian = Constant::DoublePi * static_cast<float>(i) / static_cast<float>(m_roundPointSampleCount);
+			Vector2 p = position + Vector2(radius * Math::cosx(radian), radius * Math::sinx(radian));
+			pushVector(shape.vertices, p);
+			pushColor(shape.vertices, color);
+		}
+		m_fills.push_back(shape);
 	}
 
 	void Renderer2D::point(const Vector2& position, const Color& color, float size)
@@ -780,7 +872,7 @@ namespace STEditor
 		polyDashedLines({ aabb.topLeft(), aabb.topRight(), aabb.bottomRight(), aabb.bottomLeft(),aabb.topLeft() }, color, dashLength, gapLength);
 	}
 
-	void Renderer2D::arrow(const Color& color, const float& size, const float& degree)
+	void Renderer2D::arrow(const Vector2& start, const Vector2& end, const Color& color, const float& size, const float& degree)
 	{
 
 	}
@@ -838,10 +930,17 @@ namespace STEditor
 			}
 			break;
 		case 3:
-			closedLines({ simplex.vertices[0].result, simplex.vertices[1].result, simplex.vertices[2].result }, lineColor);
-			point(simplex.vertices[0].result, color);
-			point(simplex.vertices[1].result, color);
-			point(simplex.vertices[2].result, color);
+			MultiCommandsDraw draw;
+			pushVector(draw.vertices, simplex.vertices[0].result);
+			pushColor(draw.vertices, lineColor);
+			pushVector(draw.vertices, simplex.vertices[1].result);
+			pushColor(draw.vertices, lineColor);
+			pushVector(draw.vertices, simplex.vertices[2].result);
+			pushColor(draw.vertices, lineColor);
+
+			draw.commands.push_back(GL_LINE_LOOP);
+			draw.commands.push_back(GL_POINTS);
+
 
 			if (showIndex)
 			{
@@ -1007,13 +1106,18 @@ namespace STEditor
 		m_meterToPixel *= 1.0f + yoffset * m_scaleRatio;
 		m_meterToPixel = std::clamp(m_meterToPixel, 0.1f, 5000.0f);
 
-		m_easingMeterToPixel.continueTo(m_meterToPixel, 0.5f);
+		m_easingMeterToPixel.continueTo(m_meterToPixel, m_zoomingDuration);
 
 		if (!m_smoothZooming)
 		{
 			m_easingMeterToPixel.finish();
 
-			buildMVPMatrix();
+			m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_easingMeterToPixel.value()));
+
+			float h = m_orthoSize;
+			float w = m_aspectRatio * h;
+
+			m_projection = glm::ortho(-w, w, -h, h, m_zNear, m_zFar);
 
 			Vector2 after = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
 
