@@ -65,7 +65,6 @@ namespace STEditor
 		void clearAll();
 
 		bool m_userDrawVisible = true;
-		bool m_cameraViewportMovement = false;
 		bool m_onDistanceCheck = false;
 
 		int m_currentSceneIndex = 2;
@@ -78,7 +77,6 @@ namespace STEditor
 		GLFWwindow* m_window;
 
 
-		float m_zoomFactor = 0.3f;
 		bool m_enableDistanceCheck = true;
 
 		Vector2 m_mousePos;

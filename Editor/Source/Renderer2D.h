@@ -97,7 +97,7 @@ namespace STEditor
 	{
 	public:
 
-		Renderer2D();
+		Renderer2D(GLFWwindow* window);
 		~Renderer2D();
 
 		void onRenderStart();
@@ -156,21 +156,21 @@ namespace STEditor
 		void onRender();
 		void onUpdate(float deltaTime);
 
-		void onFrameBufferResize(GLFWwindow* window, int width, int height);
-		void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods);
-		void onMouseButton(GLFWwindow* window, int button, int action, int mods);
-		void onMouseMoved(GLFWwindow* window, double xpos, double ypos);
-		void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset);
+		void onFrameBufferResize(int width, int height);
+		void onKeyButton(int key, int scancode, int action, int mods);
+		void onMouseButton(int button, int action, int mods);
+		void onMouseMoved(double xpos, double ypos);
+		void onMouseScroll(double xoffset, double yoffset);
 
 		float meterToPixel() const;
 		float pixelToMeter() const;
 
 		bool& smoothZooming() { return m_smoothZooming; }
+		float& scaleRatio() { return m_scaleRatio; }
 
 	private:
-
-		void onScale(GLFWwindow* window, float yOffset);
-		void onTranslateView(GLFWwindow* window, float x, float y);
+		void onZoomView(float xoffset, float yoffset);
+		void onTranslateView(float x, float y);
 		void buildMVPMatrix();
 
 		void pushVector(std::vector<float>& lines, const Vector2& vec);
@@ -195,6 +195,9 @@ namespace STEditor
 		float m_zNear = 0.1f;
 		float m_zFar = 1000.0f;
 		float m_aspectRatio = 16.0f / 9.0f;
+
+		EasingObject<float> m_easingMeterToPixel = EasingObject(100.0f);
+		GLFWwindow* m_window = nullptr;
 
 		float m_meterToPixel = 100.0f;
 		float m_scaleRatio = 0.1f;

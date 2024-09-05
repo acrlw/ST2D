@@ -2,7 +2,7 @@
 
 namespace STEditor
 {
-	Renderer2D::Renderer2D()
+	Renderer2D::Renderer2D(GLFWwindow* window) : m_window(window)
 	{
 		//read shader source from path res/shaders/vert.glsl
 		auto readShader = [](const std::string& path) -> std::string
@@ -44,6 +44,9 @@ namespace STEditor
 
 		m_model = glm::mat4(1.0f);
 		buildMVPMatrix();
+
+		m_easingMeterToPixel.setEasingFunction(EasingFunction::easeOutCubic);
+		
 	}
 
 	Renderer2D::~Renderer2D()
@@ -231,7 +234,25 @@ namespace STEditor
 
 	void Renderer2D::onUpdate(float deltaTime)
 	{
+		if(m_smoothZooming)
+			m_easingMeterToPixel.update(deltaTime);
+		else
+			m_easingMeterToPixel.finish();
 
+		bool finished = m_easingMeterToPixel.isFinished();
+		if (!finished)
+		{
+			double xpos, ypos;
+			glfwGetCursorPos(m_window, &xpos, &ypos);
+			Vector2 currentMouse = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
+
+			Vector2 delta = m_scrollMouseStart - currentMouse;
+			m_cameraPosition += glm::vec3(delta.x, delta.y, 0.0f);
+		}
+		else
+		{
+			m_scrollMouseStart.clear();
+		}
 	}
 
 	void Renderer2D::onRenderEnd()
@@ -921,7 +942,7 @@ namespace STEditor
 		m_polyLines.emplace_back(lines);
 	}
 
-	void Renderer2D::onFrameBufferResize(GLFWwindow* window, int width, int height)
+	void Renderer2D::onFrameBufferResize(int width, int height)
 	{
 		m_frameBufferWidth = width;
 		m_frameBufferHeight = height;
@@ -929,12 +950,12 @@ namespace STEditor
 		glViewport(0, 0, width, height);
 	}
 
-	void Renderer2D::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
+	void Renderer2D::onKeyButton(int key, int scancode, int action, int mods)
 	{
 
 	}
 
-	void Renderer2D::onMouseButton(GLFWwindow* window, int button, int action, int mods)
+	void Renderer2D::onMouseButton(int button, int action, int mods)
 	{
 		if (button == GLFW_MOUSE_BUTTON_RIGHT)
 		{
@@ -952,23 +973,18 @@ namespace STEditor
 		}
 	}
 
-	void Renderer2D::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
+	void Renderer2D::onMouseMoved(double xpos, double ypos)
 	{
 		float x = static_cast<float>(xpos);
 		float y = static_cast<float>(ypos);
 
 		if (m_isTranslateView)
-			onTranslateView(window, x, y);
+			onTranslateView(x, y);
 	}
 
-	void Renderer2D::onMouseScroll(GLFWwindow* window, double xoffset, double yoffset)
+	void Renderer2D::onMouseScroll(double xoffset, double yoffset)
 	{
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-		m_scrollMouseStart = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
-
-		float y = static_cast<float>(yoffset);
-		onScale(window, y);
+		onZoomView(static_cast<float>(xoffset), static_cast<float>(yoffset));
 	}
 
 	float Renderer2D::meterToPixel() const
@@ -981,36 +997,35 @@ namespace STEditor
 		return 1.0f / m_meterToPixel;
 	}
 
-	void Renderer2D::onScale(GLFWwindow* window, float yOffset)
+
+	void Renderer2D::onZoomView(float xoffset, float yoffset)
 	{
-		m_meterToPixel *= 1.0f + yOffset * m_scaleRatio;
+		double xpos, ypos;
+		glfwGetCursorPos(m_window, &xpos, &ypos);
+		m_scrollMouseStart = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
+
+		m_meterToPixel *= 1.0f + yoffset * m_scaleRatio;
 		m_meterToPixel = std::clamp(m_meterToPixel, 0.1f, 5000.0f);
 
-		m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_meterToPixel));
+		m_easingMeterToPixel.continueTo(m_meterToPixel, 0.5f);
 
-		//m_orthoSize *= 1.0f - yOffset * m_orthoSizeScaleRatio;
+		if (!m_smoothZooming)
+		{
+			m_easingMeterToPixel.finish();
 
+			buildMVPMatrix();
 
-		//m_orthoSize -= yOffset * m_orthoSizeScaleRatio;
-		//m_orthoSize = std::clamp(m_orthoSize, 0.1f, 100.0f);
+			Vector2 after = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
 
-		float h = m_orthoSize;
-		float w = m_aspectRatio * h;
+			Vector2 scrollDelta = m_scrollMouseStart - after;
 
-		m_projection = glm::ortho(-w, w, -h, h, m_zNear, m_zFar);
+			m_cameraPosition += glm::vec3(scrollDelta.x, scrollDelta.y, 0.0f);
 
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-		Vector2 after = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
-
-		Vector2 scrollDelta = m_scrollMouseStart - after;
-
-		m_cameraPosition += glm::vec3(scrollDelta.x, scrollDelta.y, 0.0f);
-
-		m_scrollMouseStart.clear();
+			m_scrollMouseStart.clear();
+		}
 	}
 
-	void Renderer2D::onTranslateView(GLFWwindow* window, float x, float y)
+	void Renderer2D::onTranslateView(float x, float y)
 	{
 		if (!m_translationStart)
 		{
@@ -1038,7 +1053,7 @@ namespace STEditor
 	{
 		m_view = glm::lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
 
-		m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_meterToPixel));
+		m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_easingMeterToPixel.value()));
 
 		float h = m_orthoSize;
 		float w = m_aspectRatio * h;

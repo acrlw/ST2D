@@ -50,7 +50,7 @@ namespace STEditor
 
 		glDepthFunc(GL_LEQUAL);
 
-		m_renderer2D = std::make_unique<Renderer2D>();
+		m_renderer2D = std::make_unique<Renderer2D>(m_window);
 
 		switchScene(m_currentSceneIndex);
 
@@ -234,7 +234,7 @@ namespace STEditor
 	void ST2DEditor::onFrameBufferResize(GLFWwindow* window, int width, int height)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onFrameBufferResize(window, width, height);
+			m_renderer2D->onFrameBufferResize(width, height);
 
 		if (m_currentScene != nullptr)
 			m_currentScene->onFrameBufferResize(window, *m_renderer2D, width, height);
@@ -243,7 +243,7 @@ namespace STEditor
 	void ST2DEditor::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onKeyButton(window, key, scancode, action, mods);
+			m_renderer2D->onKeyButton(key, scancode, action, mods);
 
 		if (m_currentScene != nullptr)
 			m_currentScene->onKeyButton(window, *m_renderer2D, key, scancode, action, mods);
@@ -252,7 +252,7 @@ namespace STEditor
 	void ST2DEditor::onMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onMouseButton(window, button, action, mods);
+			m_renderer2D->onMouseButton(button, action, mods);
 
 		if (m_currentScene != nullptr)
 			m_currentScene->onMouseButton(window, *m_renderer2D, button, action, mods);
@@ -261,7 +261,7 @@ namespace STEditor
 	void ST2DEditor::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onMouseMoved(window, xpos, ypos);
+			m_renderer2D->onMouseMoved(xpos, ypos);
 
 		if (m_currentScene != nullptr)
 			m_currentScene->onMouseMoved(window, *m_renderer2D, xpos, ypos);
@@ -270,7 +270,7 @@ namespace STEditor
 	void ST2DEditor::onMouseScroll(GLFWwindow* window, double xoffset, double yoffset)
 	{
 		if (m_renderer2D != nullptr)
-			m_renderer2D->onMouseScroll(window, xoffset, yoffset);
+			m_renderer2D->onMouseScroll(xoffset, yoffset);
 
 		if (m_currentScene != nullptr)
 			m_currentScene->onMouseScroll(window, *m_renderer2D, xoffset, yoffset);
@@ -301,7 +301,7 @@ namespace STEditor
 		ImGui::Checkbox("User Draw", &m_userDrawVisible);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Smooth Zooming", &m_renderer2D->smoothZooming());
-		ImGui::SliderFloat("Zoom", &m_zoomFactor, 0.1f, 0.8f, "%.1f");
+		ImGui::SliderFloat("Zoom", &m_renderer2D->scaleRatio(), 0.01f, 0.3f, "%.2f");
 		ImGui::Checkbox("Distance Check", &m_enableDistanceCheck);
 
 		ImGui::NextColumn();
