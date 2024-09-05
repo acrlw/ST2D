@@ -86,15 +86,6 @@ namespace ST
     };
 
     template<>
-    struct LerpTraits<glm::quat>
-    {
-        static glm::quat lerp(const glm::quat& startValue, const glm::quat& endValue, float t)
-        {
-            return glm::slerp(startValue, endValue, t);
-        }
-    };
-
-    template<>
     struct LerpTraits<Matrix4x4>
     {
         static Matrix4x4 lerp(const Matrix4x4& startValue, const Matrix4x4& endValue, float t)

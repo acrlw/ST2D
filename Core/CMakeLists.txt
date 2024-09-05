@@ -34,8 +34,8 @@ target_include_directories(ST2DCore PUBLIC
 
 target_link_libraries(ST2DCore PUBLIC
     spdlog::spdlog_header_only
-    ${Stb_INCLUDE_DIR}
     Tracy::TracyClient
+    ${Stb_INCLUDE_DIR}
 )
 
 target_precompile_headers(ST2DCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Source/pch.h)

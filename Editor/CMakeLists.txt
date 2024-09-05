@@ -33,7 +33,7 @@ target_include_directories(ST2DEditor PRIVATE
 )
 
 target_compile_definitions(ST2DEditor PRIVATE 
-    ST_BUILD_EDITOR
+    ST_BUILD_EXE
     $<$<CONFIG:Debug>:ST_DEBUG>
     $<$<CONFIG:Release>:ST_RELEASE>
 )

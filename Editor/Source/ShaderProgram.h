@@ -1,8 +1,24 @@
 #pragma once
 
 #include "ST2DCore.h"
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <fstream>
+#include <iostream>
+#include <string>
 
 namespace STEditor
 {

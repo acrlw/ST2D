@@ -12,7 +12,7 @@ namespace STEditor
 		initFont();
 
 		m_model = glm::mat4(1.0f);
-		buildMVPMatrix();
+		buildViewProjectionMatrix();
 
 		m_easingMeterToPixel.setEasingFunction(EasingFunction::easeOutExpo);
 
@@ -37,7 +37,7 @@ namespace STEditor
 				std::ifstream file(path);
 				if (!file)
 				{
-					std::cout << std::format("[ERROR] Unable to read shader from {0}", path) << '\n';
+					APP_ERROR("Unable to read shader from {}", path);
 					return "";
 				}
 				std::stringstream buffer;
@@ -141,7 +141,7 @@ namespace STEditor
 
 	void Renderer2D::onRender()
 	{
-		buildMVPMatrix();
+		buildViewProjectionMatrix();
 
 		onRenderStart();
 
@@ -1248,7 +1248,7 @@ namespace STEditor
 		updateScreenAABB();
 	}
 
-	void Renderer2D::buildMVPMatrix()
+	void Renderer2D::buildViewProjectionMatrix()
 	{
 		m_view = glm::lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
 

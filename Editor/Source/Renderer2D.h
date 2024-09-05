@@ -1,10 +1,6 @@
 #pragma once
 
-#include <ft2build.h>
-#include FT_FREETYPE_H 
-
 #include "ShaderProgram.h"
-#include "glm/glm.hpp"
 
 namespace STEditor
 {
@@ -178,10 +174,11 @@ namespace STEditor
 		AABB screenAABB() const;
 
 	private:
-		void updateScreenAABB();
 		void onZoomView(float xoffset, float yoffset);
 		void onTranslateView(float x, float y);
-		void buildMVPMatrix();
+
+		void updateScreenAABB();
+		void buildViewProjectionMatrix();
 
 		void pushVector(std::vector<float>& lines, const Vector2& vec);
 		void pushColor(std::vector<float>& lines, const Color& color);
