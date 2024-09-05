@@ -301,11 +301,12 @@ namespace STEditor
 		ImGui::Checkbox("User Draw", &m_userDrawVisible);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Smooth Zooming", &m_renderer2D->smoothZooming());
-		ImGui::SliderFloat("Zoom", &m_renderer2D->scaleRatio(), 0.01f, 0.3f, "%.2f");
+		ImGui::SliderFloat("Zoom", &m_renderer2D->scaleRatio(), 0.1f, 0.8f, "%.1f");
 		ImGui::Checkbox("Distance Check", &m_enableDistanceCheck);
 
 		ImGui::NextColumn();
 		ImGui::Columns(1, nullptr);
+		ImGui::Text("Meter To Pixel: %f", m_renderer2D->meterToPixel());
 
 		ImGui::SeparatorText("Buttons");
 

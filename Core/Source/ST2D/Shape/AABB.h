@@ -41,7 +41,8 @@ namespace ST
 		
 
 		static bool collide(const AABB& src, const AABB& target);
-		
+		static bool collide(const AABB& src, const Vector2& point);
+		static bool collide(const AABB& src, const Vector2& p1, const Vector2& p2);
 
 		static AABB combine(const AABB& src, const AABB& target, const real& factor = 0);
 		

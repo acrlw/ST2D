@@ -32,6 +32,20 @@ namespace STEditor
 	{
 		auto info = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
 
+		Color simplexColor = DarkPalette::Purple;
+
+		Color polytopeColor = DarkPalette::Teal;
+		polytopeColor.a = 50.0f / 255.0f;
+
+		std::vector<Vector2> points;
+		for(auto&& elem: info.polytope)
+		{
+			points.push_back(elem.vertex.result);
+		}
+		renderer.polytope(points, polytopeColor);
+
+		renderer.simplex(info.simplex, simplexColor);
+
 		renderer.shape(tf1, &rect, DarkPalette::Yellow);
 		renderer.shape(tf2, &ellipse, DarkPalette::Cyan);
 
@@ -39,6 +53,11 @@ namespace STEditor
 		renderer.roundPoint(info.pair.pointB, DarkPalette::Cyan);
 
 		renderer.dashedLine(info.pair.pointA, info.pair.pointB, DarkPalette::LightGray);
+
+	}
+
+	void NarrowphaseScene::onRenderUI()
+	{
 
 	}
 

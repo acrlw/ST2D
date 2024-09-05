@@ -238,6 +238,36 @@ namespace ST
 		return !(srcBottomRight.x < targetTopLeft.x || targetBottomRight.x < srcTopLeft.x || srcTopLeft.y < targetBottomRight.y || targetTopLeft.y < srcBottomRight.y);
 	}
 
+	bool AABB::collide(const AABB& src, const Vector2& point)
+	{
+		Vector2 bottomLeft = src.bottomLeft();
+		Vector2 topRight = src.topRight();
+
+		return Math::isInRange(point.x, bottomLeft.x, topRight.x)
+			&& Math::isInRange(point.y, bottomLeft.y, topRight.y);
+
+	}
+
+	bool AABB::collide(const AABB& src, const Vector2& p1, const Vector2& p2)
+	{
+		Vector2 bottomLeft = src.bottomLeft();
+		Vector2 topRight = src.topRight();
+
+		real minX = p1.x;
+		real maxX = p2.x;
+		real minY = p1.y;
+		real maxY = p2.y;
+		if (minX > maxX)
+			std::swap(minX, maxX);
+		if (minY > maxY)
+			std::swap(minY, maxY);
+
+		bool xOut = maxX < bottomLeft.x || minX > topRight.x;
+		bool yOut = maxY < bottomLeft.y || minY > topRight.y;
+
+		return !(xOut || yOut);
+	}
+
 	AABB AABB::combine(const AABB& src, const AABB& target, const real& factor)
 	{
 		if (src.isEmpty())

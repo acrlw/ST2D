@@ -2,7 +2,35 @@
 
 namespace STEditor
 {
+
 	Renderer2D::Renderer2D(GLFWwindow* window) : m_window(window)
+	{
+		initShaders();
+
+		initRenderSettings();
+
+		initFont();
+
+		m_model = glm::mat4(1.0f);
+		buildMVPMatrix();
+
+		m_easingMeterToPixel.setEasingFunction(EasingFunction::easeOutCubic);
+
+
+		updateScreenAABB();
+	}
+
+	Renderer2D::~Renderer2D()
+	{
+		APP_INFO("Delete VAO ({}) and VBO ({}) ", m_verticesVao, m_verticesVbo);
+
+		glDeleteVertexArrays(1, &m_verticesVao);
+		glDeleteBuffers(1, &m_verticesVbo);
+
+		m_shaderProgram.destroy();
+	}
+
+	void Renderer2D::initShaders()
 	{
 		//read shader source from path res/shaders/vert.glsl
 		auto readShader = [](const std::string& path) -> std::string
@@ -39,24 +67,6 @@ namespace STEditor
 		m_shaderProgram.addGeometryShader(geometryShader);
 		m_shaderProgram.compileShader();
 		m_shaderProgram.link();
-
-		initRenderSettings();
-
-		m_model = glm::mat4(1.0f);
-		buildMVPMatrix();
-
-		m_easingMeterToPixel.setEasingFunction(EasingFunction::easeOutCubic);
-		
-	}
-
-	Renderer2D::~Renderer2D()
-	{
-		APP_INFO("Delete VAO ({}) and VBO ({}) ", m_verticesVao, m_verticesVbo);
-
-		glDeleteVertexArrays(1, &m_verticesVao);
-		glDeleteBuffers(1, &m_verticesVbo);
-
-		m_shaderProgram.destroy();
 	}
 
 	void Renderer2D::initRenderSettings()
@@ -70,7 +80,7 @@ namespace STEditor
 		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
 		m_size = 0;
 		m_capacity = 7;
-		glBufferData(GL_ARRAY_BUFFER, m_capacity * sizeof(float), nullptr, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, m_capacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
@@ -81,6 +91,11 @@ namespace STEditor
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		APP_INFO("Created Line VAO({}) and VBO({})", m_verticesVao, m_verticesVbo);
+	}
+
+	void Renderer2D::initFont()
+	{
+
 	}
 
 	void Renderer2D::onRenderStart()
@@ -305,21 +320,14 @@ namespace STEditor
 			double xpos, ypos;
 			glfwGetCursorPos(m_window, &xpos, &ypos);
 
-			m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_easingMeterToPixel.value()));
-
-			float h = m_orthoSize;
-			float w = m_aspectRatio * h;
-
-			m_projection = glm::ortho(-w, w, -h, h, m_zNear, m_zFar);
+			buildMVPMatrix();
 
 			Vector2 currentMouse = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
 
 			Vector2 delta = m_scrollMouseStart - currentMouse;
 			m_cameraPosition += glm::vec3(delta.x, delta.y, 0.0f);
-		}
-		else
-		{
-			m_scrollMouseStart.clear();
+
+			updateScreenAABB();
 		}
 	}
 
@@ -359,6 +367,23 @@ namespace STEditor
 		float ndcX2 = (2.0f * static_cast<float>(x2) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
 		float ndcY2 = 1.0f - (2.0f * static_cast<float>(y2) / static_cast<float>(m_frameBufferHeight));
 
+		float minX = ndcX1;
+		float maxX = ndcX2;
+		float minY = ndcY1;
+		float maxY = ndcY2;
+
+		if (minX > maxX)
+			std::swap(minX, maxX);
+		if (minY > maxY)
+			std::swap(minY, maxY);
+
+		bool xOut = maxX < -1.0f || minX > 1.0f;
+		bool yOut = maxY < -1.0f || minY > 1.0f;
+
+		bool collide = !(xOut || yOut);
+		if (!collide)
+			return;
+
 		pushVector(m_ndcLines, { ndcX1, ndcY1 });
 		pushColor(m_ndcLines, color);
 		pushVector(m_ndcLines, { ndcX2, ndcY2 });
@@ -371,6 +396,25 @@ namespace STEditor
 		float ndcY1 = 1.0f - (2.0f * static_cast<float>(y1) / static_cast<float>(m_frameBufferHeight));
 		float ndcX2 = (2.0f * static_cast<float>(x2) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
 		float ndcY2 = 1.0f - (2.0f * static_cast<float>(y2) / static_cast<float>(m_frameBufferHeight));
+
+		float minX = ndcX1;
+		float maxX = ndcX2;
+		float minY = ndcY1;
+		float maxY = ndcY2;
+
+		if (minX > maxX)
+			std::swap(minX, maxX);
+		if (minY > maxY)
+			std::swap(minY, maxY);
+
+		bool xOut = maxX < -1.0f || minX > 1.0f;
+		bool yOut = maxY < -1.0f || minY > 1.0f;
+
+		bool collide = !(xOut || yOut);
+		if (!collide)
+			return;
+
+
 		Color color(r, g, b, a);
 
 		pushVector(m_ndcLines, { ndcX1, ndcY1 });
@@ -383,6 +427,10 @@ namespace STEditor
 	{
 		float ndcX = (2.0f * static_cast<float>(x) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
 		float ndcY = 1.0f - (2.0f * static_cast<float>(y) / static_cast<float>(m_frameBufferHeight));
+
+		if (!(Math::isInRange(ndcX, -1.0f, 1.0f) &&
+			Math::isInRange(ndcY, -1.0f, 1.0f)))
+			return;
 
 		pushVector(m_ndcPoints, { ndcX, ndcY });
 		pushColor(m_ndcPoints, color);
@@ -410,6 +458,9 @@ namespace STEditor
 
 	void Renderer2D::point(const Vector2& position, const Color& color, float size)
 	{
+		if (!AABB::collide(m_screenAABB, position))
+			return;
+
 		pushVector(m_points, position);
 		pushColor(m_points, color);
 	}
@@ -426,6 +477,9 @@ namespace STEditor
 
 	void Renderer2D::line(const Vector2& start, const Vector2& end, const Color& color)
 	{
+		if (!AABB::collide(m_screenAABB, start, end))
+			return;
+
 		pushVector(m_lines, start);
 		pushColor(m_lines, color);
 		pushVector(m_lines, end);
@@ -712,6 +766,11 @@ namespace STEditor
 	{
 		CORE_ASSERT(shape != nullptr, "Null reference of shape");
 
+		AABB aabb = AABB::fromShape(transform, shape);
+
+		if (!aabb.collide(m_screenAABB))
+			return;
+
 		switch (shape->type())
 		{
 		case ShapeType::Polygon:
@@ -930,6 +989,8 @@ namespace STEditor
 			}
 			break;
 		case 3:
+		{
+
 			MultiCommandsDraw draw;
 			pushVector(draw.vertices, simplex.vertices[0].result);
 			pushColor(draw.vertices, lineColor);
@@ -950,17 +1011,18 @@ namespace STEditor
 				Vector2 offset = simplex.vertices[0].result - center;
 				offset = offset.normal() * 0.3f;
 				text(simplex.vertices[0].result, color, 0, fontSize, offset);
-				
+
 				offset = simplex.vertices[1].result - center;
 				offset = offset.normal() * 0.3f;
 				text(simplex.vertices[1].result, color, 1, fontSize, offset);
-				
+
 				offset = simplex.vertices[2].result - center;
 				offset = offset.normal() * 0.3f;
 				text(simplex.vertices[2].result, color, 2, fontSize, offset);
-				
+
 			}
 			break;
+		}
 		default:
 			assert(false && "Simplex count must be less than 3");
 			break;
@@ -969,19 +1031,27 @@ namespace STEditor
 
 	void Renderer2D::polytope(const std::vector<Vector2>& points, const Color& color, float pointSize, const unsigned int& indexSize, bool showIndex)
 	{
+		MultiCommandsDraw draw;
+		draw.pointSize = pointSize;
+		draw.commands.push_back(GL_LINE_LOOP);
+		draw.commands.push_back(GL_POINTS);
 
 		Vector2 center = GeometryAlgorithm2D::computeCenter(points);
-		for (int i = 0; i < points.size(); ++i)
+		std::vector<Vector2> offsets;
+
+		for (const auto& point : points)
 		{
-			int j = (i + 1) % points.size();
-			Vector2 offset = (points[i] - center).normal() * 0.3f;
+			offsets.emplace_back((point - center).normal() * 0.3f);
+			pushVector(draw.vertices, point);
+			pushColor(draw.vertices, color);
+		}
 
-			point(points[i], color, pointSize);
-			point(points[j], color, pointSize);
-			line(points[i], points[j], color);
+		m_multiCommandsDraws.emplace_back(draw);
 
-			if (showIndex)
-				text(points[i], color, i, indexSize, offset);
+		//draw text
+		if(showIndex)
+		{
+			
 		}
 	}
 
@@ -1047,6 +1117,8 @@ namespace STEditor
 		m_frameBufferHeight = height;
 
 		glViewport(0, 0, width, height);
+
+		updateScreenAABB();
 	}
 
 	void Renderer2D::onKeyButton(int key, int scancode, int action, int mods)
@@ -1097,8 +1169,19 @@ namespace STEditor
 	}
 
 
+	void Renderer2D::updateScreenAABB()
+	{
+		Vector2 screenTopLeft = screenToWorld({ 0.0f, 0.0f });
+		Vector2 screenBottomRight = screenToWorld({ static_cast<real>(m_frameBufferWidth), static_cast<real>(m_frameBufferHeight) });
+
+		m_screenAABB = AABB::fromBox(screenTopLeft, screenBottomRight);
+	}
+
 	void Renderer2D::onZoomView(float xoffset, float yoffset)
 	{
+		if (!m_easingMeterToPixel.isFinished())
+			return;
+
 		double xpos, ypos;
 		glfwGetCursorPos(m_window, &xpos, &ypos);
 		m_scrollMouseStart = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
@@ -1126,6 +1209,8 @@ namespace STEditor
 			m_cameraPosition += glm::vec3(scrollDelta.x, scrollDelta.y, 0.0f);
 
 			m_scrollMouseStart.clear();
+
+			updateScreenAABB();
 		}
 	}
 

@@ -17,6 +17,7 @@ namespace STEditor
 		void onUnLoad() override;
 		void onUpdate(float deltaTime) override;
 		void onRender(Renderer2D& renderer) override;
+		void onRenderUI() override;
 		void onKeyButton(GLFWwindow* window, Renderer2D& renderer, int key, int scancode, int action, int mods) override;
 		void onMouseButton(GLFWwindow* window, Renderer2D& renderer, int button, int action, int mods) override;
 		void onMouseMoved(GLFWwindow* window, Renderer2D& renderer, double xpos, double ypos) override;

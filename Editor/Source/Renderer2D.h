@@ -102,7 +102,6 @@ namespace STEditor
 	class Renderer2D
 	{
 	public:
-
 		Renderer2D(GLFWwindow* window);
 		~Renderer2D();
 
@@ -155,7 +154,7 @@ namespace STEditor
 
 		void simplex(const Simplex& simplex, const Color& color, bool showIndex = true, const unsigned int& fontSize = 18);
 		void polytope(const std::vector<Vector2>& points,
-			const Color& color, float pointSize = 16, const unsigned int& indexSize = 18,
+			const Color& color, float pointSize = 8, const unsigned int& indexSize = 18,
 			bool showIndex = true);
 
 		Vector2 worldToScreen(const Vector2& worldPos) const;
@@ -177,6 +176,7 @@ namespace STEditor
 		float& scaleRatio() { return m_scaleRatio; }
 
 	private:
+		void updateScreenAABB();
 		void onZoomView(float xoffset, float yoffset);
 		void onTranslateView(float x, float y);
 		void buildMVPMatrix();
@@ -184,7 +184,9 @@ namespace STEditor
 		void pushVector(std::vector<float>& lines, const Vector2& vec);
 		void pushColor(std::vector<float>& lines, const Color& color);
 
+		void initShaders();
 		void initRenderSettings();
+		void initFont();
 
 		bool m_smoothZooming = false;
 
@@ -208,7 +210,7 @@ namespace STEditor
 		GLFWwindow* m_window = nullptr;
 
 		float m_meterToPixel = 100.0f;
-		float m_scaleRatio = 0.1f;
+		float m_scaleRatio = 0.3f;
 		float m_zoomingDuration = 0.3f;
 
 		glm::vec3 m_translationStartPos = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -242,6 +244,8 @@ namespace STEditor
 		size_t m_capacity = 7;
 		size_t m_size = 0;
 		int m_roundPointSampleCount = 12;
+
+		AABB m_screenAABB;
 	};
 
 	
