@@ -1,5 +1,4 @@
 #include "CurveScene.h"
-#include "RenderSFMLImpl.h"
 
 namespace STEditor
 {

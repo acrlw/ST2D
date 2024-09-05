@@ -1,9 +1,5 @@
 ﻿#include "ST2DEditor.h"
 
-#include "imgui-SFML.h"
-#include "RenderSFMLImpl.h"
-
-
 namespace STEditor
 {
 	ST2DEditor::ST2DEditor()
@@ -300,8 +296,8 @@ namespace STEditor
 		ImGui::SeparatorText("Camera");
 		ImGui::Columns(2, nullptr);
 
-		ImGui::Checkbox("Grid Lines", &m_renderer2D->gridVisible());
-		ImGui::Checkbox("Show Numbers", &m_renderer2D->coordsScaleVisible());
+		ImGui::Checkbox("Grid Lines", &m_referenceLayer.gridVisible());
+		ImGui::Checkbox("Show Numbers", &m_referenceLayer.coordsVisible());
 		ImGui::Checkbox("User Draw", &m_userDrawVisible);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Smooth Zooming", &m_renderer2D->smoothZooming());

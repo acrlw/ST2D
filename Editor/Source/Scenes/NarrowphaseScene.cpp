@@ -42,39 +42,45 @@ namespace STEditor
 
 	void NarrowphaseScene::onKeyButton(GLFWwindow* window, Renderer2D& renderer, int key, int scancode, int action, int mods)
 	{
-		//if (event.mouseButton.button == sf::Mouse::Left)
-		//{
-		//	Vector2 mousePos = m_settings.camera->screenToWorld(Vector2(event.mouseButton.x, event.mouseButton.y));
-		//	Vector2 p1 = tf1.inverseTranslatePoint(mousePos);
-		//	Vector2 p2 = tf2.inverseTranslatePoint(mousePos);
-		//	if (rect.contains(p1))
-		//	{
-		//		selectedTransform = &tf1;
-		//		oldTransform = tf1;
-		//		mouseStart = mousePos;
-		//	}
-		//	else if (ellipse.contains(p2))
-		//	{
-		//		selectedTransform = &tf2;
-		//		oldTransform = tf2;
-		//		mouseStart = mousePos;
-		//	}
-		//}
+		
+
 	}
 
 	void NarrowphaseScene::onMouseButton(GLFWwindow* window, Renderer2D& renderer, int button, int action, int mods)
 	{
-		//selectedTransform = nullptr;
+		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+		{
+			double xpos, ypos;
+			glfwGetCursorPos(window, &xpos, &ypos);
+			Vector2 mousePos = renderer.screenToWorld({ static_cast<real>(xpos) , static_cast<real>(ypos)});
+			Vector2 p1 = tf1.inverseTranslatePoint(mousePos);
+			Vector2 p2 = tf2.inverseTranslatePoint(mousePos);
+			if (rect.contains(p1))
+			{
+				selectedTransform = &tf1;
+				oldTransform = tf1;
+				mouseStart = mousePos;
+			}
+			else if (ellipse.contains(p2))
+			{
+				selectedTransform = &tf2;
+				oldTransform = tf2;
+				mouseStart = mousePos;
+			}
+		}
+		if (action == GLFW_RELEASE)
+			selectedTransform = nullptr;
 	}
 
 	void NarrowphaseScene::onMouseMoved(GLFWwindow* window, Renderer2D& renderer, double xpos, double ypos)
 	{
-		//if (selectedTransform != nullptr)
-		//{
-		//	Vector2 pos(event.mouseMove.x, event.mouseMove.y);
-		//	Vector2 currentMousePos = m_settings.camera->screenToWorld(pos);
+		if (selectedTransform != nullptr)
+		{
+			double xpos, ypos;
+			glfwGetCursorPos(window, &xpos, &ypos);
+			Vector2 currentMousePos = renderer.screenToWorld({ static_cast<real>(xpos) , static_cast<real>(ypos) });
 
-		//	selectedTransform->position = oldTransform.position + (currentMousePos - mouseStart);
-		//}
+			selectedTransform->position = oldTransform.position + (currentMousePos - mouseStart);
+		}
 	}
 }

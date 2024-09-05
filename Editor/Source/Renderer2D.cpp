@@ -120,8 +120,6 @@ namespace STEditor
 	{
 		buildMVPMatrix();
 
-		drawGridScaleLines();
-
 		onRenderStart();
 
 		GLint previousDepthFunc;
@@ -981,31 +979,6 @@ namespace STEditor
 	float Renderer2D::pixelToMeter() const
 	{
 		return 1.0f / m_meterToPixel;
-	}
-
-	void Renderer2D::drawGridScaleLines()
-	{
-		if (!m_gridVisible)
-			return;
-
-		Color thin = DarkPalette::DarkGreen;
-		for (int i = -10; i <= 10; ++i)
-		{
-			if (i == 0)
-				thin = DarkPalette::Green;
-			else
-			{
-				thin = DarkPalette::DarkGreen;
-				thin.a = 100.0f / 255.0f;
-			}
-
-			Vector2 start = { -10.0f, static_cast<float>(i) };
-			Vector2 end = { 10.0f, static_cast<float>(i) };
-			line(start, end, thin);
-			start = { static_cast<float>(i), -10.0f };
-			end = { static_cast<float>(i), 10.0f };
-			line(start, end, thin);
-		}
 	}
 
 	void Renderer2D::onScale(GLFWwindow* window, float yOffset)

@@ -18,7 +18,6 @@
 #include "Scenes/EmptyScene.h"
 #include "Scenes/SplineScene.h"
 
-
 #include "ReferenceLayer.h"
 
 namespace STEditor

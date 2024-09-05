@@ -1,8 +1,6 @@
 #pragma once
 
 #include "ST2DCore.h"
-#include "Camera2D.h"
-#include "RenderSFMLImpl.h"
 #include "Renderer2D.h"
 
 namespace STEditor

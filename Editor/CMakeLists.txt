@@ -14,8 +14,6 @@ find_package(imgui CONFIG REQUIRED)
 find_package(Stb REQUIRED)
 find_package(GSL REQUIRED)
 find_package(Freetype REQUIRED)
-find_package(SFML CONFIG REQUIRED COMPONENTS graphics system window)
-find_package(ImGui-SFML CONFIG REQUIRED)
 
 link_directories(${CMAKE_BINARY_DIR}/lib)
 
@@ -47,8 +45,6 @@ target_link_libraries(ST2DEditor PRIVATE
     glm::glm-header-only
     imgui::imgui
     Freetype::Freetype
-    sfml-system sfml-network sfml-graphics sfml-window
-    ImGui-SFML::ImGui-SFML
     GSL::gsl GSL::gslcblas
 )
 

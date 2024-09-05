@@ -12,13 +12,12 @@ namespace STEditor
 
 		void onRender(Renderer2D& renderer);
 
+		bool& coordsVisible() { return m_coordsVisible; }
+		bool& gridVisible() { return m_gridVisible; }
 	private:
 
-		bool m_visible = true;
+		bool m_coordsVisible = true;
 		bool m_gridVisible = true;
-		bool m_axisVisible = true;
-
-		int m_axisPointCount = 100;
 
 
 	};

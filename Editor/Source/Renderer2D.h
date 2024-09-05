@@ -165,12 +165,9 @@ namespace STEditor
 		float meterToPixel() const;
 		float pixelToMeter() const;
 
-		bool& gridVisible() { return m_gridVisible; }
 		bool& smoothZooming() { return m_smoothZooming; }
-		bool& coordsScaleVisible() { return m_coordsScaleVisible; }
 
 	private:
-		void drawGridScaleLines();
 
 		void onScale(GLFWwindow* window, float yOffset);
 		void onTranslateView(GLFWwindow* window, float x, float y);
@@ -181,9 +178,7 @@ namespace STEditor
 
 		void initRenderSettings();
 
-		bool m_gridVisible = true;
 		bool m_smoothZooming = false;
-		bool m_coordsScaleVisible = false;
 
 		int m_frameBufferWidth = 1920;
 		int m_frameBufferHeight = 1080;
