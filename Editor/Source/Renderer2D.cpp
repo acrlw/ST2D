@@ -14,8 +14,7 @@ namespace STEditor
 		m_model = glm::mat4(1.0f);
 		buildMVPMatrix();
 
-		m_easingMeterToPixel.setEasingFunction(EasingFunction::easeOutCubic);
-
+		m_easingMeterToPixel.setEasingFunction(EasingFunction::easeOutExpo);
 
 		updateScreenAABB();
 	}
@@ -309,23 +308,28 @@ namespace STEditor
 
 	void Renderer2D::onUpdate(float deltaTime)
 	{
+		bool finished = m_easingMeterToPixel.isFinished();
+
 		if(m_smoothZooming)
 			m_easingMeterToPixel.update(deltaTime);
 		else
 			m_easingMeterToPixel.finish();
 
-		bool finished = m_easingMeterToPixel.isFinished();
 		if (!finished)
 		{
-			double xpos, ypos;
-			glfwGetCursorPos(m_window, &xpos, &ypos);
+			m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_easingMeterToPixel.value()));
 
-			buildMVPMatrix();
+			float h = m_orthoSize;
+			float w = m_aspectRatio * h;
 
-			Vector2 currentMouse = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
+			m_projection = glm::ortho(-w, w, -h, h, m_zNear, m_zFar);
+
+			Vector2 currentMouse = screenToWorld(m_scrollMouseScreenStart);
 
 			Vector2 delta = m_scrollMouseStart - currentMouse;
 			m_cameraPosition += glm::vec3(delta.x, delta.y, 0.0f);
+
+			m_view = glm::lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
 
 			updateScreenAABB();
 		}
@@ -990,7 +994,6 @@ namespace STEditor
 			break;
 		case 3:
 		{
-
 			MultiCommandsDraw draw;
 			pushVector(draw.vertices, simplex.vertices[0].result);
 			pushColor(draw.vertices, lineColor);
@@ -1002,11 +1005,11 @@ namespace STEditor
 			draw.commands.push_back(GL_LINE_LOOP);
 			draw.commands.push_back(GL_POINTS);
 
+			m_multiCommandsDraws.emplace_back(draw);
 
 			if (showIndex)
 			{
-				Vector2 center = (simplex.vertices[0].result + simplex.vertices[1].result + simplex.vertices[2].result)
-					/ 3.0f;
+				Vector2 center = 1.0f / 3.0f * (simplex.vertices[0].result + simplex.vertices[1].result + simplex.vertices[2].result);
 
 				Vector2 offset = simplex.vertices[0].result - center;
 				offset = offset.normal() * 0.3f;
@@ -1169,6 +1172,11 @@ namespace STEditor
 	}
 
 
+	AABB Renderer2D::screenAABB() const
+	{
+		return m_screenAABB;
+	}
+
 	void Renderer2D::updateScreenAABB()
 	{
 		Vector2 screenTopLeft = screenToWorld({ 0.0f, 0.0f });
@@ -1179,12 +1187,10 @@ namespace STEditor
 
 	void Renderer2D::onZoomView(float xoffset, float yoffset)
 	{
-		if (!m_easingMeterToPixel.isFinished())
-			return;
-
 		double xpos, ypos;
 		glfwGetCursorPos(m_window, &xpos, &ypos);
-		m_scrollMouseStart = screenToWorld({ static_cast<float>(xpos), static_cast<float>(ypos) });
+		m_scrollMouseScreenStart = { static_cast<float>(xpos), static_cast<float>(ypos) };
+		m_scrollMouseStart = screenToWorld(m_scrollMouseScreenStart);
 
 		m_meterToPixel *= 1.0f + yoffset * m_scaleRatio;
 		m_meterToPixel = std::clamp(m_meterToPixel, 0.1f, 5000.0f);
@@ -1209,6 +1215,8 @@ namespace STEditor
 			m_cameraPosition += glm::vec3(scrollDelta.x, scrollDelta.y, 0.0f);
 
 			m_scrollMouseStart.clear();
+
+			m_view = glm::lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
 
 			updateScreenAABB();
 		}
@@ -1236,6 +1244,9 @@ namespace STEditor
 
 		m_cameraPosition = pos;
 
+		m_view = glm::lookAt(m_cameraPosition, m_cameraPosition + m_cameraFront, m_cameraUp);
+
+		updateScreenAABB();
 	}
 
 	void Renderer2D::buildMVPMatrix()

@@ -19,6 +19,7 @@ namespace STEditor
 		bool m_coordsVisible = true;
 		bool m_gridVisible = true;
 
+		int m_gridMaxPoint = 100;
 
 	};
 }

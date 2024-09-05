@@ -175,6 +175,8 @@ namespace STEditor
 		bool& smoothZooming() { return m_smoothZooming; }
 		float& scaleRatio() { return m_scaleRatio; }
 
+		AABB screenAABB() const;
+
 	private:
 		void updateScreenAABB();
 		void onZoomView(float xoffset, float yoffset);
@@ -197,6 +199,7 @@ namespace STEditor
 		float m_orthoSize = 4.0f;
 		float m_orthoSizeScaleRatio = 0.15f;
 		Vector2 m_scrollMouseStart;
+		Vector2 m_scrollMouseScreenStart;
 
 		bool m_isTranslateView = false;
 		bool m_translationStart = false;
@@ -210,7 +213,7 @@ namespace STEditor
 		GLFWwindow* m_window = nullptr;
 
 		float m_meterToPixel = 100.0f;
-		float m_scaleRatio = 0.3f;
+		float m_scaleRatio = 0.1f;
 		float m_zoomingDuration = 0.3f;
 
 		glm::vec3 m_translationStartPos = glm::vec3(0.0f, 0.0f, 0.0f);
