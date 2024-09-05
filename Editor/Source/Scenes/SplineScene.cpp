@@ -37,18 +37,18 @@ namespace STEditor
 		ImGui::End();
 	}
 
-	void SplineScene::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
+	void SplineScene::onKeyButton(GLFWwindow* window, Renderer2D& renderer, int key, int scancode, int action, int mods)
 	{
 
 	}
 
-	void SplineScene::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
+	void SplineScene::onMouseMoved(GLFWwindow* window, Renderer2D& renderer, double xpos, double ypos)
 	{
 
 	}
 
 
-	void SplineScene::onMouseButton(GLFWwindow* window, int button, int action, int mods)
+	void SplineScene::onMouseButton(GLFWwindow* window, Renderer2D& renderer, int button, int action, int mods)
 	{
 
 	}

@@ -7,18 +7,11 @@
 
 namespace STEditor
 {
-	struct SceneSettings
-	{
-		Camera2D* camera = nullptr;
-		sf::Font* font = nullptr;
-		Renderer2D* renderer = nullptr;
-	};
-
 	class AbstractScene
 	{
 	public:
-		AbstractScene(const SceneSettings& settings, const std::string& name) :
-			m_settings(settings), m_name(name)
+		AbstractScene(const std::string& name) :
+			m_name(name)
 		{
 		}
 
@@ -32,15 +25,14 @@ namespace STEditor
 		virtual void onRender(Renderer2D& renderer) {};
 		virtual void onRenderUI() {}
 
-		virtual void onFrameBufferResize(GLFWwindow* window, int width, int height) {};
-		virtual void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods) {};
-		virtual void onMouseButton(GLFWwindow* window, int button, int action, int mods) {};
-		virtual void onMouseMoved(GLFWwindow* window, double xpos, double ypos) {};
-		virtual void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset) {};
+		virtual void onFrameBufferResize(GLFWwindow* window, Renderer2D& renderer, int width, int height) {};
+		virtual void onKeyButton(GLFWwindow* window, Renderer2D& renderer, int key, int scancode, int action, int mods) {};
+		virtual void onMouseButton(GLFWwindow* window, Renderer2D& renderer, int button, int action, int mods) {};
+		virtual void onMouseMoved(GLFWwindow* window, Renderer2D& renderer, double xpos, double ypos) {};
+		virtual void onMouseScroll(GLFWwindow* window, Renderer2D& renderer, double xoffset, double yoffset) {};
 
 	protected:
 		std::string m_name;
-		SceneSettings m_settings;
 	};
 
 }

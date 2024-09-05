@@ -10,24 +10,15 @@ namespace STEditor
 	{
 		m_sceneList = {
 			{
-				[&](const SceneSettings& settings)
-				{ return std::make_unique<HelloWorldScene>(settings); },
-				[&](const SceneSettings& settings)
-				{ return std::make_unique<CurveScene>(settings); },
-				[&](const SceneSettings& settings)
-				{ return std::make_unique<BroadphaseScene>(settings); },
-				[&](const SceneSettings& settings)
-				{ return std::make_unique<NarrowphaseScene>(settings); },
-				[&](const SceneSettings& settings)
-				{ return std::make_unique<EmptyScene>(settings); },
-				[&](const SceneSettings& settings)
-				{ return std::make_unique<SplineScene>(settings); },
-				[&](const SceneSettings& settings)
-				{ return std::make_unique<SpiralScene>(settings); }
+				[&]() { return std::make_unique<HelloWorldScene>(); },
+				[&]() { return std::make_unique<CurveScene>(); },
+				[&]() { return std::make_unique<BroadphaseScene>(); },
+				[&]() { return std::make_unique<NarrowphaseScene>(); },
+				[&]() { return std::make_unique<EmptyScene>(); },
+				[&]() { return std::make_unique<SplineScene>(); },
+				[&]() { return std::make_unique<SpiralScene>(); }
 			}
 		};
-
-		m_camera.setViewport(Viewport(Vector2(0, 0), Vector2(1920, 1080)));
 	}
 
 	void ST2DEditor::exec()
@@ -51,10 +42,21 @@ namespace STEditor
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		{
 			APP_ERROR("Failed to initialize GLAD");
+			glfwTerminate();
 			return;
 		}
 		glViewport(0, 0, 1920, 1080);
-		//set frame buffer size callback and use type trait to adapt
+		glPointSize(10.0f);
+		glEnable(GL_DEPTH_TEST);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glDepthFunc(GL_LEQUAL);
+
+		m_renderer2D = std::make_unique<Renderer2D>();
+
+		switchScene(m_currentSceneIndex);
 
 		glfwSetWindowUserPointer(m_window, this);
 		glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
@@ -83,8 +85,6 @@ namespace STEditor
 					app->onKeyButton(window, key, scancode, action, mods);
 			});
 
-
-
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -102,18 +102,6 @@ namespace STEditor
 		ImGui_ImplGlfw_InitForOpenGL(m_window, true);
 
 		ImGui_ImplOpenGL3_Init("#version 330");
-
-		m_renderer2D = std::make_unique<Renderer2D>();
-
-		switchScene(m_currentSceneIndex);
-
-		glPointSize(10.0f);
-		glEnable(GL_DEPTH_TEST);
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		glDepthFunc(GL_LEQUAL);
 
 
 		while (!glfwWindowShouldClose(m_window))
@@ -253,7 +241,7 @@ namespace STEditor
 			m_renderer2D->onFrameBufferResize(window, width, height);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onFrameBufferResize(window, width, height);
+			m_currentScene->onFrameBufferResize(window, *m_renderer2D, width, height);
 	}
 
 	void ST2DEditor::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -262,7 +250,7 @@ namespace STEditor
 			m_renderer2D->onKeyButton(window, key, scancode, action, mods);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onKeyButton(window, key, scancode, action, mods);
+			m_currentScene->onKeyButton(window, *m_renderer2D, key, scancode, action, mods);
 	}
 
 	void ST2DEditor::onMouseButton(GLFWwindow* window, int button, int action, int mods)
@@ -271,7 +259,7 @@ namespace STEditor
 			m_renderer2D->onMouseButton(window, button, action, mods);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onMouseButton(window, button, action, mods);
+			m_currentScene->onMouseButton(window, *m_renderer2D, button, action, mods);
 	}
 
 	void ST2DEditor::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
@@ -280,7 +268,7 @@ namespace STEditor
 			m_renderer2D->onMouseMoved(window, xpos, ypos);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onMouseMoved(window, xpos, ypos);
+			m_currentScene->onMouseMoved(window, *m_renderer2D, xpos, ypos);
 	}
 
 	void ST2DEditor::onMouseScroll(GLFWwindow* window, double xoffset, double yoffset)
@@ -289,7 +277,7 @@ namespace STEditor
 			m_renderer2D->onMouseScroll(window, xoffset, yoffset);
 
 		if (m_currentScene != nullptr)
-			m_currentScene->onMouseScroll(window, xoffset, yoffset);
+			m_currentScene->onMouseScroll(window, *m_renderer2D, xoffset, yoffset);
 	}
 
 	void ST2DEditor::onRenderUI()
@@ -312,11 +300,11 @@ namespace STEditor
 		ImGui::SeparatorText("Camera");
 		ImGui::Columns(2, nullptr);
 
-		ImGui::Checkbox("Grid Lines", &m_camera.gridScaleLineVisible());
-		ImGui::Checkbox("Show Numbers", &m_camera.coordinateScale());
+		ImGui::Checkbox("Grid Lines", &m_renderer2D->gridVisible());
+		ImGui::Checkbox("Show Numbers", &m_renderer2D->coordsScaleVisible());
 		ImGui::Checkbox("User Draw", &m_userDrawVisible);
 		ImGui::NextColumn();
-		ImGui::Checkbox("Smooth Zooming", &m_camera.smoothZoom());
+		ImGui::Checkbox("Smooth Zooming", &m_renderer2D->smoothZooming());
 		ImGui::SliderFloat("Zoom", &m_zoomFactor, 0.1f, 0.8f, "%.1f");
 		ImGui::Checkbox("Distance Check", &m_enableDistanceCheck);
 
@@ -363,6 +351,9 @@ namespace STEditor
 
 	void ST2DEditor::onUpdate(float deltaTime) const
 	{
+		if (m_renderer2D != nullptr)
+			m_renderer2D->onUpdate(deltaTime);
+
 		if (m_currentScene != nullptr)
 			m_currentScene->onUpdate(deltaTime);
 	}
@@ -371,12 +362,7 @@ namespace STEditor
 	{
 		clearAll();
 
-		SceneSettings settings;
-		settings.camera = &m_camera;
-		settings.font = &m_font;
-		settings.renderer = m_renderer2D.get();
-
-		m_currentScene = m_sceneList[index](settings);
+		m_currentScene = m_sceneList[index]();
 		m_currentScene->onLoad();
 
 	}

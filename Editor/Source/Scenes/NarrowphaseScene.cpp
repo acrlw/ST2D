@@ -40,7 +40,7 @@ namespace STEditor
 
 	}
 
-	void NarrowphaseScene::onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods)
+	void NarrowphaseScene::onKeyButton(GLFWwindow* window, Renderer2D& renderer, int key, int scancode, int action, int mods)
 	{
 		//if (event.mouseButton.button == sf::Mouse::Left)
 		//{
@@ -62,12 +62,12 @@ namespace STEditor
 		//}
 	}
 
-	void NarrowphaseScene::onMouseButton(GLFWwindow* window, int button, int action, int mods)
+	void NarrowphaseScene::onMouseButton(GLFWwindow* window, Renderer2D& renderer, int button, int action, int mods)
 	{
 		//selectedTransform = nullptr;
 	}
 
-	void NarrowphaseScene::onMouseMoved(GLFWwindow* window, double xpos, double ypos)
+	void NarrowphaseScene::onMouseMoved(GLFWwindow* window, Renderer2D& renderer, double xpos, double ypos)
 	{
 		//if (selectedTransform != nullptr)
 		//{

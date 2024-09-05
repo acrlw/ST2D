@@ -7,8 +7,8 @@ namespace STEditor
 	class EmptyScene : public AbstractScene
 	{
 	public:
-		explicit EmptyScene(const SceneSettings& settings)
-			: AbstractScene(settings, "EmptyScene")
+		explicit EmptyScene()
+			: AbstractScene("EmptyScene")
 		{
 		}
 

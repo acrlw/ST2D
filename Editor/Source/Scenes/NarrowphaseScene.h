@@ -7,8 +7,8 @@ namespace STEditor
 	class NarrowphaseScene : public AbstractScene
 	{
 	public:
-		explicit NarrowphaseScene(const SceneSettings& settings)
-			: AbstractScene(settings, "NarrowphaseScene")
+		explicit NarrowphaseScene()
+			: AbstractScene("NarrowphaseScene")
 		{
 		}
 
@@ -17,9 +17,9 @@ namespace STEditor
 		void onUnLoad() override;
 		void onUpdate(float deltaTime) override;
 		void onRender(Renderer2D& renderer) override;
-		void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods) override;
-		void onMouseButton(GLFWwindow* window, int button, int action, int mods) override;
-		void onMouseMoved(GLFWwindow* window, double xpos, double ypos) override;
+		void onKeyButton(GLFWwindow* window, Renderer2D& renderer, int key, int scancode, int action, int mods) override;
+		void onMouseButton(GLFWwindow* window, Renderer2D& renderer, int button, int action, int mods) override;
+		void onMouseMoved(GLFWwindow* window, Renderer2D& renderer, double xpos, double ypos) override;
 
 	private:
 		ST::Rectangle rect;

@@ -9,9 +9,9 @@ namespace STEditor
 		//renderer.thickLine({ -1.0f, -1.0f }, { 1.0f, 1.0f }, DarkPalette::Teal, 2.0f);
 		//renderer.thickLine({ -2.0f, -1.0f }, { 0.0f, 1.0f }, DarkPalette::Purple, 8.0f);
 		//renderer.line(100, 500, 500, 800, DarkPalette::Purple);
-		auto color = DarkPalette::DarkGreen;
-		color.a = 40.0f / 255.0f;
-		renderer.fillAndStroke({ {2.0f, 1.0f}, {1.0f, -1.0f}, {-1.0f, -1.0f},{-1.0f, 2.0f} }, color, DarkPalette::Purple, 1.0f);
+		//auto color = DarkPalette::DarkGreen;
+		//color.a = 40.0f / 255.0f;
+		//renderer.fillAndStroke({ {2.0f, 1.0f}, {1.0f, -1.0f}, {-1.0f, -1.0f},{-1.0f, 2.0f} }, color, DarkPalette::Purple, 1.0f);
 
 
 		//renderer.line({ -10.0f, 0.0f }, { 10.0f, 0.0f }, DarkPalette::Green);

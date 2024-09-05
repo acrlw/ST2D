@@ -8,8 +8,8 @@ namespace STEditor
 	{
 
 	public:
-		explicit SplineScene(const SceneSettings& settings)
-			: AbstractScene(settings, "SplineScene")
+		explicit SplineScene()
+			: AbstractScene("SplineScene")
 		{
 		}
 
@@ -19,9 +19,9 @@ namespace STEditor
 		void onUpdate(float deltaTime) override;
 		void onRender(Renderer2D& renderer) override;
 		void onRenderUI() override;
-		void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods) override;
-		void onMouseMoved(GLFWwindow* window, double xpos, double ypos) override;
-		void onMouseButton(GLFWwindow* window, int button, int action, int mods) override;
+		void onKeyButton(GLFWwindow* window, Renderer2D& renderer, int key, int scancode, int action, int mods) override;
+		void onMouseMoved(GLFWwindow* window, Renderer2D& renderer, double xpos, double ypos) override;
+		void onMouseButton(GLFWwindow* window, Renderer2D& renderer, int button, int action, int mods) override;
 
 
 	private:

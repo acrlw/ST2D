@@ -17,7 +17,7 @@
 #include "Scenes/HelloWorldScene.h"
 #include "Scenes/EmptyScene.h"
 #include "Scenes/SplineScene.h"
-#include <SFML/Graphics/Font.hpp>
+
 
 #include "ReferenceLayer.h"
 
@@ -65,22 +65,16 @@ namespace STEditor
 		void switchScene(int index);
 		void clearAll();
 
-
-
 		bool m_userDrawVisible = true;
-
 		bool m_cameraViewportMovement = false;
 		bool m_onDistanceCheck = false;
 
-
 		int m_currentSceneIndex = 2;
-
-		Camera2D m_camera;
 
 		std::array<const char*, 7> m_sceneName = { "HelloWorld", "Curve", "Broadphase", "Narrowphase", "Empty", "Spline", "Spiral" };
 
-		std::array<std::function<std::unique_ptr<AbstractScene> (const SceneSettings& settings)>, 7> m_sceneList;
-		std::unique_ptr<sf::RenderWindow> m_renderWindow;
+		std::array<std::function<std::unique_ptr<AbstractScene>()>, 7> m_sceneList;
+		
 
 		GLFWwindow* m_window;
 
@@ -92,10 +86,7 @@ namespace STEditor
 		Vector2 m_screenMousePos;
 
 		std::unique_ptr<AbstractScene> m_currentScene;
-		sf::Font m_font;
-
 		std::array<Vector2, 2> m_mouseArray;
-
 		std::unique_ptr<Renderer2D> m_renderer2D;
 
 		double m_previousTime;

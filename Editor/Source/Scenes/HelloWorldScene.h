@@ -8,8 +8,8 @@ namespace STEditor
 	class HelloWorldScene : public AbstractScene
 	{
 	public:
-		explicit HelloWorldScene(const SceneSettings& settings)
-			: AbstractScene(settings, "HelloWorldScene")
+		explicit HelloWorldScene()
+			: AbstractScene("HelloWorldScene")
 		{
 		}
 

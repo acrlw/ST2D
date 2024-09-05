@@ -75,7 +75,6 @@ namespace STEditor
 	{
 		std::vector<float> vertices;
 		Color fillColor;
-		Color strokeColor;
 		float thickness = 1.0f;
 	};
 
@@ -90,6 +89,7 @@ namespace STEditor
 		std::vector<float> vertices;
 		float size = 1.0f;
 	};
+
 
 
 
@@ -130,7 +130,6 @@ namespace STEditor
 		void shape(const Transform& transform, Shape* shape, const Color& color);
 		void polygon(const Transform& transform, Shape* shape, const Color& color);
 		void edge(const Transform& transform, Shape* shape, const Color& color);
-		void rectangle(const Transform& transform, Shape* shape, const Color& color);
 		void circle(const Transform& transform, Shape* shape, const Color& color);
 		void capsule(const Transform& transform, Shape* shape, const Color& color);
 		void ellipse(const Transform& transform, Shape* shape, const Color& color);
@@ -138,14 +137,6 @@ namespace STEditor
 
 		void aabb(const AABB& aabb, const Color& color);
 		void dashedAABB(const AABB& aabb, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
-
-		void dashedShape(const Transform& transform, Shape* shape, const Color& color);
-		void dashedPolygon(const Transform& transform, Shape* shape, const Color& color);
-		void dashedEdge(const Transform& transform, Shape* shape, const Color& color);
-		void dashedRectangle(const Transform& transform, Shape* shape, const Color& color);
-		void dashedCircle(const Transform& transform, Shape* shape, const Color& color);
-		void dashedCapsule(const Transform& transform, Shape* shape, const Color& color);
-		void dashedEllipse(const Transform& transform, Shape* shape, const Color& color);
 
 		void arrow(const Color& color, const float& size = 0.2f, const float& degree = 45);
 
@@ -163,6 +154,7 @@ namespace STEditor
 		Vector2 screenToWorld(const Vector2& screenPos) const;
 
 		void onRender();
+		void onUpdate(float deltaTime);
 
 		void onFrameBufferResize(GLFWwindow* window, int width, int height);
 		void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -170,6 +162,12 @@ namespace STEditor
 		void onMouseMoved(GLFWwindow* window, double xpos, double ypos);
 		void onMouseScroll(GLFWwindow* window, double xoffset, double yoffset);
 
+		float meterToPixel() const;
+		float pixelToMeter() const;
+
+		bool& gridVisible() { return m_gridVisible; }
+		bool& smoothZooming() { return m_smoothZooming; }
+		bool& coordsScaleVisible() { return m_coordsScaleVisible; }
 
 	private:
 		void drawGridScaleLines();
@@ -183,6 +181,10 @@ namespace STEditor
 
 		void initRenderSettings();
 
+		bool m_gridVisible = true;
+		bool m_smoothZooming = false;
+		bool m_coordsScaleVisible = false;
+
 		int m_frameBufferWidth = 1920;
 		int m_frameBufferHeight = 1080;
 
@@ -193,7 +195,7 @@ namespace STEditor
 
 		bool m_isTranslateView = false;
 		bool m_translationStart = false;
-		float m_translateSensitivity = 0.8f;
+		float m_translateSensitivity = 0.5f;
 		Vector2 m_mouseStart;
 		float m_zNear = 0.1f;
 		float m_zFar = 1000.0f;
@@ -227,6 +229,9 @@ namespace STEditor
 
 		unsigned int m_verticesVao;
 		unsigned int m_verticesVbo;
+
+		size_t m_capacity = 7;
+		size_t m_size = 0;
 	};
 
 	

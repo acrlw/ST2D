@@ -9,8 +9,8 @@ namespace STEditor
 	class CurveScene : public AbstractScene
 	{
 	public:
-		explicit CurveScene(const SceneSettings& settings)
-			: AbstractScene(settings, "CurveScene")
+		explicit CurveScene()
+			: AbstractScene("CurveScene")
 		{
 		}
 

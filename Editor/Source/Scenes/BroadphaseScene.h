@@ -12,8 +12,8 @@ namespace STEditor
 	class BroadphaseScene : public AbstractScene
 	{
 	public:
-		explicit BroadphaseScene(const SceneSettings& settings)
-			: AbstractScene(settings, "BroadphaseScene")
+		explicit BroadphaseScene()
+			: AbstractScene("BroadphaseScene")
 		{
 		}
 

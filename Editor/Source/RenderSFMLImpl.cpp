@@ -141,9 +141,9 @@ namespace STEditor
 		{
 			assert(shape != nullptr);
 			assert(shape->type() == ShapeType::Polygon);
+			auto polygon = static_cast<ST::Polygon*>(shape);
 
 			sf::ConvexShape convex;
-			auto polygon = static_cast<ST::Polygon*>(shape);
 			convex.setPointCount(polygon->vertices().size());
 			for (size_t i = 0; i < polygon->vertices().size(); ++i)
 			{
@@ -174,6 +174,7 @@ namespace STEditor
 			Vector2 center = (edge->startPoint() + edge->endPoint()) / 2.0f;
 			center += transform.position;
 			renderLine(window, camera, center, center + 0.1f * edge->normal(), RenderConstant::Yellow);
+
 		}
 
 		void RenderSFMLImpl::renderRectangle(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
@@ -208,9 +209,9 @@ namespace STEditor
 		{
 			assert(shape != nullptr);
 			assert(shape->type() == ShapeType::Capsule);
+			const Capsule* capsule = static_cast<Capsule*>(shape);
 			std::vector<sf::Vertex> vertices;
 
-			const Capsule* capsule = static_cast<Capsule*>(shape);
 			const Vector2 screenPos = camera.worldToScreen(transform.position);
 			int pointCounts = (RenderConstant::BasicCirclePointCount + camera.meterToPixel()) / 4;
 			sf::Vertex centerVertex = toVector2f(screenPos);
@@ -255,6 +256,7 @@ namespace STEditor
 			for (auto& elem : vertices)
 				elem.color = color;
 			window.draw(&vertices[1], vertices.size() - 1, sf::LinesStrip);
+
 		}
 
 		void RenderSFMLImpl::renderEllipse(sf::RenderWindow& window, Camera2D& camera, const Transform& transform,
@@ -262,9 +264,9 @@ namespace STEditor
 		{
 			assert(shape != nullptr);
 			assert(shape->type() == ShapeType::Ellipse);
+			const ST::Ellipse* ellipse = static_cast<ST::Ellipse*>(shape);
 			std::vector<sf::Vertex> vertices;
 
-			const ST::Ellipse* ellipse = static_cast<ST::Ellipse*>(shape);
 			const Vector2 screenPos = camera.worldToScreen(transform.position);
 			int pointCounts = (RenderConstant::BasicCirclePointCount + camera.meterToPixel()) / 2;
 
@@ -309,6 +311,7 @@ namespace STEditor
 			yP = transform.translatePoint(yP);
 			renderLine(window, camera, transform.position, xP, RenderConstant::Blue);
 			renderLine(window, camera, transform.position, yP, RenderConstant::Red);
+
 		}
 
 		void RenderSFMLImpl::renderAABB(sf::RenderWindow& window, Camera2D& camera, const AABB& aabb, const sf::Color& color)

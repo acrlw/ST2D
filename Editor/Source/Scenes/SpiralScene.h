@@ -8,8 +8,8 @@ namespace STEditor
 	class SpiralScene : public AbstractScene
 	{
 	public:
-		explicit SpiralScene(const SceneSettings& settings)
-			: AbstractScene(settings, "SpiralScene")
+		explicit SpiralScene()
+			: AbstractScene("SpiralScene")
 		{
 		}
 

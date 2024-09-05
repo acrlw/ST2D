@@ -65,6 +65,14 @@ namespace STEditor
 
 		glGenBuffers(1, &m_verticesVbo);
 		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
+		m_size = 0;
+		m_capacity = 7;
+		glBufferData(GL_ARRAY_BUFFER, m_capacity * sizeof(float), nullptr, GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -96,15 +104,136 @@ namespace STEditor
 
 		glBindVertexArray(m_verticesVao);
 		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+		m_size = vertices.size();
+		if (m_size > m_capacity)
+		{
+			m_capacity = m_size * 2;
+			glBufferData(GL_ARRAY_BUFFER, m_capacity * sizeof(float), nullptr, GL_STATIC_DRAW);
+		}
+		glBufferSubData(GL_ARRAY_BUFFER, 0, m_size * sizeof(float), vertices.data());
 		
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
-		glEnableVertexAttribArray(1);
-
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
+	void Renderer2D::onRender()
+	{
+		buildMVPMatrix();
+
+		drawGridScaleLines();
+
+		onRenderStart();
+
+		GLint previousDepthFunc;
+		glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
+		glDepthFunc(GL_ALWAYS);
+
+		glBindVertexArray(m_verticesVao);
+		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
+
+		m_shaderProgram.setUniformMat4f("model", m_model);
+		m_shaderProgram.setUniformMat4f("view", m_view);
+		m_shaderProgram.setUniformMat4f("projection", m_projection);
+
+		size_t lineSize = m_lines.size() / 7;
+		size_t offset = lineSize;
+		if (!m_lines.empty())
+			glDrawArrays(GL_LINES, 0, lineSize);
+
+
+		if (!m_thickLines.empty())
+		{
+			for (auto&& elem : m_thickLines)
+			{
+				glLineWidth(elem.thickness);
+				glDrawArrays(GL_LINES, offset, elem.vertices.size() / 7);
+				offset += elem.vertices.size() / 7;
+			}
+		}
+
+		if (!m_polyLines.empty())
+		{
+			for (auto&& elem : m_polyLines)
+			{
+				glLineWidth(elem.thickness);
+				if (elem.closed)
+					glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
+				else
+					glDrawArrays(GL_LINE_STRIP, offset, elem.vertices.size() / 7);
+				offset += elem.vertices.size() / 7;
+			}
+		}
+
+		if (!m_points.empty())
+		{
+			glPointSize(8.0f);
+			glDrawArrays(GL_POINTS, offset, m_points.size() / 7);
+			offset += m_points.size() / 7;
+		}
+
+		if (!m_fills.empty())
+		{
+			for (auto&& elem : m_fills)
+			{
+				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+				offset += elem.vertices.size() / 7;
+			}
+		}
+
+		if (!m_fillStrokes.empty())
+		{
+			for (auto&& elem : m_fillStrokes)
+			{
+				m_shaderProgram.setUniform1i("isFillMode", 0);
+
+				glLineWidth(elem.thickness);
+				glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
+
+				m_shaderProgram.setUniform1i("isFillMode", 1);
+				m_shaderProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+
+				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+
+				offset += elem.vertices.size() / 7;
+			}
+			m_shaderProgram.setUniform1i("isFillMode", 0);
+		}
+
+		if (!m_ndcLines.empty())
+		{
+			glm::mat4 identity = glm::mat4(1.0f);
+
+			glLineWidth(1.0f);
+
+			m_shaderProgram.setUniformMat4f("model", identity);
+			m_shaderProgram.setUniformMat4f("view", identity);
+			m_shaderProgram.setUniformMat4f("projection", identity);
+
+			glDrawArrays(GL_LINES, offset, m_ndcLines.size() / 7);
+			offset += m_ndcLines.size() / 7;
+		}
+
+		if (!m_ndcPoints.empty())
+		{
+			glm::mat4 identity = glm::mat4(1.0f);
+
+			glPointSize(8.0f);
+			m_shaderProgram.setUniformMat4f("model", identity);
+			m_shaderProgram.setUniformMat4f("view", identity);
+			m_shaderProgram.setUniformMat4f("projection", identity);
+
+			glDrawArrays(GL_POINTS, offset, m_ndcPoints.size() / 7);
+			offset += m_ndcPoints.size() / 7;
+		}
+
+		glDepthFunc(previousDepthFunc);
+
+		onRenderEnd();
+	}
+
+	void Renderer2D::onUpdate(float deltaTime)
+	{
+
 	}
 
 	void Renderer2D::onRenderEnd()
@@ -121,6 +250,15 @@ namespace STEditor
 		m_fillStrokes.clear();
 		m_ndcLines.clear();
 		m_ndcPoints.clear();
+
+		m_lines.shrink_to_fit();
+		m_points.shrink_to_fit();
+		m_thickLines.shrink_to_fit();
+		m_polyLines.shrink_to_fit();
+		m_fills.shrink_to_fit();
+		m_fillStrokes.shrink_to_fit();
+		m_ndcLines.shrink_to_fit();
+		m_ndcPoints.shrink_to_fit();
 	}
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, const Color& color)
@@ -185,6 +323,9 @@ namespace STEditor
 
 	void Renderer2D::fill(const std::vector<Vector2>& points, const Color& color)
 	{
+		if (points.size() < 2)
+			return;
+
 		Fill shape;
 		for(auto&& elem: points)
 		{
@@ -197,6 +338,9 @@ namespace STEditor
 	void Renderer2D::fillAndStroke(const std::vector<Vector2>& points, const Color& fillColor, const Color& strokeColor,
 		float thickness)
 	{
+		if (points.size() < 2)
+			return;
+
 		FillStroke shape;
 		for (auto&& elem : points)
 		{
@@ -330,6 +474,9 @@ namespace STEditor
 
 	void Renderer2D::polyThickLine(const std::vector<Vector2>& points, const Color& color, float thickness)
 	{
+		if (points.size() < 2)
+			return;
+
 		PolyLines lines;
 		for (auto&& elem : points)
 		{
@@ -343,11 +490,102 @@ namespace STEditor
 	void Renderer2D::polyDashedThickLine(const std::vector<Vector2>& points, const Color& color, float thickness,
 		float dashLength, float gapLength)
 	{
+		if (points.size() < 2)
+			return;
 
+		real dashResidual = 0.0f;
+		real gapResidual = 0.0f;
+		real dashedAndGap = dashLength + gapLength;
+		for (size_t i = 1; i < points.size(); ++i)
+		{
+			Vector2 p1 = points[i - 1];
+			Vector2 p2 = points[i];
+			Vector2 direction = p2 - p1;
+			real length = direction.length();
+			if (realEqual(length, 0.0f))
+				continue;
+
+			direction /= length;
+
+			Vector2 start = p1;
+
+			if (dashResidual > 0.0f)
+			{
+				if (dashResidual > length)
+				{
+					dashResidual -= length;
+					thickLine(p1, p2, color, thickness);
+					continue;
+				}
+
+				Vector2 end = start + direction * dashResidual;
+				thickLine(start, end, color, thickness);
+				length -= dashResidual;
+				dashResidual = 0.0f;
+
+				if (length > gapLength)
+				{
+					length -= gapLength;
+					start = end + direction * gapLength;
+				}
+				else
+				{
+					gapResidual = gapLength - length;
+					continue;
+				}
+			}
+
+			if (gapResidual > 0.0f)
+			{
+				if (gapResidual > length)
+				{
+					gapResidual -= length;
+					continue;
+				}
+				start += direction * gapResidual;
+				length -= gapResidual;
+				gapResidual = 0.0f;
+			}
+
+
+			bool finished = false;
+
+			while (!finished)
+			{
+				if (length < dashLength)
+				{
+					thickLine(start, p2, color, thickness);
+					dashResidual = dashLength - length;
+					gapResidual = 0.0f;
+					finished = true;
+				}
+				else if (length >= dashLength && length < dashedAndGap)
+				{
+					Vector2 end = start + direction * dashLength;
+					thickLine(start, end, color, thickness);
+					dashResidual = 0.0f;
+					gapResidual = dashedAndGap - length;
+					finished = true;
+				}
+				else
+				{
+					Vector2 end = start + direction * dashLength;
+					thickLine(start, end, color, thickness);
+					start = end + direction * gapLength;
+					dashResidual = 0.0f;
+					gapResidual = 0.0f;
+					length -= dashedAndGap;
+				}
+
+			}
+		}
 	}
 
 	void Renderer2D::polyClosedThickLines(const std::vector<Vector2>& points, const Color& color, float thickness)
 	{
+		if (points.size() < 2)
+			return;
+
 		PolyLines lines;
 		for (auto&& elem : points)
 		{
@@ -385,30 +623,132 @@ namespace STEditor
 
 	void Renderer2D::polygon(const Transform& transform, Shape* shape, const Color& color)
 	{
+		assert(shape != nullptr && shape->type() == ShapeType::Polygon);
+		auto polygon = static_cast<ST::Polygon*>(shape);
+		std::vector<Vector2> vertices;
+		vertices.reserve(polygon->vertices().size());
+		for (auto&& elem : polygon->vertices())
+			vertices.push_back(transform.translatePoint(elem));
+		Color fillColor = color;
+		fillColor.a = 38.0f / 255.0f;
+		fillAndStroke(vertices, fillColor, color);
 	}
 
 	void Renderer2D::edge(const Transform& transform, Shape* shape, const Color& color)
 	{
-	}
+		assert(shape != nullptr && shape->type() == ShapeType::Edge);
+		auto edge = static_cast<Edge*>(shape);
+		Vector2 p1 = edge->startPoint() + transform.position;
+		Vector2 p2 = edge->endPoint() + transform.position;
+		Vector2 center = (edge->startPoint() + edge->endPoint()) / 2.0f;
+		center += transform.position;
 
-	void Renderer2D::rectangle(const Transform& transform, Shape* shape, const Color& color)
-	{
+		point(p1, color);
+		point(p2, color);
+		line(p1, p2, color);
+		line(center, center + 0.1f * edge->normal(), DarkPalette::Yellow);
 	}
 
 	void Renderer2D::circle(const Transform& transform, Shape* shape, const Color& color)
 	{
+		assert(shape != nullptr && shape->type() == ShapeType::Circle);
+		const Circle* circle = static_cast<Circle*>(shape);
+		std::vector<Vector2> vertices;
+		int pointCount = 60 + static_cast<int>(meterToPixel());
+		vertices.reserve(pointCount);
+		for (int i = 0; i < pointCount; ++i)
+		{
+			real radian = Constant::DoublePi * static_cast<float>(i) / static_cast<float>(pointCount);
+			Complex rot(radian);
+			Vector2 point = rot.multiply(Vector2(1.0f, 0.0f)) * circle->radius();
+			vertices.emplace_back(transform.translatePoint(point));
+		}
+		Color fillColor = color;
+		fillColor.a = 38.0f / 255.0f;
+		fillAndStroke(vertices, fillColor, color);
 	}
 
 	void Renderer2D::capsule(const Transform& transform, Shape* shape, const Color& color)
 	{
+		assert(shape != nullptr && shape->type() == ShapeType::Capsule);
+		const Capsule* capsule = static_cast<Capsule*>(shape);
+		std::vector<Vector2> vertices;
+		int pointCount = 60 + static_cast<int>(meterToPixel());
+		vertices.reserve(pointCount);
+		pointCount /= 2;
+		float halfWidth = capsule->halfWidth();
+		float halfHeight = capsule->halfHeight();
+		bool isHorizontal = halfWidth > halfHeight;
+		float radius = halfWidth > halfHeight ? halfHeight : halfWidth;
+
+		auto sampling = [&](const Vector2& center, const real& startRadians, const real& endRadians)
+			{
+				real step = (endRadians - startRadians) / static_cast<float>(pointCount);
+				for (real radian = startRadians; radian <= endRadians; radian += step)
+				{
+					Vector2 point(radius * Math::cosx(radian), radius * Math::sinx(radian));
+					point += center;
+					const Vector2 worldPos = Complex(transform.rotation).multiply(point) + transform.position;
+					vertices.emplace_back(worldPos);
+				}
+			};
+		if (isHorizontal)
+		{
+			sampling((capsule->bottomLeft() + capsule->topLeft()) / 2.0f, Math::radians(90),
+				Math::radians(270));
+			sampling((capsule->topRight() + capsule->bottomRight()) / 2.0f, Math::radians(270),
+				Math::radians(450));
+		}
+		else
+		{
+			sampling((capsule->topLeft() + capsule->topRight()) / 2.0f, Math::radians(0),
+				Math::radians(180));
+			sampling((capsule->bottomLeft() + capsule->bottomRight()) / 2.0f, Math::radians(180),
+				Math::radians(360));
+		}
+
+		Color fillColor = color;
+		fillColor.a = 38.0f / 255.0f;
+		fillAndStroke(vertices, fillColor, color);
 	}
 
 	void Renderer2D::ellipse(const Transform& transform, Shape* shape, const Color& color)
 	{
+		assert(shape != nullptr && shape->type() == ShapeType::Ellipse);
+		const ST::Ellipse* ellipse = static_cast<ST::Ellipse*>(shape);
+
+		std::vector<Vector2> vertices;
+		int pointCount = 60 + static_cast<int>(meterToPixel());
+		vertices.reserve(pointCount);
+
+		real step = Constant::DoublePi / static_cast<float>(pointCount);
+		real innerRadius = ellipse->A();
+		real outerRadius = ellipse->B();
+		if (ellipse->A() > ellipse->B())
+		{
+			innerRadius = ellipse->B();
+			outerRadius = ellipse->A();
+		}
+		for (real radian = 0; radian <= Constant::DoublePi; radian += step)
+		{
+			Vector2 point(outerRadius * Math::cosx(radian), innerRadius * Math::sinx(radian));
+			const Vector2 worldPos = transform.translatePoint(point);
+			vertices.emplace_back(worldPos);
+		}
+
+		Color fillColor = color;
+		fillColor.a = 38.0f / 255.0f;
+		fillAndStroke(vertices, fillColor, color);
 	}
 
 	void Renderer2D::orientation(const Transform& transform)
 	{
+		Vector2 xP(0.15f, 0);
+		Vector2 yP(0, 0.15f);
+		xP = transform.translatePoint(xP);
+		yP = transform.translatePoint(yP);
+		line(transform.position, xP, DarkPalette::Red);
+		line(transform.position, yP, DarkPalette::Green);
 	}
 
 	void Renderer2D::aabb(const AABB& aabb, const Color& color)
@@ -421,86 +761,110 @@ namespace STEditor
 		polyDashedLines({ aabb.topLeft(), aabb.topRight(), aabb.bottomRight(), aabb.bottomLeft(),aabb.topLeft() }, color, dashLength, gapLength);
 	}
 
-	void Renderer2D::dashedShape(const Transform& transform, Shape* shape, const Color& color)
-	{
-		CORE_ASSERT(shape != nullptr, "Null reference of shape");
-
-		switch (shape->type())
-		{
-		case ShapeType::Polygon:
-			dashedPolygon(transform, shape, color);
-			break;
-		case ShapeType::Edge:
-			dashedEdge(transform, shape, color);
-			break;
-		case ShapeType::Circle:
-			dashedCircle(transform, shape, color);
-			break;
-		case ShapeType::Capsule:
-			dashedCapsule(transform, shape, color);
-			break;
-		case ShapeType::Ellipse:
-			dashedEllipse(transform, shape, color);
-			break;
-		}
-	}
-
-	void Renderer2D::dashedPolygon(const Transform& transform, Shape* shape, const Color& color)
-	{
-	}
-
-	void Renderer2D::dashedEdge(const Transform& transform, Shape* shape, const Color& color)
-	{
-	}
-
-	void Renderer2D::dashedRectangle(const Transform& transform, Shape* shape, const Color& color)
-	{
-	}
-
-	void Renderer2D::dashedCircle(const Transform& transform, Shape* shape, const Color& color)
-	{
-	}
-
-	void Renderer2D::dashedCapsule(const Transform& transform, Shape* shape, const Color& color)
-	{
-	}
-
-	void Renderer2D::dashedEllipse(const Transform& transform, Shape* shape, const Color& color)
-	{
-	}
-
 	void Renderer2D::arrow(const Color& color, const float& size, const float& degree)
 	{
+
 	}
 
 	void Renderer2D::text(const Vector2& position, const Color& color, const std::string& text,
 		const unsigned int& size, const Vector2& offset, bool centered)
 	{
+
 	}
 
 	void Renderer2D::text(const Vector2& position, const Color& color, int value, const unsigned int& size,
 		const Vector2& offset, bool centered)
 	{
+
 	}
 
 	void Renderer2D::text(const Vector2& position, const Color& color, float value, const unsigned int& size,
 		const Vector2& offset, bool centered)
 	{
+
 	}
 
 	void Renderer2D::text(const Vector2& position, const Color& color, unsigned int value, const unsigned int& size,
 		const Vector2& offset, bool centered)
 	{
+
 	}
 
 	void Renderer2D::simplex(const Simplex& simplex, const Color& color, bool showIndex,
 		const unsigned int& fontSize)
 	{
+		Color lineColor = color;
+		lineColor.a = 150.0f / 255.0f;
+
+		switch (simplex.count)
+		{
+		case 0:
+			break;
+		case 1:
+			point(simplex.vertices[0].result, color);
+			if (showIndex)
+				text(simplex.vertices[0].result, color, 0, fontSize);
+			break;
+		case 2:
+			point(simplex.vertices[0].result, color);
+			point(simplex.vertices[1].result, color);
+			line(simplex.vertices[0].result, simplex.vertices[1].result, lineColor);
+
+			if (showIndex)
+			{
+				Vector2 offset = simplex.vertices[1].result - simplex.vertices[0].result;
+				offset = -offset.perpendicular().normal() * 0.3f;
+				text(simplex.vertices[0].result, color, 0, fontSize, offset);
+				text(simplex.vertices[1].result, color, 1, fontSize, offset);
+			}
+			break;
+		case 3:
+			closedLines({ simplex.vertices[0].result, simplex.vertices[1].result, simplex.vertices[2].result }, lineColor);
+			point(simplex.vertices[0].result, color);
+			point(simplex.vertices[1].result, color);
+			point(simplex.vertices[2].result, color);
+
+			if (showIndex)
+			{
+				Vector2 center = (simplex.vertices[0].result + simplex.vertices[1].result + simplex.vertices[2].result)
+					/ 3.0f;
+
+				Vector2 offset = simplex.vertices[0].result - center;
+				offset = offset.normal() * 0.3f;
+				text(simplex.vertices[0].result, color, 0, fontSize, offset);
+				
+				offset = simplex.vertices[1].result - center;
+				offset = offset.normal() * 0.3f;
+				text(simplex.vertices[1].result, color, 1, fontSize, offset);
+				
+				offset = simplex.vertices[2].result - center;
+				offset = offset.normal() * 0.3f;
+				text(simplex.vertices[2].result, color, 2, fontSize, offset);
+				
+			}
+			break;
+		default:
+			assert(false && "Simplex count must be less than 3");
+			break;
+		}
 	}
 
 	void Renderer2D::polytope(const std::vector<Vector2>& points, const Color& color, float pointSize, const unsigned int& indexSize, bool showIndex)
 	{
 
+		Vector2 center = GeometryAlgorithm2D::computeCenter(points);
+		for (int i = 0; i < points.size(); ++i)
+		{
+			int j = (i + 1) % points.size();
+			Vector2 offset = (points[i] - center).normal() * 0.3f;
+
+			point(points[i], color, pointSize);
+			point(points[j], color, pointSize);
+			line(points[i], points[j], color);
+
+			if (showIndex)
+				text(points[i], color, i, indexSize, offset);
+		}
 	}
 
 	Vector2 Renderer2D::worldToScreen(const Vector2& worldPos) const
@@ -559,121 +923,6 @@ namespace STEditor
 		m_polyLines.emplace_back(lines);
 	}
 
-	void Renderer2D::onRender()
-	{
-		buildMVPMatrix();
-
-		drawGridScaleLines();
-
-		onRenderStart();
-
-		GLint previousDepthFunc;
-		glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
-		glDepthFunc(GL_ALWAYS);
-
-		glBindVertexArray(m_verticesVao);
-		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
-
-		m_shaderProgram.setUniformMat4f("model", m_model);
-		m_shaderProgram.setUniformMat4f("view", m_view);
-		m_shaderProgram.setUniformMat4f("projection", m_projection);
-
-		size_t lineSize = m_lines.size() / 7;
-		size_t offset = lineSize;
-		if(!m_lines.empty())
-			glDrawArrays(GL_LINES, 0, lineSize);
-		
-
-		if (!m_thickLines.empty())
-		{
-			for(auto&& elem: m_thickLines)
-			{
-				glLineWidth(elem.thickness);
-				glDrawArrays(GL_LINES, offset, elem.vertices.size() / 7);
-				offset += elem.vertices.size() / 7;
-			}
-		}
-
-		if(!m_polyLines.empty())
-		{
-			for(auto&& elem: m_polyLines)
-			{
-				glLineWidth(elem.thickness);
-				if (elem.closed)
-					glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
-				else
-					glDrawArrays(GL_LINE_STRIP, offset, elem.vertices.size() / 7);
-				offset += elem.vertices.size() / 7;
-			}
-		}
-
-		if(!m_points.empty())
-		{
-			glPointSize(8.0f);
-			glDrawArrays(GL_POINTS, offset, m_points.size() / 7);
-			offset += m_points.size() / 7;
-		}
-
-		if (!m_fills.empty())
-		{
-			for (auto&& elem : m_fills)
-			{
-				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
-				offset += elem.vertices.size() / 7;
-			}
-		}
-
-		if (!m_fillStrokes.empty())
-		{
-			for (auto&& elem : m_fillStrokes)
-			{
-				m_shaderProgram.setUniform1i("isFillMode", 0);
-
-				glLineWidth(elem.thickness);
-				glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
-
-				m_shaderProgram.setUniform1i("isFillMode", 1);
-				m_shaderProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
-
-				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
-
-				offset += elem.vertices.size() / 7;
-			}
-			m_shaderProgram.setUniform1i("isFillMode", 0);
-		}
-
-		if (!m_ndcLines.empty())
-		{
-			glm::mat4 identity = glm::mat4(1.0f);
-
-			glLineWidth(1.0f);
-
-			m_shaderProgram.setUniformMat4f("model", identity);
-			m_shaderProgram.setUniformMat4f("view", identity);
-			m_shaderProgram.setUniformMat4f("projection", identity);
-
-			glDrawArrays(GL_LINES, offset, m_ndcLines.size() / 7);
-			offset += m_ndcLines.size() / 7;
-		}
-
-		if(!m_ndcPoints.empty())
-		{
-			glm::mat4 identity = glm::mat4(1.0f);
-
-			glPointSize(8.0f);
-			m_shaderProgram.setUniformMat4f("model", identity);
-			m_shaderProgram.setUniformMat4f("view", identity);
-			m_shaderProgram.setUniformMat4f("projection", identity);
-
-			glDrawArrays(GL_POINTS, offset, m_ndcPoints.size() / 7);
-			offset += m_ndcPoints.size() / 7;
-		}
-
-		glDepthFunc(previousDepthFunc);
-
-		onRenderEnd();
-	}
-
 	void Renderer2D::onFrameBufferResize(GLFWwindow* window, int width, int height)
 	{
 		m_frameBufferWidth = width;
@@ -724,8 +973,21 @@ namespace STEditor
 		onScale(window, y);
 	}
 
+	float Renderer2D::meterToPixel() const
+	{
+		return m_meterToPixel;
+	}
+
+	float Renderer2D::pixelToMeter() const
+	{
+		return 1.0f / m_meterToPixel;
+	}
+
 	void Renderer2D::drawGridScaleLines()
 	{
+		if (!m_gridVisible)
+			return;
+
 		Color thin = DarkPalette::DarkGreen;
 		for (int i = -10; i <= 10; ++i)
 		{
