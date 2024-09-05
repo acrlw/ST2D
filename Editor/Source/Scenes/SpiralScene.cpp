@@ -563,7 +563,7 @@ namespace STEditor
 				p2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, p2);
 			}
 
-			renderer.point(p0, DarkPalette::Gray, 3);
+			renderer.roundPoint(p0, DarkPalette::Gray);
 			renderer.dashedLine(p0, p1, DarkPalette::Gray, 0.01f, 0.01f);
 			renderer.dashedLine(p0, p2, DarkPalette::Gray, 0.01f, 0.01f);
 			drawCurvature(renderer, m_spiralRoundCurvatureStart, m_spiralRoundCurvatureEnd, color, false);
@@ -582,9 +582,6 @@ namespace STEditor
 
 			renderer.line(m_p01, ref1, DarkPalette::LightGray);
 			renderer.line(m_p10, ref2, DarkPalette::LightGray);
-			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p01, ref1, RenderConstant::LightGray);
-			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p10, ref2, RenderConstant::LightGray);
-
 
 			ref1 = Vector2(m_halfWidth, m_halfHeight - m_currentRadius);
 			ref2 = Vector2(m_p01.x, m_halfHeight - m_currentRadius);
@@ -593,21 +590,14 @@ namespace STEditor
 
 			renderer.line(ref1, ref2, DarkPalette::LightGray);
 			renderer.line(ref3, ref4, DarkPalette::LightGray);
-			//RenderSFMLImpl::renderLine(window, *m_settings.camera, ref1, ref2, RenderConstant::LightGray);
-			//RenderSFMLImpl::renderLine(window, *m_settings.camera, ref3, ref4, RenderConstant::LightGray);
 
 			ref1 = Vector2((m_halfWidth - m_currentRadius) * m_innerWidthFactor, m_roundCorner.y);
 			ref2 = Vector2(m_roundCorner.x, (m_halfHeight - m_currentRadius) * m_innerHeightFactor);
 
 			renderer.line(m_roundCenter, ref1, DarkPalette::LightGray);
 			renderer.line(m_roundCenter, ref2, DarkPalette::LightGray);
-			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCorner, ref1, RenderConstant::LightGray);
-			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCorner, ref2, RenderConstant::LightGray);
-
 			renderer.line(m_roundCenter, m_startRoundedPos, DarkPalette::LightGray);
 			renderer.line(m_roundCenter, m_endRoundedPos, DarkPalette::LightGray);
-			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCenter, m_startRoundedPos, RenderConstant::LightGray);
-			//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_roundCenter, m_endRoundedPos, RenderConstant::LightGray);
 
 		}
 	}
@@ -639,6 +629,7 @@ namespace STEditor
 		std::vector<Vector2> quadrant2 = curve;
 		std::vector<Vector2> quadrant3 = curve;
 		std::vector<Vector2> quadrant4 = curve;
+
 		std::ranges::transform(quadrant2, quadrant2.begin(), [](const Vector2& v) { return Vector2(-v.x, v.y); });
 		std::ranges::transform(quadrant3, quadrant3.begin(), [](const Vector2& v) { return Vector2(-v.x, -v.y); });
 		std::ranges::transform(quadrant4, quadrant4.begin(), [](const Vector2& v) { return Vector2(v.x, -v.y); });

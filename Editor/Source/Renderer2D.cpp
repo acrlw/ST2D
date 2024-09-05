@@ -308,12 +308,12 @@ namespace STEditor
 
 	void Renderer2D::onUpdate(float deltaTime)
 	{
-		bool finished = m_easingMeterToPixel.isFinished();
-
 		if(m_smoothZooming)
 			m_easingMeterToPixel.update(deltaTime);
 		else
 			m_easingMeterToPixel.finish();
+
+		bool finished = m_easingMeterToPixel.isFinished();
 
 		if (!finished)
 		{
@@ -1141,8 +1141,6 @@ namespace STEditor
 			{
 				m_isTranslateView = false;
 				m_translationStart = false;
-				m_translationStartPos = m_cameraPosition;
-				m_mouseStart.clear();
 			}
 		}
 	}
@@ -1170,7 +1168,6 @@ namespace STEditor
 	{
 		return 1.0f / m_meterToPixel;
 	}
-
 
 	AABB Renderer2D::screenAABB() const
 	{
@@ -1226,21 +1223,23 @@ namespace STEditor
 	{
 		if (!m_translationStart)
 		{
-			m_mouseStart = screenToWorld({ x, y });
+			m_mouseScreenStart.set(x, y);
 			m_translationStart = true;
 			m_translationStartPos = m_cameraPosition;
 			return;
 		}
 
-		Vector2 current = screenToWorld({ x, y });
-		float dx = current.x - m_mouseStart.x;
-		float dy = current.y - m_mouseStart.y;
+		Vector2 currentMouse(x, y);
+		currentMouse = screenToWorld(currentMouse);
 
-		dx *= -m_translateSensitivity;
-		dy *= -m_translateSensitivity;
+		Vector2 oldMouse = m_mouseScreenStart;
+		oldMouse = screenToWorld(oldMouse);
 
-		glm::vec3 delta = glm::vec3(dx, dy, 0.0f);
-		glm::vec3 pos = m_translationStartPos + delta;
+		Vector2 dMouse = currentMouse - oldMouse;
+
+		glm::vec3 delta = glm::vec3(dMouse.x, dMouse.y, 0.0f);
+
+		glm::vec3 pos = m_translationStartPos - delta;
 
 		m_cameraPosition = pos;
 

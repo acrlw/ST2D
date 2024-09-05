@@ -203,8 +203,8 @@ namespace STEditor
 
 		bool m_isTranslateView = false;
 		bool m_translationStart = false;
-		float m_translateSensitivity = 0.5f;
-		Vector2 m_mouseStart;
+
+		Vector2 m_mouseScreenStart;
 		float m_zNear = 0.1f;
 		float m_zFar = 1000.0f;
 		float m_aspectRatio = 16.0f / 9.0f;
