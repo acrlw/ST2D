@@ -56,6 +56,11 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Render");
 
+		Color color = DarkPalette::Yellow;
+		color.a = 150.0f / 255.0f;
+
+		renderer.point({ 1.0f, 1.0f }, color, static_cast<real>(m_pointRadius));
+
 		for(int i = 0; i < m_count; ++i)
 		{
 			if(m_showObjectId)
@@ -284,6 +289,7 @@ namespace STEditor
 			createShapes();
 		}
 
+		ImGui::SliderInt("Point Radius", &m_pointRadius, 1, 50);
 		ImGui::Checkbox("Show Object", &m_showObject);
 		ImGui::Checkbox("Show AABB", &m_showAABB);
 		ImGui::Checkbox("Show Grid", &m_showGrid);

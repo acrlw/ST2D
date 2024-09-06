@@ -11,7 +11,6 @@ namespace STEditor
 
 		initFont();
 
-		m_model = glm::mat4(1.0f);
 		buildViewProjectionMatrix();
 
 		m_easingMeterToPixel.setEasingFunction(EasingFunction::easeOutExpo);
@@ -26,7 +25,15 @@ namespace STEditor
 		glDeleteVertexArrays(1, &m_graphicsVAO);
 		glDeleteBuffers(1, &m_graphicsVBO);
 
+		glDeleteVertexArrays(1, &m_pointVAO);
+		glDeleteBuffers(1, &m_pointVBO);
+
+		glDeleteVertexArrays(1, &m_fontVAO);
+		glDeleteBuffers(1, &m_fontVBO);
+
 		m_graphicsProgram.destroy();
+		m_pointProgram.destroy();
+		m_fontProgram.destroy();
 
 		FT_Done_Face(m_ftFace);
 		FT_Done_FreeType(m_ftLibrary);
@@ -34,51 +41,20 @@ namespace STEditor
 
 	void Renderer2D::initShaders()
 	{
-		//read shader source from path res/shaders/vert.glsl
-		auto readShader = [](const std::string& path) -> std::string
-			{
-				std::ifstream file(path);
-				if (!file)
-				{
-					APP_ERROR("Unable to read shader from {}", path);
-					return "";
-				}
-				std::stringstream buffer;
-				buffer << file.rdbuf();
-				return buffer.str();
-			};
-
-		Shader graphicsVert, graphicsFrag;
-		Shader fontVert, fontFrag;
-
-		graphicsVert.source = readShader("./Resource/Shaders/vert.glsl");
-		graphicsFrag.source = readShader("./Resource/Shaders/frag.glsl");
-
-		fontVert.source = readShader("./Resource/Shaders/vert-font.vert");
-		fontFrag.source = readShader("./Resource/Shaders/frag-font.frag");
-
-		if (graphicsVert.source.empty())
-			APP_WARN("Graphics vertex shader is empty");
-
-		if (graphicsFrag.source.empty())
-			APP_WARN("Graphics fragment shader is empty");
-
-		if (fontVert.source.empty())
-			APP_WARN("Font vertex shader is empty");
-
-		if (fontFrag.source.empty())
-			APP_WARN("Font fragment shader is empty");
-
-		m_graphicsProgram.addVertexShader(graphicsVert);
-		m_graphicsProgram.addFragmentShader(graphicsFrag);
+		m_graphicsProgram.addVertexShader("./Resource/Shaders/vert-graphics.glsl");
+		m_graphicsProgram.addFragmentShader("./Resource/Shaders/frag-graphics.glsl");
 		m_graphicsProgram.compileShader();
 		m_graphicsProgram.link();
 
-		m_fontProgram.addVertexShader(fontVert);
-		m_fontProgram.addFragmentShader(fontFrag);
+		m_pointProgram.addVertexShader("./Resource/Shaders/vert-round-point.glsl");
+		m_pointProgram.addFragmentShader("./Resource/Shaders/frag-round-point.glsl");
+		m_pointProgram.compileShader();
+		m_pointProgram.link();
+
+		m_fontProgram.addVertexShader("./Resource/Shaders/vert-font.glsl");
+		m_fontProgram.addFragmentShader("./Resource/Shaders/frag-font.glsl");
 		m_fontProgram.compileShader();
 		m_fontProgram.link();
-
 	}
 
 	void Renderer2D::initRenderSettings()
@@ -90,13 +66,49 @@ namespace STEditor
 
 		glGenBuffers(1, &m_graphicsVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, m_graphicsVBO);
-		m_size = 0;
-		m_capacity = 7;
-		glBufferData(GL_ARRAY_BUFFER, m_capacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+		m_graphicsDataSize = 0;
+		m_graphicsDataCapacity = 7;
+		glBufferData(GL_ARRAY_BUFFER, m_graphicsDataCapacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+
+		m_pointProgram.use();
+
+		glGenVertexArrays(1, &m_pointVAO);
+		glBindVertexArray(m_pointVAO);
+
+		glGenBuffers(1, &m_pointVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_pointVBO);
+		m_pointDataSize = 0;
+		m_pointDataCapacity = 8;
+
+		glBufferData(GL_ARRAY_BUFFER, m_pointDataCapacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(7 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+
+		m_fontProgram.use();
+
+		glGenVertexArrays(1, &m_fontVAO);
+		glBindVertexArray(m_fontVAO);
+
+		glGenBuffers(1, &m_fontVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_fontVBO);
+		m_textDataSize = 0;
+		m_textDataCapacity = 8;
+
+		glBufferData(GL_ARRAY_BUFFER, m_textDataCapacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4 * sizeof(float)));
 		glEnableVertexAttribArray(1);
 
 		glBindVertexArray(0);
@@ -130,8 +142,6 @@ namespace STEditor
 		for (auto&& elem : m_polyLines)
 			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
 
-		vertices.insert(vertices.end(), m_points.begin(), m_points.end());
-
 		for(auto&& elem: m_fills)
 			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
 
@@ -143,7 +153,6 @@ namespace STEditor
 
 		vertices.insert(vertices.end(), m_ndcLines.begin(), m_ndcLines.end());
 
-		vertices.insert(vertices.end(), m_ndcPoints.begin(), m_ndcPoints.end());
 
 		for (auto&& elem : m_ndcMultiCommandsDraws)
 			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
@@ -152,41 +161,62 @@ namespace STEditor
 
 		glBindVertexArray(m_graphicsVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, m_graphicsVBO);
-		m_size = vertices.size();
-		if (m_size > m_capacity)
+		m_graphicsDataSize = vertices.size();
+		if (m_graphicsDataSize > m_graphicsDataCapacity)
 		{
-			m_capacity = m_size * 2;
-			glBufferData(GL_ARRAY_BUFFER, m_capacity * sizeof(float), nullptr, GL_STATIC_DRAW);
+			m_graphicsDataCapacity = m_graphicsDataSize * 2;
+			glBufferData(GL_ARRAY_BUFFER, m_graphicsDataCapacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 		}
-		glBufferSubData(GL_ARRAY_BUFFER, 0, m_size * sizeof(float), vertices.data());
-		
+		glBufferSubData(GL_ARRAY_BUFFER, 0, m_graphicsDataSize * sizeof(float), vertices.data());
+
+		vertices.clear();
+		vertices.insert(vertices.end(), m_points.begin(), m_points.end());
+		vertices.insert(vertices.end(), m_ndcPoints.begin(), m_ndcPoints.end());
+
+		m_pointProgram.use();
+
+		glBindVertexArray(m_pointVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_pointVBO);
+		m_pointDataSize = vertices.size();
+		if (m_pointDataSize > m_pointDataCapacity)
+		{
+			m_pointDataCapacity = m_pointDataSize * 2;
+			glBufferData(GL_ARRAY_BUFFER, m_pointDataCapacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+		}
+		glBufferSubData(GL_ARRAY_BUFFER, 0, m_pointDataSize * sizeof(float), vertices.data());
+
+		vertices.clear();
+
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
 	void Renderer2D::onRender()
 	{
-		m_graphicsProgram.use();
-
 		buildViewProjectionMatrix();
 
-		onRenderStart();
+		glm::mat4 identity = glm::mat4(1.0f);
 
 		GLint previousDepthFunc;
 		glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
 		glDepthFunc(GL_ALWAYS);
 
+		onRenderStart();
+
+		m_graphicsProgram.use();
 		glBindVertexArray(m_graphicsVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, m_graphicsVBO);
 
-		m_graphicsProgram.setUniformMat4f("model", m_model);
 		m_graphicsProgram.setUniformMat4f("view", m_view);
 		m_graphicsProgram.setUniformMat4f("projection", m_projection);
 
 		size_t lineSize = m_lines.size() / 7;
-		size_t offset = lineSize;
+		size_t offset = 0;
 		if (!m_lines.empty())
-			glDrawArrays(GL_LINES, 0, lineSize);
+		{
+			glDrawArrays(GL_LINES, offset, lineSize);
+			offset += lineSize;
+		}
 
 
 		if (!m_thickLines.empty())
@@ -210,13 +240,6 @@ namespace STEditor
 					glDrawArrays(GL_LINE_STRIP, offset, elem.vertices.size() / 7);
 				offset += elem.vertices.size() / 7;
 			}
-		}
-
-		if (!m_points.empty())
-		{
-			glPointSize(8.0f);
-			glDrawArrays(GL_POINTS, offset, m_points.size() / 7);
-			offset += m_points.size() / 7;
 		}
 
 		if (!m_fills.empty())
@@ -278,9 +301,6 @@ namespace STEditor
 			}
 		}
 
-		glm::mat4 identity = glm::mat4(1.0f);
-
-		m_graphicsProgram.setUniformMat4f("model", identity);
 		m_graphicsProgram.setUniformMat4f("view", identity);
 		m_graphicsProgram.setUniformMat4f("projection", identity);
 
@@ -289,12 +309,6 @@ namespace STEditor
 			glLineWidth(1.0f);
 			glDrawArrays(GL_LINES, offset, m_ndcLines.size() / 7);
 			offset += m_ndcLines.size() / 7;
-		}
-
-		if (!m_ndcPoints.empty())
-		{
-			glDrawArrays(GL_POINTS, offset, m_ndcPoints.size() / 7);
-			offset += m_ndcPoints.size() / 7;
 		}
 
 		if (!m_ndcMultiCommandsDraws.empty())
@@ -326,6 +340,48 @@ namespace STEditor
 				}
 				offset += elem.vertices.size() / 7;
 			}
+		}
+
+		m_pointProgram.use();
+
+		glBindVertexArray(m_pointVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_pointVBO);
+
+		m_pointProgram.setUniformMat4f("view", m_view);
+		m_pointProgram.setUniformMat4f("projection", m_projection);
+
+		size_t pointSize = m_points.size() / 8;
+		offset = 0;
+
+		if (!m_points.empty())
+		{
+			glDrawArrays(GL_POINTS, offset, pointSize);
+			offset += pointSize;
+		}
+
+		m_pointProgram.setUniformMat4f("view", identity);
+		m_pointProgram.setUniformMat4f("projection", identity);
+
+		if (!m_ndcPoints.empty())
+		{
+			glDrawArrays(GL_POINTS, offset, m_ndcPoints.size() / 8);
+		}
+
+		m_fontProgram.use();
+
+		glBindVertexArray(m_fontVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_fontVBO);
+
+		m_fontProgram.setUniformMat4f("view", identity);
+		m_fontProgram.setUniformMat4f("projection", identity);
+
+
+		size_t textDataSize = m_text.size() / 8;
+		offset = 0;
+
+		if (!m_text.empty())
+		{
+
 		}
 
 		glDepthFunc(previousDepthFunc);
@@ -369,26 +425,30 @@ namespace STEditor
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		m_lines.clear();
-		m_points.clear();
 		m_thickLines.clear();
 		m_polyLines.clear();
 		m_fills.clear();
 		m_fillStrokes.clear();
 		m_multiCommandsDraws.clear();
 		m_ndcLines.clear();
-		m_ndcPoints.clear();
 		m_ndcMultiCommandsDraws.clear();
 
+		m_points.clear();
+		m_ndcPoints.clear();
+
+		m_text.clear();
+
 		m_lines.shrink_to_fit();
-		m_points.shrink_to_fit();
 		m_thickLines.shrink_to_fit();
 		m_polyLines.shrink_to_fit();
 		m_fills.shrink_to_fit();
 		m_fillStrokes.shrink_to_fit();
 		m_multiCommandsDraws.shrink_to_fit();
 		m_ndcLines.shrink_to_fit();
-		m_ndcPoints.shrink_to_fit();
 		m_ndcMultiCommandsDraws.shrink_to_fit();
+
+		m_points.shrink_to_fit();
+		m_ndcPoints.shrink_to_fit();
 	}
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, const Color& color)
@@ -465,35 +525,20 @@ namespace STEditor
 
 		pushVector(m_ndcPoints, { ndcX, ndcY });
 		pushColor(m_ndcPoints, color);
-	}
-
-	void Renderer2D::roundPoint(int x, int y, const Color& color, float size)
-	{
-		float radius = size * pixelToMeter();
-
-	}
-
-	void Renderer2D::roundPoint(const Vector2& position, const Color& color, float size)
-	{
-		Fill shape;
-		float radius = size * pixelToMeter();
-		for (int i = 0; i < m_roundPointSampleCount; ++i)
-		{
-			float radian = Constant::DoublePi * static_cast<float>(i) / static_cast<float>(m_roundPointSampleCount);
-			Vector2 p = position + Vector2(radius * Math::cosx(radian), radius * Math::sinx(radian));
-			pushVector(shape.vertices, p);
-			pushColor(shape.vertices, color);
-		}
-		m_fills.push_back(shape);
+		m_points.push_back(size);
 	}
 
 	void Renderer2D::point(const Vector2& position, const Color& color, float size)
 	{
-		if (!AABB::collide(m_screenAABB, position))
+		AABB aabb = m_screenAABB;
+		aabb.expand(2.0f * size);
+
+		if (!AABB::collide(aabb, position))
 			return;
 
 		pushVector(m_points, position);
 		pushColor(m_points, color);
+		m_points.push_back(size);
 	}
 
 	void Renderer2D::line(const Vector2& start, const Vector2& end, int r, int g, int b, int a)
@@ -1087,7 +1132,7 @@ namespace STEditor
 
 	Vector2 Renderer2D::worldToScreen(const Vector2& worldPos) const
 	{
-		glm::vec4 pos = m_projection * m_view * m_model * glm::vec4(worldPos.x, worldPos.y, 0.0f, 1.0f);
+		glm::vec4 pos = m_projection * m_view * glm::vec4(worldPos.x, worldPos.y, 0.0f, 1.0f);
 		float ndcX = pos.x / pos.w;
 		float ndcY = pos.y / pos.w;
 
@@ -1106,7 +1151,7 @@ namespace STEditor
 		float ndcY = 1.0f - (2.0f * static_cast<float>(screenPos.y) / static_cast<float>(m_frameBufferHeight));
 		float ndcZ = 0.0f;
 
-		glm::vec4 pos = glm::inverse(m_projection * m_view * m_model) * glm::vec4(ndcX, ndcY, ndcZ, 1.0f);
+		glm::vec4 pos = glm::inverse(m_projection * m_view) * glm::vec4(ndcX, ndcY, ndcZ, 1.0f);
 		pos /= pos.w;
 
 		return { pos.x, pos.y };
@@ -1147,6 +1192,8 @@ namespace STEditor
 		m_frameBufferHeight = height;
 
 		glViewport(0, 0, width, height);
+
+		buildViewProjectionMatrix();
 
 		updateScreenAABB();
 	}

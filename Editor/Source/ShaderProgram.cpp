@@ -3,6 +3,24 @@
 
 namespace STEditor
 {
+	void ShaderProgram::addVertexShader(const std::string& path)
+	{
+        m_vertexShaders.emplace_back();
+		m_vertexShaders.back().loadFromFile(path);
+	}
+
+	void ShaderProgram::addFragmentShader(const std::string& path)
+	{
+		m_fragmentShaders.emplace_back();
+		m_fragmentShaders.back().loadFromFile(path);
+	}
+
+	void ShaderProgram::addGeometryShader(const std::string& path)
+	{
+		m_geometryShaders.emplace_back();
+		m_geometryShaders.back().loadFromFile(path);
+	}
+
     void ShaderProgram::addVertexShader(const Shader& vertexShader)
     {
         m_vertexShaders.emplace_back(vertexShader);

@@ -4,6 +4,7 @@ namespace STEditor
 {
 	void ReferenceLayer::onRender(Renderer2D& renderer)
 	{
+
 		if (!m_gridVisible)
 			return;
 
@@ -24,7 +25,7 @@ namespace STEditor
 		else if (meterToPixel <= 60)
 			h = 2;
 
-		bool isFine = meterToPixel >= 100;
+		bool isFine = meterToPixel >= 90;
 
 		int f = 5;
 		if(isFine)
@@ -33,11 +34,9 @@ namespace STEditor
 				f = 1;
 		}
 
-
 		AABB viewport = renderer.screenAABB();
 		Vector2 bottomLeft = viewport.bottomLeft();
 		Vector2 topRight = viewport.topRight();
-
 
 		int xMin = std::max(static_cast<int>(std::floor(bottomLeft.x)), -m_gridMaxPoint);
 		int yMin = std::max(static_cast<int>(std::floor(bottomLeft.y)), -m_gridMaxPoint);

@@ -72,6 +72,7 @@ namespace STEditor
 		std::vector<int> m_idsAABB;
 		std::vector<int> m_idsRaycast;
 
+		int m_pointRadius = 10;
 
 	};
 }

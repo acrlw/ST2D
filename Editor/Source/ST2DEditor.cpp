@@ -42,9 +42,8 @@ namespace STEditor
 			return;
 		}
 		glViewport(0, 0, 1920, 1080);
-		glPointSize(10.0f);
 		glEnable(GL_DEPTH_TEST);
-
+		glEnable(GL_PROGRAM_POINT_SIZE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

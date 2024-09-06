@@ -563,7 +563,7 @@ namespace STEditor
 				p2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, p2);
 			}
 
-			renderer.roundPoint(p0, DarkPalette::Gray);
+			renderer.point(p0, DarkPalette::Gray);
 			renderer.dashedLine(p0, p1, DarkPalette::Gray, 0.01f, 0.01f);
 			renderer.dashedLine(p0, p2, DarkPalette::Gray, 0.01f, 0.01f);
 			drawCurvature(renderer, m_spiralRoundCurvatureStart, m_spiralRoundCurvatureEnd, color, false);

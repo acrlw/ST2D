@@ -108,10 +108,8 @@ namespace STEditor
 		void line(int x1, int y1, int x2, int y2, const Color& color);
 		void line(int x1, int y1, int x2, int y2, int r, int g, int b, int a);
 		void point(int x, int y, const Color& color, float size = 1.0f);
-		void roundPoint(int x, int y, const Color& color, float size = 2.0f);
 
 		//world space
-		void roundPoint(const Vector2& position, const Color& color, float size = 2.0f);
 		void point(const Vector2& position, const Color& color, float size = 1.0f);
 		void line(const Vector2& start, const Vector2& end, int r, int g, int b, int a);
 		void line(const Vector2& start, const Vector2& end, float r, float g, float b, float a);
@@ -218,20 +216,15 @@ namespace STEditor
 		glm::vec3 m_cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 		glm::vec3 m_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-		glm::mat4 m_model;
 		glm::mat4 m_view;
 		glm::mat4 m_projection;
 
-		size_t m_capacity = 7;
-		size_t m_size = 0;
 		int m_roundPointSampleCount = 12;
 
 		AABB m_screenAABB;
 
-
-		//render
+		//graphics shader
 		std::vector<float> m_lines;
-		std::vector<float> m_points;
 		std::vector<ThickLine> m_thickLines;
 		std::vector<PolyLines> m_polyLines;
 		std::vector<Fill> m_fills;
@@ -239,17 +232,36 @@ namespace STEditor
 		std::vector<MultiCommandsDraw> m_multiCommandsDraws;
 
 		std::vector<float> m_ndcLines;
-		std::vector<float> m_ndcPoints;
 		std::vector<MultiCommandsDraw> m_ndcMultiCommandsDraws;
+
+		size_t m_graphicsDataCapacity = 7;
+		size_t m_graphicsDataSize = 0;
+
+		//round point shader
+		std::vector<float> m_points;
+		std::vector<float> m_ndcPoints;
+
+		size_t m_pointDataCapacity = 7;
+		size_t m_pointDataSize = 0;
+
+		//font shader
+		std::vector<float> m_text;
+
+		size_t m_textDataCapacity = 7;
+		size_t m_textDataSize = 0;
 
 		ShaderProgram m_graphicsProgram;
 		ShaderProgram m_fontProgram;
+		ShaderProgram m_pointProgram;
 
 		unsigned int m_graphicsVAO;
 		unsigned int m_graphicsVBO;
 
 		unsigned int m_fontVAO;
 		unsigned int m_fontVBO;
+
+		unsigned int m_pointVAO;
+		unsigned int m_pointVBO;
 
 		FT_Library m_ftLibrary;
 		FT_Face m_ftFace;

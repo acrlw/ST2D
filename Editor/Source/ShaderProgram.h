@@ -26,12 +26,31 @@ namespace STEditor
 	{
 		std::string source;
 		unsigned int id;
+
+		void loadFromFile(const std::string& path)
+		{
+			std::ifstream file(path);
+			if (!file)
+			{
+				APP_ERROR("Unable to read shader from {}", path);
+				return;
+			}
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			source = buffer.str();
+			if (source.empty())
+				APP_ERROR("'{}' is empty", path);
+		}
 	};
 
 	class ShaderProgram
 	{
 	public:
 		ShaderProgram() = default;
+
+		void addVertexShader(const std::string& path);
+		void addFragmentShader(const std::string& path);
+		void addGeometryShader(const std::string& path);
 
 		void addVertexShader(const Shader& vertexShader);
 		void addFragmentShader(const Shader& fragmentShader);

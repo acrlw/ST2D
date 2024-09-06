@@ -5,7 +5,6 @@ layout(location = 1) in vec4 aColor;
 
 out vec4 vertexColor;
 
-uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
@@ -14,7 +13,7 @@ uniform vec4 fillColor = vec4(1.0, 1.0, 1.0, 1.0);
 
 void main()
 {
-	gl_Position = projection * view * model * vec4(aPos, 1.0);
+	gl_Position = projection * view * vec4(aPos, 1.0);
 	if (isFillMode == 1)
 		vertexColor = fillColor;
 	else

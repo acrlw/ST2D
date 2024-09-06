@@ -49,8 +49,8 @@ namespace STEditor
 		renderer.shape(tf1, &rect, DarkPalette::Yellow);
 		renderer.shape(tf2, &ellipse, DarkPalette::Cyan);
 
-		renderer.roundPoint(info.pair.pointA, DarkPalette::Yellow);
-		renderer.roundPoint(info.pair.pointB, DarkPalette::Cyan);
+		renderer.point(info.pair.pointA, DarkPalette::Yellow);
+		renderer.point(info.pair.pointB, DarkPalette::Cyan);
 
 		renderer.dashedLine(info.pair.pointA, info.pair.pointB, DarkPalette::LightGray);
 
