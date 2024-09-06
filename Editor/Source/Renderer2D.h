@@ -150,15 +150,12 @@ namespace STEditor
 		void arrow(const Vector2& start, const Vector2& end, const Color& color, const float& size = 0.2f, const float& degree = 45);
 
 		void text(const Vector2& position, const Color& color, const std::string& text, const float& scale = 1.0f, bool centered = true);
-		void text(const Vector2& position, const Color& color, int value, const unsigned int& size = 16, const Vector2& offset = { 0.0f, 0.0f }, bool centered = true);
-		void text(const Vector2& position, const Color& color, float value, const unsigned int& size = 16, const Vector2& offset = { 0.0f, 0.0f }, bool centered = true);
-		void text(const Vector2& position, const Color& color, unsigned int value, const unsigned int& size = 16, const Vector2& offset = { 0.0f, 0.0f }, bool centered = true);
 
-		void simplex(const Simplex& simplex, const Color& color, bool showIndex = true, const unsigned int& fontSize = 18);
-		void polytope(const std::vector<Vector2>& points,
-			const Color& color, float pointSize = 6, const unsigned int& indexSize = 18,
-			bool showIndex = true);
+		void simplex(const Simplex& simplex, const Color& color, bool showIndex = true);
+		void polytope(const std::vector<Vector2>& points, const Color& color, float pointSize = 6, bool showIndex = true);
 
+		Vector2 screenToNDC(const Vector2& pos)const;
+		Vector2 ndcToScreen(const Vector2& pos)const;
 		Vector2 worldToScreen(const Vector2& worldPos) const;
 		Vector2 screenToWorld(const Vector2& screenPos) const;
 
@@ -246,23 +243,25 @@ namespace STEditor
 		std::vector<float> m_ndcLines;
 		std::vector<MultiCommandsDraw> m_ndcMultiCommandsDraws;
 
-		size_t m_graphicsDataCapacity = 7;
 		size_t m_graphicsDataSize = 0;
+		size_t m_graphicsDataCapacity = 7;
 
 		//round point shader
 		std::vector<float> m_points;
 		std::vector<float> m_ndcPoints;
 
-		size_t m_pointDataCapacity = 8;
 		size_t m_pointDataSize = 0;
+		size_t m_pointDataCapacity = 8;
 
 		//font shader
 		std::vector<float> m_text;
 		std::vector<GLuint> m_textureIDs;
+		std::vector<Color> m_textColors;
 		std::map<GLchar, Char> m_characters;
 
-		size_t m_textDataCapacity = 8;
 		size_t m_textDataSize = 0;
+		size_t m_textDataCapacity = 4 * 6;
+		int m_fontHeight = 56;
 
 		ShaderProgram m_graphicsProgram;
 		ShaderProgram m_fontProgram;

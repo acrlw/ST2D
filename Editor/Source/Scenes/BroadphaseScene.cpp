@@ -56,14 +56,17 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Render");
 
-		Vector2 pos = renderer.worldToScreen({ 1.0f, 1.0f });
+		Vector2 pos(1.0f, 1.0f);
 
-		renderer.text(pos, DarkPalette::Green, "This is sample text");
+		//renderer.text(pos, DarkPalette::Green, "This is a sample text.", 0.25f, true);
 
 		for(int i = 0; i < m_count; ++i)
 		{
 			if(m_showObjectId)
-				renderer.text(m_transforms[i].position, DarkPalette::Gray, m_objectIds[i], 12);
+			{
+				std::string id = std::to_string(m_objectIds[i]);
+				renderer.text(m_transforms[i].position, DarkPalette::Gray, id, 0.25f, true);
+			}
 
 			if (m_showTransform)
 				renderer.orientation(m_transforms[i]);

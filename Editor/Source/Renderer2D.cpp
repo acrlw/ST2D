@@ -66,8 +66,7 @@ namespace STEditor
 
 		glGenBuffers(1, &m_graphicsVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, m_graphicsVBO);
-		m_graphicsDataSize = 0;
-		m_graphicsDataCapacity = 7;
+
 		glBufferData(GL_ARRAY_BUFFER, m_graphicsDataCapacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
@@ -82,9 +81,6 @@ namespace STEditor
 
 		glGenBuffers(1, &m_pointVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, m_pointVBO);
-		m_pointDataSize = 0;
-		m_pointDataCapacity = 8;
-
 		glBufferData(GL_ARRAY_BUFFER, m_pointDataCapacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
@@ -101,15 +97,10 @@ namespace STEditor
 
 		glGenBuffers(1, &m_fontVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, m_fontVBO);
-		m_textDataSize = 0;
-		m_textDataCapacity = 8;
-
 		glBufferData(GL_ARRAY_BUFFER, m_textDataCapacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4 * sizeof(float)));
-		glEnableVertexAttribArray(1);
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -129,7 +120,7 @@ namespace STEditor
 			APP_ERROR("[FreeType] Failed to load font");
 		}
 
-		FT_Set_Pixel_Sizes(m_ftFace, 0, 48);
+		FT_Set_Pixel_Sizes(m_ftFace, 0, m_fontHeight);
 
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		for (GLubyte c = 0; c < 128; c++)
@@ -331,15 +322,13 @@ namespace STEditor
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, const Color& color)
 	{
-		float ndcX1 = (2.0f * static_cast<float>(x1) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
-		float ndcY1 = 1.0f - (2.0f * static_cast<float>(y1) / static_cast<float>(m_frameBufferHeight));
-		float ndcX2 = (2.0f * static_cast<float>(x2) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
-		float ndcY2 = 1.0f - (2.0f * static_cast<float>(y2) / static_cast<float>(m_frameBufferHeight));
+		Vector2 p1 = screenToNDC({ static_cast<float>(x1), static_cast<float>(y1) });
+		Vector2 p2 = screenToNDC({ static_cast<float>(x2), static_cast<float>(y2) });
 
-		float minX = ndcX1;
-		float maxX = ndcX2;
-		float minY = ndcY1;
-		float maxY = ndcY2;
+		float minX = p1.x;
+		float maxX = p2.x;
+		float minY = p1.y;
+		float maxY = p2.y;
 
 		if (minX > maxX)
 			std::swap(minX, maxX);
@@ -353,23 +342,21 @@ namespace STEditor
 		if (!collide)
 			return;
 
-		pushVector(m_ndcLines, { ndcX1, ndcY1 });
+		pushVector(m_ndcLines, p1);
 		pushColor(m_ndcLines, color);
-		pushVector(m_ndcLines, { ndcX2, ndcY2 });
+		pushVector(m_ndcLines, p2);
 		pushColor(m_ndcLines, color);
 	}
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, int r, int g, int b, int a)
 	{
-		float ndcX1 = (2.0f * static_cast<float>(x1) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
-		float ndcY1 = 1.0f - (2.0f * static_cast<float>(y1) / static_cast<float>(m_frameBufferHeight));
-		float ndcX2 = (2.0f * static_cast<float>(x2) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
-		float ndcY2 = 1.0f - (2.0f * static_cast<float>(y2) / static_cast<float>(m_frameBufferHeight));
+		Vector2 p1 = screenToNDC({ static_cast<float>(x1), static_cast<float>(y1) });
+		Vector2 p2 = screenToNDC({ static_cast<float>(x2), static_cast<float>(y2) });
 
-		float minX = ndcX1;
-		float maxX = ndcX2;
-		float minY = ndcY1;
-		float maxY = ndcY2;
+		float minX = p1.x;
+		float maxX = p2.x;
+		float minY = p1.y;
+		float maxY = p2.y;
 
 		if (minX > maxX)
 			std::swap(minX, maxX);
@@ -386,24 +373,23 @@ namespace STEditor
 
 		Color color(r, g, b, a);
 
-		pushVector(m_ndcLines, { ndcX1, ndcY1 });
+		pushVector(m_ndcLines, p1);
 		pushColor(m_ndcLines, color);
-		pushVector(m_ndcLines, { ndcX2, ndcY2 });
+		pushVector(m_ndcLines, p2);
 		pushColor(m_ndcLines, color);
 	}
 
 	void Renderer2D::point(int x, int y, const Color& color, float size)
 	{
-		float ndcX = (2.0f * static_cast<float>(x) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
-		float ndcY = 1.0f - (2.0f * static_cast<float>(y) / static_cast<float>(m_frameBufferHeight));
+		Vector2 p = screenToNDC({ static_cast<float>(x), static_cast<float>(y) });
 
-		if (!(Math::isInRange(ndcX, -1.0f, 1.0f) &&
-			Math::isInRange(ndcY, -1.0f, 1.0f)))
+		if (!(Math::isInRange(p.x, -1.0f, 1.0f) &&
+			Math::isInRange(p.y, -1.0f, 1.0f)))
 			return;
 
-		pushVector(m_ndcPoints, { ndcX, ndcY });
+		pushVector(m_ndcPoints, p);
 		pushColor(m_ndcPoints, color);
-		m_points.push_back(size);
+		m_ndcPoints.push_back(size);
 	}
 
 	void Renderer2D::point(const Vector2& position, const Color& color, float size)
@@ -893,61 +879,147 @@ namespace STEditor
 	void Renderer2D::text(const Vector2& position, const Color& color, const std::string& text, const float& scale,
 		bool centered)
 	{
-
 		if (text.empty())
 			return;
 
-		float x = position.x;
-		float y = position.y;
+		Vector2 screenPos = worldToScreen(position);
+		screenPos.y = m_frameBufferHeight - screenPos.y;
 
-		for (std::string::const_iterator c = text.begin(); c != text.end(); ++c)
+		float x = screenPos.x;
+		float y = screenPos.y;
+
+		if(centered)
 		{
-			Char ch = m_characters[*c];
+			float tx = x;
+			float textWidth = 0.0f;
+			float minHeight = m_fontHeight;
+			float maxHeight = 0.0f;
+			float firstCharWidth = 0.0f;
 
-			float xpos = x + ch.bearing.x * scale;
-			float ypos = y - (ch.size.y - ch.bearing.y) * scale;
-
-			float w = ch.size.x * scale;
-			float h = ch.size.y * scale;
-
-			std::array vertices = 
+			for (auto iter = text.begin(); iter != text.end(); ++iter)
 			{
-				xpos, ypos + h, 0.0f, 0.0f, color.r, color.g, color.b, color.a,
-				xpos, ypos, 0.0f, 1.0f, color.r, color.g, color.b, color.a,
-				xpos + w, ypos, 1.0f, 1.0f, color.r, color.g, color.b, color.a,
-				xpos, ypos + h, 0.0f, 0.0f, color.r, color.g, color.b, color.a,
-				xpos + w, ypos, 1.0f, 1.0f, color.r, color.g, color.b, color.a,
-				xpos + w, ypos + h, 1.0f, 0.0f, color.r, color.g, color.b, color.a
-			};
+				Char ch = m_characters[*iter];
 
-			m_text.insert(m_text.end(), vertices.begin(), vertices.end());
+				float xpos = tx + ch.bearing.x * scale;
 
-			m_textureIDs.push_back(ch.textureID);
+				float w = ch.size.x * scale;
 
-			x += (ch.advance >> 6) * scale;
+				char c = *iter;
+
+				if (c != '.' && c != ',' && c != ' ')
+					minHeight = Math::min(minHeight, ch.size.y * scale);
+
+				maxHeight = Math::max(maxHeight, ch.size.y * scale);
+
+				if (iter == text.begin())
+				{
+					textWidth = xpos;
+					firstCharWidth = ch.size.x * scale;
+				}
+				else if (iter == text.end() - 1)
+				{
+					textWidth = xpos + w - textWidth;
+				}
+
+				tx += (ch.advance >> 6) * scale;
+			}
+
+			if(text.size() == 1)
+				textWidth = firstCharWidth;
+
+			textWidth *= 0.5f;
+
+			if (minHeight == m_fontHeight)
+				minHeight = maxHeight;
+
+			minHeight *= 0.5f;
+
+			for (auto&& elem : text)
+			{
+				Char ch = m_characters[elem];
+
+				float xpos = x + ch.bearing.x * scale;
+				float ypos = y - (ch.size.y - ch.bearing.y) * scale;
+
+				xpos -= textWidth;
+				ypos -= minHeight;
+
+				int px = xpos;
+				int py = m_frameBufferHeight - ypos;
+
+				float w = ch.size.x * scale;
+				float h = ch.size.y * scale;
+
+				std::array vertices =
+				{
+					xpos, ypos + h, 0.0f, 0.0f,
+					xpos, ypos, 0.0f, 1.0f,
+					xpos + w, ypos, 1.0f, 1.0f,
+
+					xpos, ypos + h, 0.0f, 0.0f,
+					xpos + w, ypos, 1.0f, 1.0f,
+					xpos + w, ypos + h, 1.0f, 0.0f
+				};
+
+				m_text.insert(m_text.end(), vertices.begin(), vertices.end());
+
+				m_textureIDs.push_back(ch.textureID);
+
+				m_textColors.push_back(color);
+
+				x += (ch.advance >> 6) * scale;
+			}
 		}
+		else
+		{
+			float maxHeight = 0.0f;
+
+			for (auto&& elem : text)
+			{
+				Char ch = m_characters[elem];
+
+				if (ch.size.y - ch.bearing.y > 0)
+					maxHeight = Math::max(maxHeight, ch.size.y * scale);
+			}
+
+			for (auto&& elem : text)
+			{
+				Char ch = m_characters[elem];
+
+				float xpos = x + ch.bearing.x * scale;
+				float ypos = y - (ch.size.y - ch.bearing.y) * scale;
+
+				ypos -= maxHeight;
+
+				float w = ch.size.x * scale;
+				float h = ch.size.y * scale;
+
+				std::array vertices =
+				{
+					xpos, ypos + h, 0.0f, 0.0f,
+					xpos, ypos, 0.0f, 1.0f,
+					xpos + w, ypos, 1.0f, 1.0f,
+					xpos, ypos + h, 0.0f, 0.0f,
+					xpos + w, ypos, 1.0f, 1.0f,
+					xpos + w, ypos + h, 1.0f, 0.0f
+				};
+
+				m_text.insert(m_text.end(), vertices.begin(), vertices.end());
+
+				m_textureIDs.push_back(ch.textureID);
+
+				m_textColors.push_back(color);
+
+				x += (ch.advance >> 6) * scale;
+			}
+		}
+		
+
+
 	}
 
-	void Renderer2D::text(const Vector2& position, const Color& color, int value, const unsigned int& size,
-	                      const Vector2& offset, bool centered)
-	{
 
-	}
-
-	void Renderer2D::text(const Vector2& position, const Color& color, float value, const unsigned int& size,
-		const Vector2& offset, bool centered)
-	{
-
-	}
-
-	void Renderer2D::text(const Vector2& position, const Color& color, unsigned int value, const unsigned int& size,
-		const Vector2& offset, bool centered)
-	{
-
-	}
-
-	void Renderer2D::simplex(const Simplex& simplex, const Color& color, bool showIndex,
-		const unsigned int& fontSize)
+	void Renderer2D::simplex(const Simplex& simplex, const Color& color, bool showIndex)
 	{
 		Color lineColor = color;
 		lineColor.a = 150.0f / 255.0f;
@@ -959,7 +1031,7 @@ namespace STEditor
 		case 1:
 			point(simplex.vertices[0].result, color);
 			if (showIndex)
-				text(simplex.vertices[0].result, color, 0, fontSize);
+				text(simplex.vertices[0].result, color, "0");
 			break;
 		case 2:
 			point(simplex.vertices[0].result, color);
@@ -970,8 +1042,8 @@ namespace STEditor
 			{
 				Vector2 offset = simplex.vertices[1].result - simplex.vertices[0].result;
 				offset = -offset.perpendicular().normal() * 0.3f;
-				text(simplex.vertices[0].result, color, 0, fontSize, offset);
-				text(simplex.vertices[1].result, color, 1, fontSize, offset);
+				text(simplex.vertices[0].result, color, "0");
+				text(simplex.vertices[1].result, color, "1");
 			}
 			break;
 		case 3:
@@ -987,15 +1059,15 @@ namespace STEditor
 
 				Vector2 offset = simplex.vertices[0].result - center;
 				offset = offset.normal() * 0.3f;
-				text(simplex.vertices[0].result, color, 0, fontSize, offset);
+				text(simplex.vertices[0].result, color, "0");
 
 				offset = simplex.vertices[1].result - center;
 				offset = offset.normal() * 0.3f;
-				text(simplex.vertices[1].result, color, 1, fontSize, offset);
+				text(simplex.vertices[1].result, color, "1");
 
 				offset = simplex.vertices[2].result - center;
 				offset = offset.normal() * 0.3f;
-				text(simplex.vertices[2].result, color, 2, fontSize, offset);
+				text(simplex.vertices[2].result, color, "2");
 
 			}
 			break;
@@ -1006,7 +1078,7 @@ namespace STEditor
 		}
 	}
 
-	void Renderer2D::polytope(const std::vector<Vector2>& points, const Color& color, float pointSize, const unsigned int& indexSize, bool showIndex)
+	void Renderer2D::polytope(const std::vector<Vector2>& points, const Color& color, float pointSize, bool showIndex)
 	{
 
 		Vector2 center = GeometryAlgorithm2D::computeCenter(points);
@@ -1024,6 +1096,18 @@ namespace STEditor
 		{
 			
 		}
+	}
+
+	Vector2 Renderer2D::screenToNDC(const Vector2& pos) const
+	{
+		float ndcX = (2.0f * static_cast<float>(pos.x) / static_cast<float>(m_frameBufferWidth)) - 1.0f;
+		float ndcY = 1.0f - (2.0f * static_cast<float>(pos.y) / static_cast<float>(m_frameBufferHeight));
+		return { ndcX, ndcY };
+	}
+
+	Vector2 Renderer2D::ndcToScreen(const Vector2& pos) const
+	{
+		return {};
 	}
 
 	Vector2 Renderer2D::worldToScreen(const Vector2& worldPos) const
@@ -1209,41 +1293,42 @@ namespace STEditor
 		m_pointProgram.setUniformMat4f("view", m_view);
 		m_pointProgram.setUniformMat4f("projection", m_projection);
 
-		size_t pointSize = m_points.size() / 8;
-		size_t offset = 0;
 
 		if (!m_points.empty())
-		{
-			glDrawArrays(GL_POINTS, offset, pointSize);
-			offset += pointSize;
-		}
+			glDrawArrays(GL_POINTS, 0, m_points.size() / 8);
 
 		m_pointProgram.setUniformMat4f("view", identity);
 		m_pointProgram.setUniformMat4f("projection", identity);
 
 		if (!m_ndcPoints.empty())
 		{
-			glDrawArrays(GL_POINTS, offset, m_ndcPoints.size() / 8);
+			glDrawArrays(GL_POINTS, 0, m_ndcPoints.size() / 8);
 		}
 	}
 
 	void Renderer2D::drawTextProgram()
 	{
 		m_fontProgram.use();
+
+		glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_frameBufferWidth), 0.0f, static_cast<float>(m_frameBufferHeight));
+
+		m_fontProgram.setUniformMat4f("projection", projection);
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindVertexArray(m_fontVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, m_fontVBO);
 
-		size_t textDataSize = m_text.size() / 8;
 		size_t offset = 0;
 
 		if(!m_textureIDs.empty())
 		{
-			for (unsigned int textureID : m_textureIDs)
+			for (int i = 0; i < m_textureIDs.size(); ++i)
 			{
-				glBindTexture(GL_TEXTURE_2D, textureID);
-				glDrawArrays(GL_TRIANGLES, 0, textDataSize);
-				offset += textDataSize;
+				glBindTexture(GL_TEXTURE_2D, m_textureIDs[i]);
+				m_fontProgram.setUniform4f("textColor", m_textColors[i].r, m_textColors[i].g, m_textColors[i].b, m_textColors[i].a);
+
+				glDrawArrays(GL_TRIANGLES, offset, 6);
+				offset += 6;
 			}
 		}
 	}
@@ -1279,6 +1364,9 @@ namespace STEditor
 
 	void Renderer2D::onFrameBufferResize(int width, int height)
 	{
+		if (width == 0 || height == 0)
+			return;
+
 		m_frameBufferWidth = width;
 		m_frameBufferHeight = height;
 
