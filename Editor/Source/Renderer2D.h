@@ -110,7 +110,7 @@ namespace STEditor
 		void point(int x, int y, const Color& color, float size = 1.0f);
 
 		//world space
-		void point(const Vector2& position, const Color& color, float size = 1.0f);
+		void point(const Vector2& position, const Color& color, float size = 6.0f);
 		void line(const Vector2& start, const Vector2& end, int r, int g, int b, int a);
 		void line(const Vector2& start, const Vector2& end, float r, float g, float b, float a);
 		void line(const Vector2& start, const Vector2& end, const Color& color);
@@ -148,7 +148,7 @@ namespace STEditor
 
 		void simplex(const Simplex& simplex, const Color& color, bool showIndex = true, const unsigned int& fontSize = 18);
 		void polytope(const std::vector<Vector2>& points,
-			const Color& color, float pointSize = 8, const unsigned int& indexSize = 18,
+			const Color& color, float pointSize = 6, const unsigned int& indexSize = 18,
 			bool showIndex = true);
 
 		Vector2 worldToScreen(const Vector2& worldPos) const;

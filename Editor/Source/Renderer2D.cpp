@@ -20,7 +20,7 @@ namespace STEditor
 
 	Renderer2D::~Renderer2D()
 	{
-		APP_INFO("Delete VAO ({}) and VBO ({}) ", m_graphicsVAO, m_graphicsVBO);
+		APP_INFO("Delete VAO ({}) and VBO ({})", m_graphicsVAO, m_pointVAO, m_fontVAO, m_graphicsVBO, m_pointVBO, m_fontVBO);
 
 		glDeleteVertexArrays(1, &m_graphicsVAO);
 		glDeleteBuffers(1, &m_graphicsVBO);
@@ -1066,18 +1066,10 @@ namespace STEditor
 			break;
 		case 3:
 		{
-			MultiCommandsDraw draw;
-			pushVector(draw.vertices, simplex.vertices[0].result);
-			pushColor(draw.vertices, lineColor);
-			pushVector(draw.vertices, simplex.vertices[1].result);
-			pushColor(draw.vertices, lineColor);
-			pushVector(draw.vertices, simplex.vertices[2].result);
-			pushColor(draw.vertices, lineColor);
-
-			draw.commands.push_back(GL_LINE_LOOP);
-			draw.commands.push_back(GL_POINTS);
-
-			m_multiCommandsDraws.emplace_back(draw);
+			closedLines({ simplex.vertices[0].result, simplex.vertices[1].result, simplex.vertices[2].result }, lineColor);
+			point(simplex.vertices[0].result, color);
+			point(simplex.vertices[1].result, color);
+			point(simplex.vertices[2].result, color);
 
 			if (showIndex)
 			{
@@ -1106,22 +1098,16 @@ namespace STEditor
 
 	void Renderer2D::polytope(const std::vector<Vector2>& points, const Color& color, float pointSize, const unsigned int& indexSize, bool showIndex)
 	{
-		MultiCommandsDraw draw;
-		draw.pointSize = pointSize;
-		draw.commands.push_back(GL_LINE_LOOP);
-		draw.commands.push_back(GL_POINTS);
 
 		Vector2 center = GeometryAlgorithm2D::computeCenter(points);
 		std::vector<Vector2> offsets;
 
-		for (const auto& point : points)
+		for (const auto& p : points)
 		{
-			offsets.emplace_back((point - center).normal() * 0.3f);
-			pushVector(draw.vertices, point);
-			pushColor(draw.vertices, color);
+			point(p, color, pointSize);
+			offsets.emplace_back((p - center).normal() * 0.3f);
 		}
-
-		m_multiCommandsDraws.emplace_back(draw);
+		closedLines(points, color);
 
 		//draw text
 		if(showIndex)

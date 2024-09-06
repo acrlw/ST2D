@@ -8,10 +8,11 @@ namespace STEditor
 		if (!m_gridVisible)
 			return;
 
-		Color thick = DarkPalette::DarkGreen;
-
 		Color thin = DarkPalette::DarkGreen;
-		thin.a = 55.0f / 255.0f;
+		thin.a = 60.0f / 255.0f;
+
+		Color thick = DarkPalette::DarkGreen;
+		thick.a = 180.0f / 255.0f;
 
 		float meterToPixel = renderer.meterToPixel();
 
@@ -43,23 +44,21 @@ namespace STEditor
 		int xMax = std::min(static_cast<int>(std::ceil(topRight.x)), m_gridMaxPoint);
 		int yMax = std::min(static_cast<int>(std::ceil(topRight.y)), m_gridMaxPoint);
 
-
+		Color color;
 		for (int i = xMin; i <= xMax; ++i)
 		{
 			if (i % h != 0)
 				continue;
 
 			if (i == 0)
-				thick = DarkPalette::Green;
+				color = DarkPalette::Green;
 			else
-			{
-				thick = DarkPalette::DarkGreen;
-				thick.a = 155.0f / 255.0f;
-			}
+				color = thick;
+			
 
 			Vector2 start = { static_cast<real>(i), static_cast<real>(yMax) };
 			Vector2 end = { static_cast<real>(i), static_cast<real>(yMin) };
-			renderer.line(start, end, thick);
+			renderer.line(start, end, color);
 
 			if(isFine)
 			{
@@ -82,16 +81,13 @@ namespace STEditor
 				continue;
 
 			if (i == 0)
-				thick = DarkPalette::Green;
+				color = DarkPalette::Green;
 			else
-			{
-				thick = DarkPalette::DarkGreen;
-				thick.a = 155.0f / 255.0f;
-			}
+				color = thick;
 
 			Vector2 start = { static_cast<real>(xMax), static_cast<real>(i) };
 			Vector2 end = { static_cast<real>(xMin), static_cast<real>(i) };
-			renderer.line(start, end, thick);
+			renderer.line(start, end, color);
 
 			if (isFine)
 			{
