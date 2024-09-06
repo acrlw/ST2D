@@ -21,12 +21,15 @@ namespace STEditor
 
 	Renderer2D::~Renderer2D()
 	{
-		APP_INFO("Delete VAO ({}) and VBO ({}) ", m_verticesVao, m_verticesVbo);
+		APP_INFO("Delete VAO ({}) and VBO ({}) ", m_graphicsVAO, m_graphicsVBO);
 
-		glDeleteVertexArrays(1, &m_verticesVao);
-		glDeleteBuffers(1, &m_verticesVbo);
+		glDeleteVertexArrays(1, &m_graphicsVAO);
+		glDeleteBuffers(1, &m_graphicsVBO);
 
-		m_shaderProgram.destroy();
+		m_graphicsProgram.destroy();
+
+		FT_Done_Face(m_ftFace);
+		FT_Done_FreeType(m_ftLibrary);
 	}
 
 	void Renderer2D::initShaders()
@@ -45,38 +48,48 @@ namespace STEditor
 				return buffer.str();
 			};
 
-		Shader vertexShader, fragmentShader, geometryShader;
+		Shader graphicsVert, graphicsFrag;
+		Shader fontVert, fontFrag;
 
-		vertexShader.source = readShader("./Resource/Shaders/vert.glsl");
-		fragmentShader.source = readShader("./Resource/Shaders/frag.glsl");
-		geometryShader.source = readShader("./Resource/Shaders/geom.glsl");
+		graphicsVert.source = readShader("./Resource/Shaders/vert.glsl");
+		graphicsFrag.source = readShader("./Resource/Shaders/frag.glsl");
 
-		if (vertexShader.source.empty())
-			APP_WARN("Vertex shader is empty");
+		fontVert.source = readShader("./Resource/Shaders/vert-font.vert");
+		fontFrag.source = readShader("./Resource/Shaders/frag-font.frag");
 
-		if (fragmentShader.source.empty())
-			APP_WARN("Fragment shader is empty");
+		if (graphicsVert.source.empty())
+			APP_WARN("Graphics vertex shader is empty");
 
-		if (geometryShader.source.empty())
-			APP_WARN("Geometry shader is empty");
+		if (graphicsFrag.source.empty())
+			APP_WARN("Graphics fragment shader is empty");
 
+		if (fontVert.source.empty())
+			APP_WARN("Font vertex shader is empty");
 
-		m_shaderProgram.addVertexShader(vertexShader);
-		m_shaderProgram.addFragmentShader(fragmentShader);
-		m_shaderProgram.addGeometryShader(geometryShader);
-		m_shaderProgram.compileShader();
-		m_shaderProgram.link();
+		if (fontFrag.source.empty())
+			APP_WARN("Font fragment shader is empty");
+
+		m_graphicsProgram.addVertexShader(graphicsVert);
+		m_graphicsProgram.addFragmentShader(graphicsFrag);
+		m_graphicsProgram.compileShader();
+		m_graphicsProgram.link();
+
+		m_fontProgram.addVertexShader(fontVert);
+		m_fontProgram.addFragmentShader(fontFrag);
+		m_fontProgram.compileShader();
+		m_fontProgram.link();
+
 	}
 
 	void Renderer2D::initRenderSettings()
 	{
-		m_shaderProgram.use();
+		m_graphicsProgram.use();
 
-		glGenVertexArrays(1, &m_verticesVao);
-		glBindVertexArray(m_verticesVao);
+		glGenVertexArrays(1, &m_graphicsVAO);
+		glBindVertexArray(m_graphicsVAO);
 
-		glGenBuffers(1, &m_verticesVbo);
-		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
+		glGenBuffers(1, &m_graphicsVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_graphicsVBO);
 		m_size = 0;
 		m_capacity = 7;
 		glBufferData(GL_ARRAY_BUFFER, m_capacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
@@ -89,12 +102,22 @@ namespace STEditor
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		APP_INFO("Created Line VAO({}) and VBO({})", m_verticesVao, m_verticesVbo);
+		APP_INFO("Created Line VAO({}) and VBO({})", m_graphicsVAO, m_graphicsVBO);
 	}
 
 	void Renderer2D::initFont()
 	{
+		if(FT_Init_FreeType(&m_ftLibrary))
+		{
+			APP_ERROR("[FreeType] Failed to init FreeType library");
+		}
 
+		if(FT_New_Face(m_ftLibrary, "Resource/Fonts/MiSans-Medium.ttf", 0, &m_ftFace))
+		{
+			APP_ERROR("[FreeType] Failed to load font");
+		}
+
+		FT_Set_Pixel_Sizes(m_ftFace, 0, 48);
 	}
 
 	void Renderer2D::onRenderStart()
@@ -125,8 +148,10 @@ namespace STEditor
 		for (auto&& elem : m_ndcMultiCommandsDraws)
 			vertices.insert(vertices.end(), elem.vertices.begin(), elem.vertices.end());
 
-		glBindVertexArray(m_verticesVao);
-		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
+		m_graphicsProgram.use();
+
+		glBindVertexArray(m_graphicsVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_graphicsVBO);
 		m_size = vertices.size();
 		if (m_size > m_capacity)
 		{
@@ -141,6 +166,8 @@ namespace STEditor
 
 	void Renderer2D::onRender()
 	{
+		m_graphicsProgram.use();
+
 		buildViewProjectionMatrix();
 
 		onRenderStart();
@@ -149,12 +176,12 @@ namespace STEditor
 		glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
 		glDepthFunc(GL_ALWAYS);
 
-		glBindVertexArray(m_verticesVao);
-		glBindBuffer(GL_ARRAY_BUFFER, m_verticesVbo);
+		glBindVertexArray(m_graphicsVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_graphicsVBO);
 
-		m_shaderProgram.setUniformMat4f("model", m_model);
-		m_shaderProgram.setUniformMat4f("view", m_view);
-		m_shaderProgram.setUniformMat4f("projection", m_projection);
+		m_graphicsProgram.setUniformMat4f("model", m_model);
+		m_graphicsProgram.setUniformMat4f("view", m_view);
+		m_graphicsProgram.setUniformMat4f("projection", m_projection);
 
 		size_t lineSize = m_lines.size() / 7;
 		size_t offset = lineSize;
@@ -205,19 +232,19 @@ namespace STEditor
 		{
 			for (auto&& elem : m_fillStrokes)
 			{
-				m_shaderProgram.setUniform1i("isFillMode", 0);
+				m_graphicsProgram.setUniform1i("isFillMode", 0);
 
 				glLineWidth(elem.thickness);
 				glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
 
-				m_shaderProgram.setUniform1i("isFillMode", 1);
-				m_shaderProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+				m_graphicsProgram.setUniform1i("isFillMode", 1);
+				m_graphicsProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
 
 				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
 
 				offset += elem.vertices.size() / 7;
 			}
-			m_shaderProgram.setUniform1i("isFillMode", 0);
+			m_graphicsProgram.setUniform1i("isFillMode", 0);
 		}
 
 		if (!m_multiCommandsDraws.empty())
@@ -229,12 +256,12 @@ namespace STEditor
 				{
 					if(command == GL_TRIANGLE_FAN)
 					{
-						m_shaderProgram.setUniform1i("isFillMode", 1);
-						m_shaderProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+						m_graphicsProgram.setUniform1i("isFillMode", 1);
+						m_graphicsProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
 
 						glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
 
-						m_shaderProgram.setUniform1i("isFillMode", 0);
+						m_graphicsProgram.setUniform1i("isFillMode", 0);
 					}
 					else if(command == GL_POINTS)
 					{
@@ -253,9 +280,9 @@ namespace STEditor
 
 		glm::mat4 identity = glm::mat4(1.0f);
 
-		m_shaderProgram.setUniformMat4f("model", identity);
-		m_shaderProgram.setUniformMat4f("view", identity);
-		m_shaderProgram.setUniformMat4f("projection", identity);
+		m_graphicsProgram.setUniformMat4f("model", identity);
+		m_graphicsProgram.setUniformMat4f("view", identity);
+		m_graphicsProgram.setUniformMat4f("projection", identity);
 
 		if (!m_ndcLines.empty())
 		{
@@ -279,12 +306,12 @@ namespace STEditor
 				{
 					if (command == GL_TRIANGLE_FAN)
 					{
-						m_shaderProgram.setUniform1i("isFillMode", 1);
-						m_shaderProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+						m_graphicsProgram.setUniform1i("isFillMode", 1);
+						m_graphicsProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
 
 						glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
 
-						m_shaderProgram.setUniform1i("isFillMode", 0);
+						m_graphicsProgram.setUniform1i("isFillMode", 0);
 					}
 					else if (command == GL_POINTS)
 					{

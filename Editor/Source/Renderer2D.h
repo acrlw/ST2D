@@ -222,6 +222,13 @@ namespace STEditor
 		glm::mat4 m_view;
 		glm::mat4 m_projection;
 
+		size_t m_capacity = 7;
+		size_t m_size = 0;
+		int m_roundPointSampleCount = 12;
+
+		AABB m_screenAABB;
+
+
 		//render
 		std::vector<float> m_lines;
 		std::vector<float> m_points;
@@ -235,17 +242,17 @@ namespace STEditor
 		std::vector<float> m_ndcPoints;
 		std::vector<MultiCommandsDraw> m_ndcMultiCommandsDraws;
 
+		ShaderProgram m_graphicsProgram;
+		ShaderProgram m_fontProgram;
 
-		ShaderProgram m_shaderProgram;
+		unsigned int m_graphicsVAO;
+		unsigned int m_graphicsVBO;
 
-		unsigned int m_verticesVao;
-		unsigned int m_verticesVbo;
+		unsigned int m_fontVAO;
+		unsigned int m_fontVBO;
 
-		size_t m_capacity = 7;
-		size_t m_size = 0;
-		int m_roundPointSampleCount = 12;
-
-		AABB m_screenAABB;
+		FT_Library m_ftLibrary;
+		FT_Face m_ftFace;
 	};
 
 	

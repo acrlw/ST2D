@@ -7,16 +7,6 @@ namespace STEditor
 		if (!m_gridVisible)
 			return;
 
-		/*
-		 * 50: 1m
-		 * 30: 2m
-		 * 20: 5m
-		 * 10: 10m
-		 * 100: 0.5m
-		 * 200: 0.1m
-		 */
-
-
 		Color thick = DarkPalette::DarkGreen;
 
 		Color thin = DarkPalette::DarkGreen;
