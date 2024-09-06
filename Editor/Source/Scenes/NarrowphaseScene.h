@@ -29,5 +29,10 @@ namespace STEditor
 		Transform* selectedTransform = nullptr;
 		Transform oldTransform;
 		Vector2 mouseStart;
+
+		//int m_currentPolytopeIndex = 0;
+		//int m_maxPolytopeIndex = 0;
+		bool m_showSimplex = false;
+		bool m_showPolytope = false;
 	};
 }

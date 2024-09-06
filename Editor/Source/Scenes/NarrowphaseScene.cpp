@@ -30,34 +30,296 @@ namespace STEditor
 
 	void NarrowphaseScene::onRender(Renderer2D& renderer)
 	{
-		auto info = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
+		auto distInfo = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
 
+		renderer.point(distInfo.pair.pointA, DarkPalette::Yellow);
+		renderer.point(distInfo.pair.pointB, DarkPalette::Cyan);
+
+		renderer.dashedLine(distInfo.pair.pointA, distInfo.pair.pointB, DarkPalette::LightGray);
 		Color simplexColor = DarkPalette::Purple;
 
 		Color polytopeColor = DarkPalette::Teal;
 		polytopeColor.a = 150.0f / 255.0f;
 
-		std::vector<Vector2> points;
-		for(auto&& elem: info.polytope)
-			points.push_back(elem.vertex.result);
-		
-		renderer.polytope(points, polytopeColor);
-
-		renderer.simplex(info.simplex, simplexColor);
-
 		renderer.shape(tf1, &rect, DarkPalette::Yellow);
 		renderer.shape(tf2, &ellipse, DarkPalette::Cyan);
 
-		renderer.point(info.pair.pointA, DarkPalette::Yellow);
-		renderer.point(info.pair.pointB, DarkPalette::Cyan);
+		if(m_showPolytope)
+		{
+			std::vector<Vector2> points;
+			for (auto&& elem : distInfo.polytope)
+				points.push_back(elem.vertex.result);
 
-		renderer.dashedLine(info.pair.pointA, info.pair.pointB, DarkPalette::LightGray);
+			renderer.polytope(points, polytopeColor);
+		}
+
+		if (m_showSimplex)
+			renderer.simplex(distInfo.simplex, simplexColor);
+
+		//std::vector<std::vector<Vector2>> polytopes;
+		//std::vector<Simplex> simplexes;
+
+		//{
+		//	VertexPair result;
+		//	CollisionInfo info;
+
+		//	Vector2 direction = tf2.position - tf1.position;
+
+		//	if (direction.fuzzyEqual({ 0, 0 }))
+		//		direction.set(1, 1);
+		//	//first
+		//	SimplexVertex vertex = Narrowphase::support(tf1, &rect, tf2, &ellipse, direction);
+		//	info.simplex.addSimplexVertex(vertex);
+		//	//second
+		//	direction.negate();
+		//	vertex = Narrowphase::support(tf1, &rect, tf2, &ellipse, direction);
+		//	info.simplex.addSimplexVertex(vertex);
+		//	//third
+		//	direction = direction.perpendicular();
+		//	vertex = Narrowphase::support(tf1, &rect, tf2, &ellipse, direction);
+		//	info.simplex.addSimplexVertex(vertex);
+
+		//	Narrowphase::reconstructSimplexByVoronoi(info.simplex);
+		//	info.originalSimplex = info.simplex;
+
+		//	simplexes.push_back(info.simplex);
+		//	//renderer.simplex(info.simplex, DarkPalette::Purple);
+
+		//	//[DEBUG]
+		//	std::list<SimplexVertexWithOriginDistance>& polytope = info.polytope;
+		//	//std::list<SimplexVertexWithOriginDistance> polytope;
+
+		//	Narrowphase::buildPolytopeFromSimplex(polytope, info.simplex);
+
+		//	auto iterStart = polytope.begin();
+		//	auto iterEnd = polytope.end();
+		//	auto iterTemp = polytope.begin();
+
+		//	int errorCount = 0;
+
+		//	auto reindexSimplex = [&info, &polytope, &iterStart, &iterEnd, &iterTemp]
+		//		{
+		//			std::swap(info.simplex.vertices[1], info.simplex.vertices[2]);
+		//			std::swap(info.simplex.vertices[0], info.simplex.vertices[1]);
+		//			polytope.clear();
+		//			Narrowphase::buildPolytopeFromSimplex(polytope, info.simplex);
+		//			iterStart = polytope.begin();
+		//			iterEnd = polytope.end();
+		//			iterTemp = polytope.begin();
+		//		};
+
+		//	int sameDistCount = 0;
+
+		//	std::vector<Vector2> points;
+		//	for (auto&& elem : info.polytope)
+		//		points.push_back(elem.vertex.result);
+
+		//	polytopes.push_back(points);
+
+		//	for (Index iter = 0; iter < 20; ++iter)
+		//	{
+		//		//indices of closest edge are set to 0 and 1
+		//		direction = Narrowphase::findDirectionByEdge(info.simplex.vertices[0], info.simplex.vertices[1], true);
+
+		//		vertex = Narrowphase::support(tf1, &rect, tf2, &ellipse, direction);
+
+		//		//cannot find any new vertex
+		//		if (info.simplex.contains(vertex))
+		//		{
+		//			if (sameDistCount == 1)
+		//			{
+		//				//check edge case
+		//				Narrowphase::polytopeIterNext(iterStart, polytope);
+		//				iterEnd = iterStart;
+		//				Narrowphase::polytopeIterPrev(iterEnd, polytope);
+		//				iterTemp = iterStart;
+		//				Narrowphase::polytopeIterNext(iterTemp, polytope);
+
+		//				info.simplex.vertices[0] = iterStart->vertex;
+		//				info.simplex.vertices[1] = iterTemp->vertex;
+		//				iter--;
+		//				//do not process anymore
+		//				sameDistCount = -1;
+		//				continue;
+		//			}
+		//			if (polytope.size() >= 4) //polytope has been expanded, terminate the loop
+		//				break;
+
+		//			if (errorCount == 3) //fail to rewind simplex, terminate
+		//				break;
+
+		//			reindexSimplex();
+
+		//			iter--;
+
+		//			errorCount++;
+
+		//			continue;
+		//		}
+		//		//convex test, make sure polytope is always convex
+
+		//		auto itA = iterStart;
+
+		//		auto itB = itA;
+		//		Narrowphase::polytopeIterNext(itB, polytope);
+
+		//		auto itC = itB;
+		//		Narrowphase::polytopeIterNext(itC, polytope);
+
+		//		const Vector2 ab = itB->vertex.result - itA->vertex.result;
+		//		const Vector2 bc = itC->vertex.result - itB->vertex.result;
+		//		const real res1 = Vector2::crossProduct(ab, bc);
+
+		//		const Vector2 an = vertex.result - itA->vertex.result;
+		//		const Vector2 nb = itB->vertex.result - vertex.result;
+		//		const real res2 = Vector2::crossProduct(an, nb);
+
+		//		const real res3 = Vector2::crossProduct(nb, bc);
+
+		//		const bool validConvexity = Math::sameSignStrict(res1, res2, res3);
+
+		//		if (!validConvexity) //invalid vertex
+		//		{
+		//			if (polytope.size() >= 4) //if polytope is expanded, terminate the loop
+		//				break;
+
+		//			if (errorCount == 3) //fail to rewind simplex, terminate
+		//				break;
+
+		//			//try to rewind
+		//			reindexSimplex();
+		//			errorCount++;
+		//			iter--;
+		//			continue;
+		//		}
+
+		//		//then insert new vertex
+
+		//		SimplexVertexWithOriginDistance pair;
+		//		pair.vertex = vertex;
+		//		const Vector2 t1 = GeometryAlgorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
+		//		const real dist1 = t1.lengthSquare();
+		//		const Vector2 t2 = GeometryAlgorithm2D::pointToLineSegment(vertex.result, itB->vertex.result, { 0, 0 });
+		//		const real dist2 = t2.lengthSquare();
+
+		//		itA->distance = dist1;
+		//		pair.distance = dist2;
+		//		polytope.insert(itB, pair);
+
+		//		points.clear();
+		//		for (auto&& elem : info.polytope)
+		//			points.push_back(elem.vertex.result);
+
+		//		polytopes.push_back(points);
+
+		//		//TODO: if dist1 == dist2, and dist1 cannot be extended and dist2 can be extended.
+		//		if (dist1 == dist2)
+		//			sameDistCount++;
+		//		
+
+		//		//set to begin
+		//		iterTemp = iterStart;
+
+		//		//find shortest distance and set iterStart
+		//		real minDistance = Constant::Max;
+		//		auto iterTarget = iterStart;
+		//		while (true)
+		//		{
+		//			if (iterTemp->distance < minDistance)
+		//			{
+		//				minDistance = iterTemp->distance;
+		//				iterTarget = iterTemp;
+		//			}
+		//			Narrowphase::polytopeIterNext(iterTemp, polytope);
+		//			if (iterTemp == iterStart)
+		//				break;
+		//		}
+		//		iterStart = iterTarget;
+		//		iterEnd = iterTarget;
+		//		Narrowphase::polytopeIterPrev(iterEnd, polytope);
+
+		//		//set to begin
+		//		iterTemp = iterStart;
+		//		Narrowphase::polytopeIterNext(iterTemp, polytope);
+		//		//reset simplex
+		//		info.simplex.vertices[0] = iterStart->vertex;
+		//		info.simplex.vertices[1] = iterTemp->vertex;
+
+		//		simplexes.push_back(info.simplex);
+
+		//		errorCount = 0;
+		//	}
+
+
+		//	info.simplex.removeEnd();
+		//	//Convex combination for calculating distance points
+		//	//https://dyn4j.org/2010/04/gjk-distance-closest-points/
+
+		//	Vector2& A_0 = info.simplex.vertices[0].point[0];
+		//	Vector2& B_0 = info.simplex.vertices[0].point[1];
+		//	Vector2& A_1 = info.simplex.vertices[1].point[0];
+		//	Vector2& B_1 = info.simplex.vertices[1].point[1];
+
+		//	Vector2 M_0 = info.simplex.vertices[0].result;
+		//	Vector2 M_1 = info.simplex.vertices[1].result;
+
+		//	Vector2 M0_M1 = M_1 - M_0;
+		//	real M0_O_proj = -M_0.dot(M0_M1);
+		//	real M0_M1_proj = M0_M1.dot(M0_M1);
+		//	real v = M0_O_proj / M0_M1_proj;
+		//	real u = 1 - v;
+
+		//	result.pointA.set(u * A_0 + v * A_1);
+		//	result.pointB.set(u * B_0 + v * B_1);
+
+		//	if (M0_M1.fuzzyEqual({ 0, 0 }) || v < 0)
+		//	{
+		//		result.pointA.set(A_0);
+		//		result.pointB.set(B_0);
+		//	}
+		//	else if (u < 0)
+		//	{
+		//		result.pointA.set(A_1);
+		//		result.pointB.set(B_1);
+		//	}
+		//	info.pair = result;
+		//	info.penetration = (result.pointA - result.pointB).length();
+		//}
+
+
+
+		//m_maxPolytopeIndex = polytopes.size() - 1;
+
+		//if (m_maxPolytopeIndex < 0)
+		//	m_maxPolytopeIndex = 0;
+
+		//if(m_showPolytope)
+		//	renderer.polytope(polytopes[m_currentPolytopeIndex], DarkPalette::Teal);
+
+		//if (m_showSimplex)
+		//	renderer.simplex(simplexes[m_currentPolytopeIndex], simplexColor);
+
+		//std::vector<Vector2> points;
+		//for(auto&& elem: info.polytope)
+		//	points.push_back(elem.vertex.result);
+		//
+		//renderer.polytope(points, polytopeColor);
+
+		//renderer.simplex(info.simplex, simplexColor);
+
+
 
 	}
 
 	void NarrowphaseScene::onRenderUI()
 	{
+		ImGui::Begin("Narrowphase Scene");
 
+		//ImGui::SliderInt("Polytope Index", &m_currentPolytopeIndex, 0, m_maxPolytopeIndex);
+		ImGui::Checkbox("Show Simplex", &m_showSimplex);
+		ImGui::Checkbox("Show Polytope", &m_showPolytope);
+
+		ImGui::End();
 	}
 
 	void NarrowphaseScene::onKeyButton(GLFWwindow* window, Renderer2D& renderer, int key, int scancode, int action, int mods)

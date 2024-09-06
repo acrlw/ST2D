@@ -267,6 +267,7 @@ namespace STEditor
 		if (!finished)
 		{
 			m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_easingMeterToPixel.value()));
+			m_pixelToMeter = 1.0f / m_easingMeterToPixel.value();
 
 			float h = m_orthoSize;
 			float w = m_aspectRatio * h;
@@ -304,6 +305,7 @@ namespace STEditor
 
 		m_text.clear();
 		m_textureIDs.clear();
+		m_textColors.clear();
 
 		//m_lines.shrink_to_fit();
 		//m_thickLines.shrink_to_fit();
@@ -906,7 +908,7 @@ namespace STEditor
 
 				char c = *iter;
 
-				if (c != '.' && c != ',' && c != ' ')
+				if (c != '.' && c != ',' && c != ' ' && c != '+' && c != '-' && c != '*')
 					minHeight = Math::min(minHeight, ch.size.y * scale);
 
 				maxHeight = Math::max(maxHeight, ch.size.y * scale);
@@ -1030,8 +1032,6 @@ namespace STEditor
 			break;
 		case 1:
 			point(simplex.vertices[0].result, color);
-			if (showIndex)
-				text(simplex.vertices[0].result, color, "0");
 			break;
 		case 2:
 			point(simplex.vertices[0].result, color);
@@ -1041,9 +1041,9 @@ namespace STEditor
 			if (showIndex)
 			{
 				Vector2 offset = simplex.vertices[1].result - simplex.vertices[0].result;
-				offset = -offset.perpendicular().normal() * 0.3f;
-				text(simplex.vertices[0].result, color, "0");
-				text(simplex.vertices[1].result, color, "1");
+				offset = -offset.perpendicular().normal() * m_simplexIndexOffset * m_pixelToMeter;
+				text(simplex.vertices[0].result + offset, color, "0");
+				text(simplex.vertices[1].result + offset, color, "1");
 			}
 			break;
 		case 3:
@@ -1058,16 +1058,16 @@ namespace STEditor
 				Vector2 center = 1.0f / 3.0f * (simplex.vertices[0].result + simplex.vertices[1].result + simplex.vertices[2].result);
 
 				Vector2 offset = simplex.vertices[0].result - center;
-				offset = offset.normal() * 0.3f;
-				text(simplex.vertices[0].result, color, "0");
+				offset = offset.normal() * m_simplexIndexOffset * m_pixelToMeter;
+				text(simplex.vertices[0].result + offset, color, "0");
 
 				offset = simplex.vertices[1].result - center;
-				offset = offset.normal() * 0.3f;
-				text(simplex.vertices[1].result, color, "1");
+				offset = offset.normal() * m_simplexIndexOffset * m_pixelToMeter;
+				text(simplex.vertices[1].result + offset, color, "1");
 
 				offset = simplex.vertices[2].result - center;
-				offset = offset.normal() * 0.3f;
-				text(simplex.vertices[2].result, color, "2");
+				offset = offset.normal() * m_simplexIndexOffset * m_pixelToMeter;
+				text(simplex.vertices[2].result + offset, color, "2");
 
 			}
 			break;
@@ -1087,14 +1087,17 @@ namespace STEditor
 		for (const auto& p : points)
 		{
 			point(p, color, pointSize);
-			offsets.emplace_back((p - center).normal() * 0.3f);
+			offsets.emplace_back((p - center).normal() * m_simplexIndexOffset * m_pixelToMeter);
 		}
 		closedLines(points, color);
 
 		//draw text
 		if(showIndex)
 		{
-			
+			for (size_t i = 0; i < points.size(); ++i)
+			{
+				text(points[i] + offsets[i], color, std::to_string(i));
+			}
 		}
 	}
 
@@ -1324,9 +1327,8 @@ namespace STEditor
 		{
 			for (int i = 0; i < m_textureIDs.size(); ++i)
 			{
+				m_fontProgram.setUniform4f("fontColor", m_textColors[i].r, m_textColors[i].g, m_textColors[i].b, m_textColors[i].a);
 				glBindTexture(GL_TEXTURE_2D, m_textureIDs[i]);
-				m_fontProgram.setUniform4f("textColor", m_textColors[i].r, m_textColors[i].g, m_textColors[i].b, m_textColors[i].a);
-
 				glDrawArrays(GL_TRIANGLES, offset, 6);
 				offset += 6;
 			}
@@ -1419,7 +1421,7 @@ namespace STEditor
 
 	float Renderer2D::pixelToMeter() const
 	{
-		return 1.0f / m_meterToPixel;
+		return m_pixelToMeter;
 	}
 
 	AABB Renderer2D::screenAABB() const
@@ -1443,13 +1445,14 @@ namespace STEditor
 		m_scrollMouseStart = screenToWorld(m_scrollMouseScreenStart);
 
 		m_meterToPixel *= 1.0f + yoffset * m_scaleRatio;
-		m_meterToPixel = std::clamp(m_meterToPixel, 0.1f, 5000.0f);
+		m_meterToPixel = std::clamp(m_meterToPixel, 1.0f / m_maxMeterToPixel, m_maxMeterToPixel);
 
 		m_easingMeterToPixel.continueTo(m_meterToPixel, m_zoomingDuration);
 
 		if (!m_smoothZooming)
 		{
 			m_easingMeterToPixel.finish();
+			m_pixelToMeter = 1.0f / m_meterToPixel;
 
 			m_orthoSize = 0.25f * (m_zFar - m_zNear) / m_zFar * (static_cast<float>(m_frameBufferWidth) / (m_aspectRatio * m_easingMeterToPixel.value()));
 

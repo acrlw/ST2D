@@ -216,7 +216,9 @@ namespace STEditor
 		EasingObject<float> m_easingMeterToPixel = EasingObject(100.0f);
 		GLFWwindow* m_window = nullptr;
 
+		float m_maxMeterToPixel = 10000.0f;
 		float m_meterToPixel = 100.0f;
+		float m_pixelToMeter = 1.0f / m_meterToPixel;
 		float m_scaleRatio = 0.1f;
 		float m_zoomingDuration = 0.3f;
 
@@ -261,7 +263,7 @@ namespace STEditor
 
 		size_t m_textDataSize = 0;
 		size_t m_textDataCapacity = 4 * 6;
-		int m_fontHeight = 56;
+		int m_fontHeight = 18;
 
 		ShaderProgram m_graphicsProgram;
 		ShaderProgram m_fontProgram;
@@ -278,6 +280,8 @@ namespace STEditor
 
 		FT_Library m_ftLibrary;
 		FT_Face m_ftFace;
+
+		float m_simplexIndexOffset = 10.0f;
 	};
 
 	

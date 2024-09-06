@@ -399,6 +399,7 @@ namespace ST
 
 		reconstructSimplexByVoronoi(info.simplex);
 		info.originalSimplex = info.simplex;
+
 		//[DEBUG]
 		std::list<SimplexVertexWithOriginDistance>& polytope = info.polytope;
 		//std::list<SimplexVertexWithOriginDistance> polytope;
@@ -423,6 +424,7 @@ namespace ST
 			};
 
 		int sameDistCount = 0;
+
 
 		for (Index iter = 0; iter < iteration; ++iter)
 		{
@@ -513,8 +515,10 @@ namespace ST
 			itA->distance = dist1;
 			pair.distance = dist2;
 			polytope.insert(itB, pair);
+
 			//TODO: if dist1 == dist2, and dist1 cannot be extended and dist2 can be extended.
-			sameDistCount = realEqual(dist1, dist2) ? sameDistCount + 1 : sameDistCount;
+			if (dist1 == dist2)
+				sameDistCount++;
 
 			//set to begin
 			iterTemp = iterStart;
@@ -543,11 +547,11 @@ namespace ST
 			//reset simplex
 			info.simplex.vertices[0] = iterStart->vertex;
 			info.simplex.vertices[1] = iterTemp->vertex;
+
+
 			errorCount = 0;
 		}
-		auto idxStart = std::distance(polytope.begin(), iterStart);
-		polytopeIterNext(iterStart, polytope);
-		auto idxNext = std::distance(polytope.begin(), iterStart);
+
 		info.simplex.removeEnd();
 		//Convex combination for calculating distance points
 		//https://dyn4j.org/2010/04/gjk-distance-closest-points/

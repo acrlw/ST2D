@@ -20,6 +20,10 @@ namespace STEditor
 		bool m_gridVisible = true;
 
 		int m_gridMaxPoint = 100;
+		Color axisColor = DarkPalette::Green;
+		Color thin = DarkPalette::DarkGreen;
+		Color thick = DarkPalette::DarkGreen;
+		float numberPixelOffset = 6.0f;
 
 	};
 }

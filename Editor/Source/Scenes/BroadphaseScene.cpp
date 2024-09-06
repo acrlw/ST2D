@@ -65,7 +65,7 @@ namespace STEditor
 			if(m_showObjectId)
 			{
 				std::string id = std::to_string(m_objectIds[i]);
-				renderer.text(m_transforms[i].position, DarkPalette::Gray, id, 0.25f, true);
+				renderer.text(m_transforms[i].position, DarkPalette::Gray, id);
 			}
 
 			if (m_showTransform)
