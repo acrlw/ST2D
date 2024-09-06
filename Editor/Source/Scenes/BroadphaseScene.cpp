@@ -56,6 +56,10 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Render");
 
+		Vector2 pos = renderer.worldToScreen({ 1.0f, 1.0f });
+
+		renderer.text(pos, DarkPalette::Green, "This is sample text");
+
 		for(int i = 0; i < m_count; ++i)
 		{
 			if(m_showObjectId)

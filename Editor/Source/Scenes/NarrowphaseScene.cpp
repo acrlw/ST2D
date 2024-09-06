@@ -35,13 +35,12 @@ namespace STEditor
 		Color simplexColor = DarkPalette::Purple;
 
 		Color polytopeColor = DarkPalette::Teal;
-		polytopeColor.a = 50.0f / 255.0f;
+		polytopeColor.a = 150.0f / 255.0f;
 
 		std::vector<Vector2> points;
 		for(auto&& elem: info.polytope)
-		{
 			points.push_back(elem.vertex.result);
-		}
+		
 		renderer.polytope(points, polytopeColor);
 
 		renderer.simplex(info.simplex, simplexColor);

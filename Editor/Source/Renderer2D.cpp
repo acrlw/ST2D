@@ -20,7 +20,7 @@ namespace STEditor
 
 	Renderer2D::~Renderer2D()
 	{
-		APP_INFO("Delete VAO ({}) and VBO ({})", m_graphicsVAO, m_pointVAO, m_fontVAO, m_graphicsVBO, m_pointVBO, m_fontVBO);
+		APP_INFO("Delete VAO ({},{},{}) and VBO ({},{},{})", m_graphicsVAO, m_pointVAO, m_fontVAO, m_graphicsVBO, m_pointVBO, m_fontVBO);
 
 		glDeleteVertexArrays(1, &m_graphicsVAO);
 		glDeleteBuffers(1, &m_graphicsVBO);
@@ -114,7 +114,7 @@ namespace STEditor
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		APP_INFO("Created Line VAO({}) and VBO({})", m_graphicsVAO, m_graphicsVBO);
+		APP_INFO("Created VAO({},{},{}) and VBO ({},{},{})", m_graphicsVAO, m_pointVAO, m_fontVAO, m_graphicsVBO, m_pointVBO, m_fontVBO);
 	}
 
 	void Renderer2D::initFont()
@@ -130,6 +130,46 @@ namespace STEditor
 		}
 
 		FT_Set_Pixel_Sizes(m_ftFace, 0, 48);
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		for (GLubyte c = 0; c < 128; c++)
+		{
+
+			if (FT_Load_Char(m_ftFace, c, FT_LOAD_RENDER))
+			{
+				APP_ERROR("[FreeType] Failed to load Glyph");
+				continue;
+			}
+
+			GLuint texture;
+			glGenTextures(1, &texture);
+			glBindTexture(GL_TEXTURE_2D, texture);
+			glTexImage2D(
+				GL_TEXTURE_2D,
+				0,
+				GL_RED,
+				m_ftFace->glyph->bitmap.width,
+				m_ftFace->glyph->bitmap.rows,
+				0,
+				GL_RED,
+				GL_UNSIGNED_BYTE,
+				m_ftFace->glyph->bitmap.buffer
+			);
+
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			
+			Char character = {
+				texture,
+				glm::ivec2(m_ftFace->glyph->bitmap.width, m_ftFace->glyph->bitmap.rows),
+				glm::ivec2(m_ftFace->glyph->bitmap_left, m_ftFace->glyph->bitmap_top),
+				m_ftFace->glyph->advance.x
+			};
+			m_characters.insert(std::pair<GLchar, Char>(c, character));
+		}
+
 	}
 
 	void Renderer2D::onRenderStart()
@@ -186,6 +226,20 @@ namespace STEditor
 		glBufferSubData(GL_ARRAY_BUFFER, 0, m_pointDataSize * sizeof(float), vertices.data());
 
 		vertices.clear();
+		vertices.insert(vertices.end(), m_text.begin(), m_text.end());
+
+		m_fontProgram.use();
+
+		glBindVertexArray(m_fontVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_fontVBO);
+
+		m_textDataSize = vertices.size();
+		if (m_textDataSize > m_textDataCapacity)
+		{
+			m_textDataCapacity = m_textDataSize * 2;
+			glBufferData(GL_ARRAY_BUFFER, m_textDataCapacity * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+		}
+		glBufferSubData(GL_ARRAY_BUFFER, 0, m_textDataSize * sizeof(float), vertices.data());
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -195,194 +249,15 @@ namespace STEditor
 	{
 		buildViewProjectionMatrix();
 
-		glm::mat4 identity = glm::mat4(1.0f);
-
 		GLint previousDepthFunc;
 		glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
 		glDepthFunc(GL_ALWAYS);
 
 		onRenderStart();
 
-		m_graphicsProgram.use();
-		glBindVertexArray(m_graphicsVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, m_graphicsVBO);
-
-		m_graphicsProgram.setUniformMat4f("view", m_view);
-		m_graphicsProgram.setUniformMat4f("projection", m_projection);
-
-		size_t lineSize = m_lines.size() / 7;
-		size_t offset = 0;
-		if (!m_lines.empty())
-		{
-			glDrawArrays(GL_LINES, offset, lineSize);
-			offset += lineSize;
-		}
-
-
-		if (!m_thickLines.empty())
-		{
-			for (auto&& elem : m_thickLines)
-			{
-				glLineWidth(elem.thickness);
-				glDrawArrays(GL_LINES, offset, elem.vertices.size() / 7);
-				offset += elem.vertices.size() / 7;
-			}
-		}
-
-		if (!m_polyLines.empty())
-		{
-			for (auto&& elem : m_polyLines)
-			{
-				glLineWidth(elem.thickness);
-				if (elem.closed)
-					glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
-				else
-					glDrawArrays(GL_LINE_STRIP, offset, elem.vertices.size() / 7);
-				offset += elem.vertices.size() / 7;
-			}
-		}
-
-		if (!m_fills.empty())
-		{
-			for (auto&& elem : m_fills)
-			{
-				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
-				offset += elem.vertices.size() / 7;
-			}
-		}
-
-		if (!m_fillStrokes.empty())
-		{
-			for (auto&& elem : m_fillStrokes)
-			{
-				m_graphicsProgram.setUniform1i("isFillMode", 0);
-
-				glLineWidth(elem.thickness);
-				glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
-
-				m_graphicsProgram.setUniform1i("isFillMode", 1);
-				m_graphicsProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
-
-				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
-
-				offset += elem.vertices.size() / 7;
-			}
-			m_graphicsProgram.setUniform1i("isFillMode", 0);
-		}
-
-		if (!m_multiCommandsDraws.empty())
-		{
-			for (auto&& elem : m_multiCommandsDraws)
-			{
-				glLineWidth(elem.thickness);
-				for (auto&& command : elem.commands)
-				{
-					if(command == GL_TRIANGLE_FAN)
-					{
-						m_graphicsProgram.setUniform1i("isFillMode", 1);
-						m_graphicsProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
-
-						glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
-
-						m_graphicsProgram.setUniform1i("isFillMode", 0);
-					}
-					else if(command == GL_POINTS)
-					{
-						glPointSize(elem.pointSize);
-						glDrawArrays(GL_POINTS, offset, elem.vertices.size() / 7);
-					}
-					else
-					{
-						glLineWidth(elem.thickness);
-						glDrawArrays(command, offset, elem.vertices.size() / 7);
-					}
-				}
-				offset += elem.vertices.size() / 7;
-			}
-		}
-
-		m_graphicsProgram.setUniformMat4f("view", identity);
-		m_graphicsProgram.setUniformMat4f("projection", identity);
-
-		if (!m_ndcLines.empty())
-		{
-			glLineWidth(1.0f);
-			glDrawArrays(GL_LINES, offset, m_ndcLines.size() / 7);
-			offset += m_ndcLines.size() / 7;
-		}
-
-		if (!m_ndcMultiCommandsDraws.empty())
-		{
-			for (auto&& elem : m_ndcMultiCommandsDraws)
-			{
-				glLineWidth(elem.thickness);
-				for (auto&& command : elem.commands)
-				{
-					if (command == GL_TRIANGLE_FAN)
-					{
-						m_graphicsProgram.setUniform1i("isFillMode", 1);
-						m_graphicsProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
-
-						glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
-
-						m_graphicsProgram.setUniform1i("isFillMode", 0);
-					}
-					else if (command == GL_POINTS)
-					{
-						glPointSize(elem.pointSize);
-						glDrawArrays(GL_POINTS, offset, elem.vertices.size() / 7);
-					}
-					else
-					{
-						glLineWidth(elem.thickness);
-						glDrawArrays(command, offset, elem.vertices.size() / 7);
-					}
-				}
-				offset += elem.vertices.size() / 7;
-			}
-		}
-
-		m_pointProgram.use();
-
-		glBindVertexArray(m_pointVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, m_pointVBO);
-
-		m_pointProgram.setUniformMat4f("view", m_view);
-		m_pointProgram.setUniformMat4f("projection", m_projection);
-
-		size_t pointSize = m_points.size() / 8;
-		offset = 0;
-
-		if (!m_points.empty())
-		{
-			glDrawArrays(GL_POINTS, offset, pointSize);
-			offset += pointSize;
-		}
-
-		m_pointProgram.setUniformMat4f("view", identity);
-		m_pointProgram.setUniformMat4f("projection", identity);
-
-		if (!m_ndcPoints.empty())
-		{
-			glDrawArrays(GL_POINTS, offset, m_ndcPoints.size() / 8);
-		}
-
-		m_fontProgram.use();
-
-		glBindVertexArray(m_fontVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, m_fontVBO);
-
-		m_fontProgram.setUniformMat4f("view", identity);
-		m_fontProgram.setUniformMat4f("projection", identity);
-
-
-		size_t textDataSize = m_text.size() / 8;
-		offset = 0;
-
-		if (!m_text.empty())
-		{
-
-		}
+		drawGraphicsProgram();
+		drawPointsProgram();
+		drawTextProgram();
 
 		glDepthFunc(previousDepthFunc);
 
@@ -437,18 +312,21 @@ namespace STEditor
 		m_ndcPoints.clear();
 
 		m_text.clear();
+		m_textureIDs.clear();
 
-		m_lines.shrink_to_fit();
-		m_thickLines.shrink_to_fit();
-		m_polyLines.shrink_to_fit();
-		m_fills.shrink_to_fit();
-		m_fillStrokes.shrink_to_fit();
-		m_multiCommandsDraws.shrink_to_fit();
-		m_ndcLines.shrink_to_fit();
-		m_ndcMultiCommandsDraws.shrink_to_fit();
+		//m_lines.shrink_to_fit();
+		//m_thickLines.shrink_to_fit();
+		//m_polyLines.shrink_to_fit();
+		//m_fills.shrink_to_fit();
+		//m_fillStrokes.shrink_to_fit();
+		//m_multiCommandsDraws.shrink_to_fit();
+		//m_ndcLines.shrink_to_fit();
+		//m_ndcMultiCommandsDraws.shrink_to_fit();
 
-		m_points.shrink_to_fit();
-		m_ndcPoints.shrink_to_fit();
+		//m_points.shrink_to_fit();
+		//m_ndcPoints.shrink_to_fit();
+
+		//m_text.shrink_to_fit();
 	}
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, const Color& color)
@@ -1012,14 +890,46 @@ namespace STEditor
 
 	}
 
-	void Renderer2D::text(const Vector2& position, const Color& color, const std::string& text,
-		const unsigned int& size, const Vector2& offset, bool centered)
+	void Renderer2D::text(const Vector2& position, const Color& color, const std::string& text, const float& scale,
+		bool centered)
 	{
 
+		if (text.empty())
+			return;
+
+		float x = position.x;
+		float y = position.y;
+
+		for (std::string::const_iterator c = text.begin(); c != text.end(); ++c)
+		{
+			Char ch = m_characters[*c];
+
+			float xpos = x + ch.bearing.x * scale;
+			float ypos = y - (ch.size.y - ch.bearing.y) * scale;
+
+			float w = ch.size.x * scale;
+			float h = ch.size.y * scale;
+
+			std::array vertices = 
+			{
+				xpos, ypos + h, 0.0f, 0.0f, color.r, color.g, color.b, color.a,
+				xpos, ypos, 0.0f, 1.0f, color.r, color.g, color.b, color.a,
+				xpos + w, ypos, 1.0f, 1.0f, color.r, color.g, color.b, color.a,
+				xpos, ypos + h, 0.0f, 0.0f, color.r, color.g, color.b, color.a,
+				xpos + w, ypos, 1.0f, 1.0f, color.r, color.g, color.b, color.a,
+				xpos + w, ypos + h, 1.0f, 0.0f, color.r, color.g, color.b, color.a
+			};
+
+			m_text.insert(m_text.end(), vertices.begin(), vertices.end());
+
+			m_textureIDs.push_back(ch.textureID);
+
+			x += (ch.advance >> 6) * scale;
+		}
 	}
 
 	void Renderer2D::text(const Vector2& position, const Color& color, int value, const unsigned int& size,
-		const Vector2& offset, bool centered)
+	                      const Vector2& offset, bool centered)
 	{
 
 	}
@@ -1141,6 +1051,201 @@ namespace STEditor
 		pos /= pos.w;
 
 		return { pos.x, pos.y };
+	}
+
+	void Renderer2D::drawGraphicsProgram()
+	{
+		glm::mat4 identity = glm::mat4(1.0f);
+
+		m_graphicsProgram.use();
+		glBindVertexArray(m_graphicsVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_graphicsVBO);
+
+		m_graphicsProgram.setUniformMat4f("view", m_view);
+		m_graphicsProgram.setUniformMat4f("projection", m_projection);
+
+		size_t lineSize = m_lines.size() / 7;
+		size_t offset = 0;
+		if (!m_lines.empty())
+		{
+			glDrawArrays(GL_LINES, offset, lineSize);
+			offset += lineSize;
+		}
+
+
+		if (!m_thickLines.empty())
+		{
+			for (auto&& elem : m_thickLines)
+			{
+				glLineWidth(elem.thickness);
+				glDrawArrays(GL_LINES, offset, elem.vertices.size() / 7);
+				offset += elem.vertices.size() / 7;
+			}
+		}
+
+		if (!m_polyLines.empty())
+		{
+			for (auto&& elem : m_polyLines)
+			{
+				glLineWidth(elem.thickness);
+				if (elem.closed)
+					glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
+				else
+					glDrawArrays(GL_LINE_STRIP, offset, elem.vertices.size() / 7);
+				offset += elem.vertices.size() / 7;
+			}
+		}
+
+		if (!m_fills.empty())
+		{
+			for (auto&& elem : m_fills)
+			{
+				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+				offset += elem.vertices.size() / 7;
+			}
+		}
+
+		if (!m_fillStrokes.empty())
+		{
+			for (auto&& elem : m_fillStrokes)
+			{
+				m_graphicsProgram.setUniform1i("isFillMode", 0);
+
+				glLineWidth(elem.thickness);
+				glDrawArrays(GL_LINE_LOOP, offset, elem.vertices.size() / 7);
+
+				m_graphicsProgram.setUniform1i("isFillMode", 1);
+				m_graphicsProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+
+				glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+
+				offset += elem.vertices.size() / 7;
+			}
+			m_graphicsProgram.setUniform1i("isFillMode", 0);
+		}
+
+		if (!m_multiCommandsDraws.empty())
+		{
+			for (auto&& elem : m_multiCommandsDraws)
+			{
+				glLineWidth(elem.thickness);
+				for (auto&& command : elem.commands)
+				{
+					if (command == GL_TRIANGLE_FAN)
+					{
+						m_graphicsProgram.setUniform1i("isFillMode", 1);
+						m_graphicsProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+
+						glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+
+						m_graphicsProgram.setUniform1i("isFillMode", 0);
+					}
+					else if (command == GL_POINTS)
+					{
+						glPointSize(elem.pointSize);
+						glDrawArrays(GL_POINTS, offset, elem.vertices.size() / 7);
+					}
+					else
+					{
+						glLineWidth(elem.thickness);
+						glDrawArrays(command, offset, elem.vertices.size() / 7);
+					}
+				}
+				offset += elem.vertices.size() / 7;
+			}
+		}
+
+		m_graphicsProgram.setUniformMat4f("view", identity);
+		m_graphicsProgram.setUniformMat4f("projection", identity);
+
+		if (!m_ndcLines.empty())
+		{
+			glLineWidth(1.0f);
+			glDrawArrays(GL_LINES, offset, m_ndcLines.size() / 7);
+			offset += m_ndcLines.size() / 7;
+		}
+
+		if (!m_ndcMultiCommandsDraws.empty())
+		{
+			for (auto&& elem : m_ndcMultiCommandsDraws)
+			{
+				glLineWidth(elem.thickness);
+				for (auto&& command : elem.commands)
+				{
+					if (command == GL_TRIANGLE_FAN)
+					{
+						m_graphicsProgram.setUniform1i("isFillMode", 1);
+						m_graphicsProgram.setUniform4f("fillColor", elem.fillColor.r, elem.fillColor.g, elem.fillColor.b, elem.fillColor.a);
+
+						glDrawArrays(GL_TRIANGLE_FAN, offset, elem.vertices.size() / 7);
+
+						m_graphicsProgram.setUniform1i("isFillMode", 0);
+					}
+					else if (command == GL_POINTS)
+					{
+						glPointSize(elem.pointSize);
+						glDrawArrays(GL_POINTS, offset, elem.vertices.size() / 7);
+					}
+					else
+					{
+						glLineWidth(elem.thickness);
+						glDrawArrays(command, offset, elem.vertices.size() / 7);
+					}
+				}
+				offset += elem.vertices.size() / 7;
+			}
+		}
+	}
+
+	void Renderer2D::drawPointsProgram()
+	{
+		glm::mat4 identity = glm::mat4(1.0f);
+
+		m_pointProgram.use();
+
+		glBindVertexArray(m_pointVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_pointVBO);
+
+		m_pointProgram.setUniformMat4f("view", m_view);
+		m_pointProgram.setUniformMat4f("projection", m_projection);
+
+		size_t pointSize = m_points.size() / 8;
+		size_t offset = 0;
+
+		if (!m_points.empty())
+		{
+			glDrawArrays(GL_POINTS, offset, pointSize);
+			offset += pointSize;
+		}
+
+		m_pointProgram.setUniformMat4f("view", identity);
+		m_pointProgram.setUniformMat4f("projection", identity);
+
+		if (!m_ndcPoints.empty())
+		{
+			glDrawArrays(GL_POINTS, offset, m_ndcPoints.size() / 8);
+		}
+	}
+
+	void Renderer2D::drawTextProgram()
+	{
+		m_fontProgram.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindVertexArray(m_fontVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_fontVBO);
+
+		size_t textDataSize = m_text.size() / 8;
+		size_t offset = 0;
+
+		if(!m_textureIDs.empty())
+		{
+			for (unsigned int textureID : m_textureIDs)
+			{
+				glBindTexture(GL_TEXTURE_2D, textureID);
+				glDrawArrays(GL_TRIANGLES, 0, textDataSize);
+				offset += textDataSize;
+			}
+		}
 	}
 
 	void Renderer2D::polyLines(const std::vector<Vector2>& points, const Color& color)

@@ -95,6 +95,14 @@ namespace STEditor
 		Color fillColor;
 	};
 
+	struct Char
+	{
+		GLuint textureID;
+		glm::ivec2 size;
+		glm::ivec2 bearing;
+		GLuint advance;
+	};
+
 	class Renderer2D
 	{
 	public:
@@ -141,7 +149,7 @@ namespace STEditor
 
 		void arrow(const Vector2& start, const Vector2& end, const Color& color, const float& size = 0.2f, const float& degree = 45);
 
-		void text(const Vector2& position, const Color& color, const std::string& text, const unsigned int& size = 16, const Vector2& offset = { 0.0f, 0.0f }, bool centered = true);
+		void text(const Vector2& position, const Color& color, const std::string& text, const float& scale = 1.0f, bool centered = true);
 		void text(const Vector2& position, const Color& color, int value, const unsigned int& size = 16, const Vector2& offset = { 0.0f, 0.0f }, bool centered = true);
 		void text(const Vector2& position, const Color& color, float value, const unsigned int& size = 16, const Vector2& offset = { 0.0f, 0.0f }, bool centered = true);
 		void text(const Vector2& position, const Color& color, unsigned int value, const unsigned int& size = 16, const Vector2& offset = { 0.0f, 0.0f }, bool centered = true);
@@ -172,6 +180,10 @@ namespace STEditor
 		AABB screenAABB() const;
 
 	private:
+		void drawGraphicsProgram();
+		void drawPointsProgram();
+		void drawTextProgram();
+
 		void onZoomView(float xoffset, float yoffset);
 		void onTranslateView(float x, float y);
 
@@ -241,13 +253,15 @@ namespace STEditor
 		std::vector<float> m_points;
 		std::vector<float> m_ndcPoints;
 
-		size_t m_pointDataCapacity = 7;
+		size_t m_pointDataCapacity = 8;
 		size_t m_pointDataSize = 0;
 
 		//font shader
 		std::vector<float> m_text;
+		std::vector<GLuint> m_textureIDs;
+		std::map<GLchar, Char> m_characters;
 
-		size_t m_textDataCapacity = 7;
+		size_t m_textDataCapacity = 8;
 		size_t m_textDataSize = 0;
 
 		ShaderProgram m_graphicsProgram;
