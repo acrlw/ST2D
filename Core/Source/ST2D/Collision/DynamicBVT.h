@@ -75,6 +75,7 @@ namespace ST
 		void updateHeight(int nodeIndex);
 		void updateAABB(int nodeIndex);
 
+		void onlyInsertLeaf(const BVTNodeBinding& leaf);
 		void insertLeaf(const BVTNodeBinding& leaf);
 		void directInsertLeaf(int leafIndex);
 		void removeLeaf(int objectId);
@@ -99,6 +100,10 @@ namespace ST
 		std::vector<int> m_freeLeaves;
 
 		int m_rootIndex = -1;
+
+		//if true, only insert new object to list of leaves, not perform any tree rotation and update
+		//this is used when need insert bulk of objects and rebuild tree later
+		bool m_onlyInsert = true;
 	};
 
 	

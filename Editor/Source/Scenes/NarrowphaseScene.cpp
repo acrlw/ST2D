@@ -11,6 +11,8 @@ namespace STEditor
 	{
 		rect.set(1.0f, 1.0f);
 		ellipse.set(1.0f, 2.0f);
+		capsule.set(1.0f, 2.0f);
+		circle.setRadius(1.0f);
 
 		tf1.position.set(-0.561019301f, 0.842656434f);
 		tf2.position.set(-1.0f, -1.0f);

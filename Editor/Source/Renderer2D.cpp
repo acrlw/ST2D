@@ -936,6 +936,9 @@ namespace STEditor
 
 			minHeight *= 0.5f;
 
+			if (x < -textWidth || x > m_frameBufferWidth + textWidth || y < -minHeight || y > m_frameBufferHeight + minHeight)
+				return;
+
 			for (auto&& elem : text)
 			{
 				Char ch = m_characters[elem];
@@ -983,6 +986,9 @@ namespace STEditor
 				if (ch.size.y - ch.bearing.y > 0)
 					maxHeight = Math::max(maxHeight, ch.size.y * scale);
 			}
+
+			if (x < -m_fontHeight || x > m_frameBufferWidth + m_fontHeight || y < -maxHeight || y > m_frameBufferHeight + maxHeight)
+				return;
 
 			for (auto&& elem : text)
 			{

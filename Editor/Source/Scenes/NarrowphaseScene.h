@@ -25,6 +25,8 @@ namespace STEditor
 	private:
 		ST::Rectangle rect;
 		ST::Ellipse ellipse;
+		ST::Capsule capsule;
+		ST::Circle circle;
 		Transform tf1, tf2;
 		Transform* selectedTransform = nullptr;
 		Transform oldTransform;

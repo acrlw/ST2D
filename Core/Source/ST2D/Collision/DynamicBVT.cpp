@@ -26,7 +26,11 @@ namespace ST
 
 		BVTNodeBinding nodeBinding;
 		nodeBinding.binding = binding;
-		insertLeaf(nodeBinding);
+
+		if (m_leaves.size() > 3 && m_onlyInsert)
+			onlyInsertLeaf(nodeBinding);
+		else
+			insertLeaf(nodeBinding);
 	}
 
 	void DynamicBVT::removeObject(int objectId)
@@ -248,46 +252,27 @@ namespace ST
 		std::vector<BVTNodeBinding> leaves;
 		leaves.reserve(m_leaves.size());
 
-		if(m_rootIndex != -1)
+		m_nodes.clear();
+		m_freeNodes.clear();
+		m_rootIndex = getNewNode();
+
+		for (int leafIndex = 0; leafIndex < m_leaves.size(); ++leafIndex)
 		{
-			rootAABB = m_nodes[m_rootIndex].aabb;
+			auto&& leaf = m_leaves[leafIndex];
+			if (leaf.isEmpty())
+				continue;
 
-			m_rootIndex = -1;
-			m_nodes.clear();
-			m_freeNodes.clear();
+			int newNodeIndex = getNewNode();
+			m_nodes[newNodeIndex].aabb = leaf.binding.aabb;
+			m_leaves[leafIndex].nodeIndex = newNodeIndex;
+			m_nodes[newNodeIndex].leafIndex = leafIndex;
+			m_nodes[newNodeIndex].parent = m_rootIndex;
 
-			m_rootIndex = getNewNode();
-			m_nodes[m_rootIndex].aabb = rootAABB;
+			rootAABB.combine(leaf.binding.aabb);
 
-			for(int leafIndex = 0; leafIndex < m_leaves.size(); ++leafIndex)
-			{
-				auto&& leaf = m_leaves[leafIndex];
-				if(leaf.isEmpty())
-					continue;
-
-				int newNodeIndex = getNewNode();
-				m_nodes[newNodeIndex].aabb = leaf.binding.aabb;
-				m_leaves[leafIndex].nodeIndex = newNodeIndex;
-				m_nodes[newNodeIndex].leafIndex = leafIndex;
-				m_nodes[newNodeIndex].parent = m_rootIndex;
-
-				leaves.push_back(leaf);
-			}
+			leaves.push_back(leaf);
 		}
-
-		if(rootAABB.isEmpty())
-		{
-			for(auto&& leaf:m_leaves)
-			{
-				if(!leaf.isValid())
-					continue;
-				rootAABB.combine(leaf.binding.aabb);
-			}
-
-			m_rootIndex = -1;
-			m_nodes.clear();
-			m_freeNodes.clear();
-		}
+		m_nodes[m_rootIndex].aabb = rootAABB;
 
 		rebuildTreeSAH(rootAABB, leaves);
 
@@ -434,7 +419,6 @@ namespace ST
 
 			real rootArea = currentRootAABB.surfaceArea();
 
-
 			real bucketSize = (rootTopRight[sortIndex1] - rootBottomLeft[sortIndex1]) / static_cast<real>(bucketCount);
 
 			bucketArea.fill(0);
@@ -447,6 +431,10 @@ namespace ST
 				const AABB& aabb = leaf.binding.aabb;
 				real dist = aabb.position[sortIndex1] - rootBottomLeft[sortIndex1];
 				int index = dist / bucketSize;
+
+				if (index < 0 || index >= bucketCount)
+					__debugbreak();
+
 				bucketArea[index] += aabb.surfaceArea();
 				bucketLeafCount[index] += 1;
 			}
@@ -701,6 +689,15 @@ namespace ST
 			m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
 			currentIndex = m_nodes[currentIndex].parent;
 		}
+	}
+
+	void DynamicBVT::onlyInsertLeaf(const BVTNodeBinding& leaf)
+	{
+		ZoneScopedN("[DBVT] Only Insert Leaf");
+
+		int leafIndex = getNewLeafNode();
+		m_leaves[leafIndex] = leaf;
+
 	}
 
 	void DynamicBVT::insertLeaf(const BVTNodeBinding& leaf)
