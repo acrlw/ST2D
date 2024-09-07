@@ -46,7 +46,7 @@ namespace STEditor
 
 		arrow = matEasing.value().multiply(Vector2(2.0f, 0.0f));
 
-		if (pList.size() > 360)
+		if (pList.size() > 255)
 			pList.pop_front();
 
 		pList.push_back(p);
@@ -54,7 +54,9 @@ namespace STEditor
 
 	void HelloWorldScene::onRender(Renderer2D& renderer)
 	{
-		Color color = DarkPalette::Pink;
+		ZoneScopedN("[HelloWorldScene] On Render");
+
+		Color color = Palette::Pink;
 		color.a = 0;
 		float step = 255.0f / static_cast<float>(pList.size());
 		//std::vector<Vector2> list;
@@ -65,17 +67,16 @@ namespace STEditor
 
 		//RenderSFMLImpl::renderPolyDashedThickLine(window, *m_settings.camera, list, RenderConstant::Red, 2.0f, 0.1f, 0.1f);
 
-		std::vector<Vector2> list;
 		for (int i = 1; i < pList.size(); ++i)
 		{
 			color.a = i * step / 255.0f;
-			renderer.thickLine(pList[i - 1], pList[i], color, 2.0f);
+			renderer.thickLine(pList[i - 1], pList[i], color);
 
 			/*RenderSFMLImpl::renderPoint(window, *m_settings.camera, pList[i], color, 3.0f);*/
 		}
 
 		//RenderSFMLImpl::renderArrow(window, *m_settings.camera, Vector2(0.0f, 0.0f), Vector2(1.0f, 1.0f), RenderConstant::Green, 0.25f);
-		renderer.line({}, arrow, DarkPalette::Green);
+		renderer.arrow({}, arrow, Palette::Green);
 	}
 }
 

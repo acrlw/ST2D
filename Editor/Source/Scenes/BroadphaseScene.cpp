@@ -65,17 +65,17 @@ namespace STEditor
 			if(m_showObjectId)
 			{
 				std::string id = std::to_string(m_objectIds[i]);
-				renderer.text(m_transforms[i].position, DarkPalette::Gray, id);
+				renderer.text(m_transforms[i].position, Palette::Gray, id);
 			}
 
 			if (m_showTransform)
 				renderer.orientation(m_transforms[i]);
 
 			if(m_showObject)
-				renderer.shape(m_transforms[i], m_shapes[i], DarkPalette::Green);
+				renderer.shape(m_transforms[i], m_shapes[i], Palette::Green);
 
 			if (m_showAABB)
-				renderer.aabb(m_aabbs[i], DarkPalette::Green);
+				renderer.aabb(m_aabbs[i], Palette::Green);
 			
 			
 		}
@@ -84,7 +84,7 @@ namespace STEditor
 		{
 			auto color = DarkPalette::Yellow;
 			color.a = 50.0f / 255.0f;
-			for (const auto& [key, value] : m_grid.m_usedCells)
+			for (const auto& [key, value] : m_grid.usedCells())
 			{
 				if (value.empty())
 					continue;
@@ -92,12 +92,12 @@ namespace STEditor
 				real row = static_cast<real>(key.row);
 				real col = static_cast<real>(key.col);
 
-				Vector2 start = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-				Vector2 end = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+				Vector2 start = m_grid.gridShift() + Vector2(col * m_grid.cellWidth(), row * m_grid.cellHeight());
+				Vector2 end = m_grid.gridShift() + Vector2((col + 1.0f) * m_grid.cellWidth(), (row + 1.0f) * m_grid.cellHeight());
 				AABB aabb;
 				aabb.position = (start + end) * 0.5f;
-				aabb.width = m_grid.m_cellWidth;
-				aabb.height = m_grid.m_cellHeight;
+				aabb.width = m_grid.cellWidth();
+				aabb.height = m_grid.cellHeight();
 
 				renderer.aabb(aabb, color);
 
@@ -106,7 +106,7 @@ namespace STEditor
 
 		if (m_showBVT)
 		{
-			m_dbvtStack.push_back(m_dbvt.m_rootIndex);
+			m_dbvtStack.push_back(m_dbvt.rootIndex());
 			while (!m_dbvtStack.empty())
 			{
 				int index = m_dbvtStack.back();
@@ -115,20 +115,20 @@ namespace STEditor
 				if (index == -1)
 					continue;
 
-				AABB aabb = m_dbvt.m_nodes[index].aabb;
-				aabb.expand(m_expandRatio * static_cast<real>(1 + m_dbvt.m_nodes[index].height));
+				AABB aabb = m_dbvt.nodes()[index].aabb;
+				aabb.expand(m_expandRatio * static_cast<real>(1 + m_dbvt.nodes()[index].height));
 
-				if (m_dbvt.m_nodes[index].height <= m_currentHeight)
+				if (m_dbvt.nodes()[index].height <= m_currentHeight)
 				{
-					if (index == m_dbvt.m_rootIndex)
+					if (index == m_dbvt.rootIndex())
 						renderer.aabb(aabb, DarkPalette::Red);
 					else
 						renderer.aabb(aabb, DarkPalette::Cyan);
 				}
 
 
-				m_dbvtStack.push_back(m_dbvt.m_nodes[index].left);
-				m_dbvtStack.push_back(m_dbvt.m_nodes[index].right);
+				m_dbvtStack.push_back(m_dbvt.nodes()[index].left);
+				m_dbvtStack.push_back(m_dbvt.nodes()[index].right);
 
 			}
 
@@ -187,7 +187,7 @@ namespace STEditor
 			{
 				for (CellIndex c = cStart; ; c += stepC)
 				{
-					real x = m_grid.m_gridShift.x + static_cast<real>(c) * m_grid.m_cellWidth;
+					real x = m_grid.gridShift().x + static_cast<real>(c) * m_grid.cellWidth();
 					real t = (x - start.x) / m_queryRayDirection.x;
 
 					if (t < 0.0f)
@@ -198,7 +198,7 @@ namespace STEditor
 
 					Vector2 p = start + m_queryRayDirection * t;
 					CellPosition cp;
-					cp.row = static_cast<CellIndex>(std::floor((p.y - m_grid.m_gridShift.y) / m_grid.m_cellHeight));
+					cp.row = static_cast<CellIndex>(std::floor((p.y - m_grid.gridShift().y) / m_grid.cellHeight()));
 					cp.col = c;
 					uniqueCells.insert(cp);
 
@@ -219,7 +219,7 @@ namespace STEditor
 			{
 				for (CellIndex r = rStart; ; r += stepR)
 				{
-					real y = m_grid.m_gridShift.y + static_cast<real>(r) * m_grid.m_cellHeight;
+					real y = m_grid.gridShift().y + static_cast<real>(r) * m_grid.cellHeight();
 					real t = (y - start.y) / m_queryRayDirection.y;
 
 					if (t < 0.0f)
@@ -231,7 +231,7 @@ namespace STEditor
 					Vector2 p = start + m_queryRayDirection * t;
 					CellPosition cp;
 					cp.row = r;
-					cp.col = static_cast<CellIndex>(std::floor((p.x - m_grid.m_gridShift.x) / m_grid.m_cellWidth));
+					cp.col = static_cast<CellIndex>(std::floor((p.x - m_grid.gridShift().x) / m_grid.cellWidth()));
 					uniqueCells.insert(cp);
 
 				}
@@ -244,8 +244,8 @@ namespace STEditor
 				real row = static_cast<real>(elem.row);
 				real col = static_cast<real>(elem.col);
 
-				Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-				Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+				Vector2 rayTopLeft = m_grid.gridShift() + Vector2(col * m_grid.cellWidth(), row * m_grid.cellHeight());
+				Vector2 rayBottom = m_grid.gridShift() + Vector2((col + 1.0f) * m_grid.cellWidth(), (row + 1.0f) * m_grid.cellHeight());
 				AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
 
 				renderer.aabb(aabb, DarkPalette::Blue);
@@ -254,8 +254,8 @@ namespace STEditor
 			real row = static_cast<real>(rStart);
 			real col = static_cast<real>(cStart);
 
-			Vector2 rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-			Vector2 rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+			Vector2 rayTopLeft = m_grid.gridShift() + Vector2(col * m_grid.cellWidth(), row * m_grid.cellHeight());
+			Vector2 rayBottom = m_grid.gridShift() + Vector2((col + 1.0f) * m_grid.cellWidth(), (row + 1.0f) * m_grid.cellHeight());
 			AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
 
 			renderer.aabb(aabb, DarkPalette::Blue);
@@ -263,8 +263,8 @@ namespace STEditor
 			row = static_cast<real>(rEnd);
 			col = static_cast<real>(cEnd);
 
-			rayTopLeft = m_grid.m_gridShift + Vector2(col * m_grid.m_cellWidth, row * m_grid.m_cellHeight);
-			rayBottom = m_grid.m_gridShift + Vector2((col + 1.0f) * m_grid.m_cellWidth, (row + 1.0f) * m_grid.m_cellHeight);
+			rayTopLeft = m_grid.gridShift() + Vector2(col * m_grid.cellWidth(), row * m_grid.cellHeight());
+			rayBottom = m_grid.gridShift() + Vector2((col + 1.0f) * m_grid.cellWidth(), (row + 1.0f) * m_grid.cellHeight());
 			aabb = AABB::fromBox(rayTopLeft, rayBottom);
 
 			renderer.aabb(aabb, DarkPalette::Blue);
@@ -279,7 +279,7 @@ namespace STEditor
 
 	void BroadphaseScene::onRenderUI()
 	{
-		ZoneScopedN("[BroadphaseScene] On RenderUI");
+		ZoneScopedN("[BroadphaseScene] On Render UI");
 
 		ImGui::Begin("Broad-phase");
 
@@ -291,7 +291,9 @@ namespace STEditor
 			createShapes();
 		}
 
-		ImGui::SliderInt("Point Radius", &m_pointRadius, 1, 50);
+		ImGui::Checkbox("BVT Only Insert", &m_onlyInsert);
+		m_dbvt.setOnlyInsert(m_onlyInsert);
+
 		ImGui::Checkbox("Show Object", &m_showObject);
 		ImGui::Checkbox("Show AABB", &m_showAABB);
 		ImGui::Checkbox("Show Grid", &m_showGrid);
@@ -315,8 +317,8 @@ namespace STEditor
 		m_queryRayDirection.set(Math::cosx(Math::radians(m_theta)), Math::sinx(Math::radians(m_theta)));
 
 
-		if (m_dbvt.m_rootIndex != -1)
-			m_maxHeight = std::max(0, m_dbvt.m_nodes[m_dbvt.m_rootIndex].height);
+		if (m_dbvt.rootIndex() != -1)
+			m_maxHeight = std::max(0, m_dbvt.nodes()[m_dbvt.rootIndex()].height);
 		else
 			m_maxHeight = 0;
 
@@ -465,17 +467,21 @@ namespace STEditor
 	void BroadphaseScene::createShapes()
 	{
 		ZoneScopedN("[BroadphaseScene] Create Shapes");
-		m_idsAABB.clear();
-		m_idsRaycast.clear();
-		m_idsObject.clear();
-		m_dbvt.clearAllObjects();
-		m_grid.clearAllObjects();
-		m_aabbs.clear();
-		m_bitmasks.clear();
-		m_transforms.clear();
-		m_shapes.clear();
-		m_objectIds.clear();
-		m_objectIdPool.reset();
+
+		{
+			ZoneScopedN("[BroadphaseScene] Clear All Objects");
+			m_idsAABB.clear();
+			m_idsRaycast.clear();
+			m_idsObject.clear();
+			m_dbvt.clearAllObjects();
+			m_grid.clearAllObjects();
+			m_aabbs.clear();
+			m_bitmasks.clear();
+			m_transforms.clear();
+			m_shapes.clear();
+			m_objectIds.clear();
+			m_objectIdPool.reset();
+		}
 
 		std::random_device rd;
 		std::mt19937 gen(rd());
@@ -491,10 +497,13 @@ namespace STEditor
 		for (int i = 0; i < m_count; ++i)
 		{
 			Transform t;
-			t.position = Vector2(dist4(gen), dist1(gen));
-			t.rotation = dist3(gen);
-
-			int shapeIndex = dist2(gen);
+			int shapeIndex = 0;
+			{
+				ZoneScopedN("[BroadphaseScene] Create Shapes - Random");
+				t.position = Vector2(dist4(gen), dist1(gen));
+				t.rotation = dist3(gen);
+				shapeIndex = dist2(gen);
+			}
 
 			//position.x = static_cast<real>(i % 12);
 			//position.y = static_cast<real>(i / 12);
@@ -506,19 +515,24 @@ namespace STEditor
 
 
 			//int shapeIndex = 0;
+			{
+				ZoneScopedN("[BroadphaseScene] Create Shapes - Add to List");
+				m_transforms.push_back(t);
+				m_shapes.push_back(m_shapesArray[shapeIndex]);
+				m_bitmasks.push_back(1);
+				m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
+				m_objectIds.push_back(m_objectIdPool.getNewId());
+			}
 
-			m_transforms.push_back(t);
-			m_shapes.push_back(m_shapesArray[shapeIndex]);
-			m_bitmasks.push_back(1);
-			m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
-			m_objectIds.push_back(m_objectIdPool.getNewId());
-
-			BroadphaseObjectBinding binding;
-			binding.aabb = m_aabbs[i];
-			binding.bitmask = 1;
-			binding.objectId = m_objectIds[i];
-			m_grid.addObject(binding);
-			m_dbvt.addObject(binding);
+			{
+				ZoneScopedN("[BroadphaseScene] Create Shapes - Add to Broadphase");
+				BroadphaseObjectBinding binding;
+				binding.aabb = m_aabbs[i];
+				binding.bitmask = 1;
+				binding.objectId = m_objectIds[i];
+				m_grid.addObject(binding);
+				m_dbvt.addObject(binding);
+			}
 
 			//position += dir;
 		}

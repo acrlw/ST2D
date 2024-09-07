@@ -22,16 +22,6 @@ namespace STEditor
 		void exec();
 
 	private:
-		//events
-		//void onResized(sf::Event& event);
-		//void onClosed(sf::Event& event);
-		//void onKeyReleased(sf::Event& event);
-		//void onKeyPressed(sf::Event& event);
-		//void onMouseReleased(sf::Event& event);
-		//void onMouseMoved(sf::Event& event);
-		//void onMousePressed(sf::Event& event);
-		//void onWheelScrolled(sf::Event& event);
-
 		void onFrameBufferResize(GLFWwindow* window, int width, int height);
 		void onKeyButton(GLFWwindow* window, int key, int scancode, int action, int mods);
 		void onMouseButton(GLFWwindow* window, int button, int action, int mods);
@@ -43,21 +33,21 @@ namespace STEditor
 		void onRender();
 
 		//running
-		void onUpdate(float deltaTime) const;
+		void onUpdate(float deltaTime);
 
 		//destroy
 		void onDestroy();
 
 		//misc
-		void styleUI();
+		void styleDarkUI();
+		void styleLightUI();
 		void restart();
 		void switchScene(int index);
 		void clearAll();
 
 		bool m_userDrawVisible = true;
-		bool m_onDistanceCheck = false;
 
-		int m_currentSceneIndex = 2;
+		int m_currentSceneIndex = 0;
 
 		std::array<const char*, 7> m_sceneName = { "HelloWorld", "Curve", "Broadphase", "Narrowphase", "Empty", "Spline", "Spiral" };
 
@@ -65,9 +55,6 @@ namespace STEditor
 		
 
 		GLFWwindow* m_window;
-
-
-		bool m_enableDistanceCheck = true;
 
 		Vector2 m_mousePos;
 		Vector2 m_screenMousePos;
@@ -79,5 +66,8 @@ namespace STEditor
 		double m_previousTime;
 
 		ReferenceLayer m_referenceLayer;
+
+		bool m_nightMode = true;
+		bool m_currentNightMode = true;
 	};
 }

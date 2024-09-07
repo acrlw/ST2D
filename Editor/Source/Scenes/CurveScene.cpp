@@ -32,45 +32,45 @@ namespace STEditor
 	{
 		if (m_showReferenceLine)
 		{
-			renderer.line(roundCenter, roundCorner, DarkPalette::LightGray);
+			renderer.line(roundCenter, roundCorner, Palette::LightGray);
 
 			Vector2 ref1(p01.x, (m_halfHeight - currentRadius) * m_innerHeightFactor);
 			Vector2 ref2((m_halfWidth - currentRadius) * m_innerWidthFactor, p10.y);
 			Vector2 ref3, ref4;
 
-			renderer.line(p01, ref1, DarkPalette::LightGray);
-			renderer.line(p10, ref2, DarkPalette::LightGray);
+			renderer.line(p01, ref1, Palette::LightGray);
+			renderer.line(p10, ref2, Palette::LightGray);
 
 			ref1 = Vector2(m_halfWidth, m_halfHeight - currentRadius);
 			ref2 = Vector2(p01.x, m_halfHeight - currentRadius);
 			ref3 = Vector2(m_halfWidth - currentRadius, m_halfHeight);
 			ref4 = Vector2(m_halfWidth - currentRadius, p10.y);
 
-			renderer.line(ref1, ref2, DarkPalette::LightGray);
-			renderer.line(ref3, ref4, DarkPalette::LightGray);
+			renderer.line(ref1, ref2, Palette::LightGray);
+			renderer.line(ref3, ref4, Palette::LightGray);
 			
 
 			ref1 = Vector2((m_halfWidth - currentRadius) * m_innerWidthFactor, roundCorner.y);
 			ref2 = Vector2(roundCorner.x, (m_halfHeight - currentRadius) * m_innerHeightFactor);
 
-			renderer.line(roundCorner, ref1, DarkPalette::LightGray);
-			renderer.line(roundCorner, ref2, DarkPalette::LightGray);
-			renderer.line(roundCenter, startRoundedPos, DarkPalette::LightGray);
-			renderer.line(roundCenter, endRoundedPos, DarkPalette::LightGray);
+			renderer.line(roundCorner, ref1, Palette::LightGray);
+			renderer.line(roundCorner, ref2, Palette::LightGray);
+			renderer.line(roundCenter, startRoundedPos, Palette::LightGray);
+			renderer.line(roundCenter, endRoundedPos, Palette::LightGray);
 
 
 		}
 
 		if (m_showG1)
 		{
-			auto color = DarkPalette::Orange;
+			auto color = Palette::Orange;
 			color.a = 100;
 			drawCurve(renderer, g1Vertices, color);
 		}
 
 		if (m_showG2)
 		{
-			auto color = DarkPalette::Green;
+			auto color = Palette::Green;
 			//color.a = 100;
 			drawCurve(renderer, g2Vertices, color);
 
@@ -79,26 +79,26 @@ namespace STEditor
 		if (m_showG3)
 		{
 
-			auto color = DarkPalette::LightBlue;
+			auto color = Palette::LightBlue;
 			//color.a = 100;
 			drawCurve(renderer, g3Vertices, color);
 		}
 
 		if (m_showRoundedCurvature)
 		{
-			drawCurvature(renderer, roundCurvatureStart, roundCurvatureEnd, DarkPalette::LightGray);
+			drawCurvature(renderer, roundCurvatureStart, roundCurvatureEnd, Palette::LightGray);
 		}
 
 		if (m_showBezierCurvature)
 		{
-			drawCurvature(renderer, bezierCurve1, bezierCurvature1, DarkPalette::Green);
-			drawCurvature(renderer, bezierCurve2, bezierCurvature2, DarkPalette::Green, true);
+			drawCurvature(renderer, bezierCurve1, bezierCurvature1, Palette::Green);
+			drawCurvature(renderer, bezierCurve2, bezierCurvature2, Palette::Green, true);
 		}
 
 		if (m_showG3Curvature)
 		{
-			drawCurvature(renderer, rationalBezierCurve1, rationalBezierCurvature1, DarkPalette::Blue);
-			drawCurvature(renderer, rationalBezierCurve2, rationalBezierCurvature2, DarkPalette::Blue, true);
+			drawCurvature(renderer, rationalBezierCurve1, rationalBezierCurvature1, Palette::Blue);
+			drawCurvature(renderer, rationalBezierCurve2, rationalBezierCurvature2, Palette::Blue, true);
 		}
 	}
 

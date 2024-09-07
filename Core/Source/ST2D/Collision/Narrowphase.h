@@ -87,10 +87,10 @@ namespace ST
 	public:
 
 		static Simplex gjk(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 20);
+			const Shape* shapeB, const size_t& iteration = 30);
 
 		static CollisionInfo epa(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 20, const real& epsilon = Constant::GeometryEpsilon);
+			const Shape* shapeB, const size_t& iteration = 30, const real& epsilon = Constant::GeometryEpsilon);
 
 		static SimplexVertex support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const Vector2& direction);
@@ -106,7 +106,7 @@ namespace ST
 			const Shape* shapeB, CollisionInfo& info);
 
 		static CollisionInfo gjkDistance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 20);
+			const Shape* shapeB, const size_t& iteration = 30);
 
 	private:
 		static void reconstructSimplexByVoronoi(Simplex& simplex);

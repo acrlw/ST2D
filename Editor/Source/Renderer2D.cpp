@@ -41,6 +41,8 @@ namespace STEditor
 
 	void Renderer2D::initShaders()
 	{
+		ZoneScopedN("[Renderer2D] Init Shaders");
+
 		m_graphicsProgram.addVertexShader("./Resource/Shaders/vert-graphics.glsl");
 		m_graphicsProgram.addFragmentShader("./Resource/Shaders/frag-graphics.glsl");
 		m_graphicsProgram.compileShader();
@@ -59,6 +61,8 @@ namespace STEditor
 
 	void Renderer2D::initRenderSettings()
 	{
+		ZoneScopedN("[Renderer2D] Init Render Settings");
+
 		m_graphicsProgram.use();
 
 		glGenVertexArrays(1, &m_graphicsVAO);
@@ -110,6 +114,8 @@ namespace STEditor
 
 	void Renderer2D::initFont()
 	{
+		ZoneScopedN("[Renderer2D] Init Font");
+
 		if(FT_Init_FreeType(&m_ftLibrary))
 		{
 			APP_ERROR("[FreeType] Failed to init FreeType library");
@@ -165,6 +171,8 @@ namespace STEditor
 
 	void Renderer2D::onRenderStart()
 	{
+		ZoneScopedN("[Renderer2D] On Render Start");
+
 		std::vector<float> vertices = m_lines;
 
 		for (auto&& elem : m_thickLines)
@@ -238,11 +246,13 @@ namespace STEditor
 
 	void Renderer2D::onRender()
 	{
-		buildViewProjectionMatrix();
+		ZoneScopedN("[Renderer2D] On Render");
 
 		GLint previousDepthFunc;
 		glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
 		glDepthFunc(GL_ALWAYS);
+
+		buildViewProjectionMatrix();
 
 		onRenderStart();
 
@@ -250,9 +260,12 @@ namespace STEditor
 		drawPointsProgram();
 		drawTextProgram();
 
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glDepthFunc(previousDepthFunc);
 
 		onRenderEnd();
+
 	}
 
 	void Renderer2D::onUpdate(float deltaTime)
@@ -287,9 +300,7 @@ namespace STEditor
 
 	void Renderer2D::onRenderEnd()
 	{
-		glLineWidth(1.0f);
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		ZoneScopedN("[Renderer2D] On Render End");
 
 		m_lines.clear();
 		m_thickLines.clear();
@@ -320,6 +331,8 @@ namespace STEditor
 		//m_ndcPoints.shrink_to_fit();
 
 		//m_text.shrink_to_fit();
+		//m_textureIDs.shrink_to_fit();
+		//m_textColors.shrink_to_fit();
 	}
 
 	void Renderer2D::line(int x1, int y1, int x2, int y2, const Color& color)
@@ -372,8 +385,8 @@ namespace STEditor
 		if (!collide)
 			return;
 
-
 		Color color(r, g, b, a);
+
 
 		pushVector(m_ndcLines, p1);
 		pushColor(m_ndcLines, color);
@@ -875,7 +888,30 @@ namespace STEditor
 
 	void Renderer2D::arrow(const Vector2& start, const Vector2& end, const Color& color, const float& size, const float& degree)
 	{
+		Vector2 tf = start - end;
+		real length = tf.length();
+		real scale = size;
+		if (length < 1.0f)
+			scale = length * size;
+		if (realEqual(length, 0))
+			return;
 
+		Vector2 n = tf.normal();
+		Vector2 normal = n * scale;
+		Complex c(Math::radians(degree * 0.5f));
+		Vector2 d1 = c.multiply(normal);
+		Vector2 d2 = c.set(-Math::radians(degree * 0.5f)).multiply(normal);
+
+		Vector2 p1 = d1 + end;
+		Vector2 p2 = d2 + end;
+		real p = d1.dot(n);
+		real l = (d1 - p * n).length();
+		real x = l / Math::tanx(Math::radians(degree));
+		real f = p - x;
+		Vector2 p3 = f * n + end;
+
+		fill({ end, p1, p3, p2 }, color);
+		line(start, p3, color);
 	}
 
 	void Renderer2D::text(const Vector2& position, const Color& color, const std::string& text, const float& scale,
@@ -1086,7 +1122,6 @@ namespace STEditor
 
 	void Renderer2D::polytope(const std::vector<Vector2>& points, const Color& color, float pointSize, bool showIndex)
 	{
-
 		Vector2 center = GeometryAlgorithm2D::computeCenter(points);
 		std::vector<Vector2> offsets;
 
@@ -1148,6 +1183,7 @@ namespace STEditor
 
 	void Renderer2D::drawGraphicsProgram()
 	{
+		ZoneScopedN("[Renderer2D] On Draw Graphics Program");
 		glm::mat4 identity = glm::mat4(1.0f);
 
 		m_graphicsProgram.use();
@@ -1161,6 +1197,7 @@ namespace STEditor
 		size_t offset = 0;
 		if (!m_lines.empty())
 		{
+			glLineWidth(1.0f);
 			glDrawArrays(GL_LINES, offset, lineSize);
 			offset += lineSize;
 		}
@@ -1292,6 +1329,8 @@ namespace STEditor
 
 	void Renderer2D::drawPointsProgram()
 	{
+		ZoneScopedN("[Renderer2D] On Draw Points Program");
+
 		glm::mat4 identity = glm::mat4(1.0f);
 
 		m_pointProgram.use();
@@ -1317,6 +1356,8 @@ namespace STEditor
 
 	void Renderer2D::drawTextProgram()
 	{
+		ZoneScopedN("[Renderer2D] On Draw Text Program");
+
 		m_fontProgram.use();
 
 		glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(m_frameBufferWidth), 0.0f, static_cast<float>(m_frameBufferHeight));

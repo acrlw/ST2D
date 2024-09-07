@@ -34,17 +34,17 @@ namespace STEditor
 	{
 		auto distInfo = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
 
-		renderer.point(distInfo.pair.pointA, DarkPalette::Yellow);
-		renderer.point(distInfo.pair.pointB, DarkPalette::Cyan);
+		renderer.point(distInfo.pair.pointA, Palette::Yellow);
+		renderer.point(distInfo.pair.pointB, Palette::Cyan);
 
-		renderer.dashedLine(distInfo.pair.pointA, distInfo.pair.pointB, DarkPalette::LightGray);
-		Color simplexColor = DarkPalette::Purple;
+		renderer.dashedLine(distInfo.pair.pointA, distInfo.pair.pointB, Palette::LightGray);
+		Color simplexColor = Palette::Purple;
 
-		Color polytopeColor = DarkPalette::Teal;
+		Color polytopeColor = Palette::Teal;
 		polytopeColor.a = 150.0f / 255.0f;
 
-		renderer.shape(tf1, &rect, DarkPalette::Yellow);
-		renderer.shape(tf2, &ellipse, DarkPalette::Cyan);
+		renderer.shape(tf1, &rect, Palette::Yellow);
+		renderer.shape(tf2, &ellipse, Palette::Cyan);
 
 		if(m_showPolytope)
 		{
@@ -85,7 +85,7 @@ namespace STEditor
 		//	info.originalSimplex = info.simplex;
 
 		//	simplexes.push_back(info.simplex);
-		//	//renderer.simplex(info.simplex, DarkPalette::Purple);
+		//	//renderer.simplex(info.simplex, Palette::Purple);
 
 		//	//[DEBUG]
 		//	std::list<SimplexVertexWithOriginDistance>& polytope = info.polytope;
@@ -296,7 +296,7 @@ namespace STEditor
 		//	m_maxPolytopeIndex = 0;
 
 		//if(m_showPolytope)
-		//	renderer.polytope(polytopes[m_currentPolytopeIndex], DarkPalette::Teal);
+		//	renderer.polytope(polytopes[m_currentPolytopeIndex], Palette::Teal);
 
 		//if (m_showSimplex)
 		//	renderer.simplex(simplexes[m_currentPolytopeIndex], simplexColor);

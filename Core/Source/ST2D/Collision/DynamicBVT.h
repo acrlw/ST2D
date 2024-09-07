@@ -64,9 +64,16 @@ namespace ST
 
 		void rebuildTreeSAH(const AABB& rootAABB, const std::vector<BVTNodeBinding>& leaves);
 
-		//private:
+		void setOnlyInsert(bool onlyInsert);
+
+		const std::vector<BVTNode>& nodes() const;
+
+		int rootIndex() const;
 
 		void checkHeight() const;
+
+	private:
+
 
 		void rotateNode(int nodeIndex);
 
@@ -103,7 +110,7 @@ namespace ST
 
 		//if true, only insert new object to list of leaves, not perform any tree rotation and update
 		//this is used when need insert bulk of objects and rebuild tree later
-		bool m_onlyInsert = true;
+		bool m_onlyInsert = false;
 	};
 
 	

@@ -9,51 +9,137 @@ namespace STEditor
 	struct Color
 	{
 		float r, g, b, a;
-		Color(float red = 1.0f, float green = 1.0f, float blue = 1.0f, float alpha = 1.0f)
+		constexpr Color(float red = 1.0f, float green = 1.0f, float blue = 1.0f, float alpha = 1.0f)
 			: r(red), g(green), b(blue), a(alpha) {}
 
-		Color(int red, int green, int blue, int alpha = 255)
+		constexpr Color(int red, int green, int blue, int alpha = 255)
 			: r(static_cast<float>(red) / 255.0f), g(static_cast<float>(green) / 255.0f), b(static_cast<float>(blue) / 255.0f), a(static_cast<float>(alpha) / 255.0f) {}
 	};
 
 	namespace DarkPalette
 	{
-		const Color Red = Color(244, 67, 54);
-		const Color Green = Color(76, 175, 80);
-		const Color Blue = Color(3, 169, 244);
-		const Color Yellow = Color(255, 235, 59);
-		const Color Cyan = Color(0, 188, 212);
-		const Color Pink = Color(233, 30, 99);
-		const Color Gray = Color(189, 189, 189);
-		const Color Orange = Color(255, 138, 101);
-		const Color Teal = Color(29, 233, 182);
-		const Color Purple = Color(156, 39, 176);
+		constexpr Color Background(0.16f, 0.16f, 0.16f, 1.0f);
+		constexpr Color Red(244, 67, 54);
+		constexpr Color Green(76, 175, 80);
+		constexpr Color Blue(3, 169, 244);
+		constexpr Color Yellow(255, 235, 59);
+		constexpr Color Cyan(0, 188, 212);
+		constexpr Color Pink(233, 30, 99);
+		constexpr Color Gray(189, 189, 189);
+		constexpr Color Orange(255, 138, 101);
+		constexpr Color Teal(29, 233, 182);
+		constexpr Color Purple(156, 39, 176);
 
-		const Color LightRed = Color(255, 205, 210);
-		const Color LightGreen = Color(139, 195, 74);
-		const Color LightBlue = Color(0, 188, 212);
-		const Color LightCyan = Color(178, 235, 242);
-		const Color LightGray = Color(158, 158, 158);
+		constexpr Color LightRed(255, 205, 210);
+		constexpr Color LightGreen(139, 195, 74);
+		constexpr Color LightBlue(0, 188, 212);
+		constexpr Color LightCyan(178, 235, 242);
+		constexpr Color LightGray(158, 158, 158);
 
-		const Color DarkRed = Color(211, 47, 47);
-		const Color DarkGreen = Color(44, 113, 48);
-		const Color DarkBlue = Color(2, 136, 209);
+		constexpr Color DarkRed(211, 47, 47);
+		constexpr Color DarkGreen(44, 113, 48);
+		constexpr Color DarkBlue(2, 136, 209);
 
 	}
 
 	namespace LightPalette
 	{
-		const Color Red = Color(183, 28, 28);
-		const Color Green = Color(76, 175, 80);
-		const Color Blue = Color(13, 71, 161);
-		const Color Yellow = Color(249, 168, 37);
-		const Color Cyan = Color(0, 131, 143);
-		const Color Pink = Color(194, 24, 91);
-		const Color Gray = Color(66, 66, 66);
-		const Color Orange = Color(230, 81, 0);
-		const Color Teal = Color(0, 105, 92);
-		const Color Purple = Color(106, 27, 154);
+		constexpr Color Background(1.0f, 1.0f, 1.0f, 1.0f);
+		constexpr Color Red(183, 28, 28);
+		constexpr Color Green(76, 175, 80);
+		constexpr Color Blue(13, 71, 161);
+		constexpr Color Yellow(245, 127, 23);
+		constexpr Color Cyan(0, 131, 143);
+		constexpr Color Pink(194, 24, 91);
+		constexpr Color Gray(15, 15, 15);
+		constexpr Color Orange(230, 81, 0);
+		constexpr Color Teal(0, 105, 92);
+		constexpr Color Purple(106, 27, 154);
+
+
 	}
+
+	namespace Palette
+	{
+		enum class ThemeMode {
+			Dark,
+			Light
+		};
+
+		static ThemeMode currentThemeMode = ThemeMode::Light;
+
+		static Color Background = DarkPalette::Background;
+
+		static Color Red = DarkPalette::Red;
+		static Color Green = DarkPalette::Green;
+		static Color Blue = DarkPalette::Blue;
+		static Color Yellow = DarkPalette::Yellow;
+		static Color Cyan = DarkPalette::Cyan;
+		static Color Pink = DarkPalette::Pink;
+		static Color Gray = DarkPalette::Gray;
+		static Color Orange = DarkPalette::Orange;
+		static Color Teal = DarkPalette::Teal;
+		static Color Purple = DarkPalette::Purple;
+
+		static Color LightRed = DarkPalette::LightRed;
+		static Color LightGreen = DarkPalette::LightGreen;
+		static Color LightBlue = DarkPalette::LightBlue;
+		static Color LightCyan = DarkPalette::LightCyan;
+		static Color LightGray = DarkPalette::LightGray;
+
+		static Color DarkRed = DarkPalette::DarkRed;
+		static Color DarkGreen = DarkPalette::DarkGreen;
+		static Color DarkBlue = DarkPalette::DarkBlue;
+
+		static void setThemeMode(ThemeMode mode)
+		{
+			currentThemeMode = mode;
+			if (currentThemeMode == ThemeMode::Dark)
+			{
+				Background = DarkPalette::Background;
+
+				Red = DarkPalette::Red;
+				Green = DarkPalette::Green;
+				Blue = DarkPalette::Blue;
+				Yellow = DarkPalette::Yellow;
+				Cyan = DarkPalette::Cyan;
+				Pink = DarkPalette::Pink;
+				Gray = DarkPalette::Gray;
+				Orange = DarkPalette::Orange;
+				Teal = DarkPalette::Teal;
+				Purple = DarkPalette::Purple;
+
+				LightRed = DarkPalette::LightRed;
+				LightGreen = DarkPalette::LightGreen;
+				LightBlue = DarkPalette::LightBlue;
+				LightCyan = DarkPalette::LightCyan;
+				LightGray = DarkPalette::LightGray;
+
+				DarkRed = DarkPalette::DarkRed;
+				DarkGreen = DarkPalette::DarkGreen;
+				DarkBlue = DarkPalette::DarkBlue;
+			}
+			else
+			{
+				Background = LightPalette::Background;
+
+				Red = LightPalette::Red;
+				Green = LightPalette::Green;
+				Blue = LightPalette::Blue;
+				Yellow = LightPalette::Yellow;
+				Cyan = LightPalette::Cyan;
+				Pink = LightPalette::Pink;
+				Gray = LightPalette::Gray;
+				Orange = LightPalette::Orange;
+				Teal = LightPalette::Teal;
+				Purple = LightPalette::Purple;
+			}
+		}
+
+		
+	}
+
+
 
 	struct PolyLines
 	{

@@ -54,6 +54,8 @@ namespace ST
 	{
 	public:
 
+		using GridCellObjectsList = std::vector<GridObjectBinding>;
+
 		void clearAllObjects() override;
 		void addObject(const BroadphaseObjectBinding& binding) override;
 		void removeObject(int objectId) override;
@@ -69,9 +71,16 @@ namespace ST
 		void getVectorFromGridIndices(const CellIndex& row, const CellIndex& col, Vector2& position) const;
 		void getVectorFromGridIndices(const CellPosition& cell, Vector2& position) const;
 
-		//private:
+		Vector2 gridShift() const { return m_gridShift; }
+		void setGridShift(const Vector2& shift) { m_gridShift = shift; }
 
-		using GridCellObjectsList = std::vector<GridObjectBinding>;
+		real cellWidth() const { return m_cellWidth; }
+		real cellHeight() const { return m_cellHeight; }
+
+		const std::map<CellPosition, GridCellObjectsList>& usedCells() const { return m_usedCells; }
+
+		private:
+
 
 		void incrementalUpdate(const BroadphaseObjectBinding& binding);
 

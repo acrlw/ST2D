@@ -23,17 +23,16 @@
 #define ST_ENABLE_ASSERT
 #define ST_ENABLE_TRACY_PROFILER
 
-
-#else
-
-#define ZoneScopedN(name)
-
 #endif
 
 #ifdef ST_ENABLE_TRACY_PROFILER
 
 #define TRACY_ENABLE
 #include "tracy/Tracy.hpp"
+
+#else
+
+#define ZoneScopedN(name)
 #endif
 
 #include "Common.h"

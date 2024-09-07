@@ -10,12 +10,21 @@ namespace ST
 {
 	void DynamicGrid::clearAllObjects()
 	{
-		m_objects.clear();
-		m_usedCells.clear();
+		ZoneScopedN("[Grid] Clear All Objects");
+		{
+			ZoneScopedN("[Grid] Clear Object List");
+			m_objects.clear();
+		}
+		{
+			ZoneScopedN("[Grid] Clear Used Cells");
+			m_usedCells.clear();
+		}
 	}
 
 	void DynamicGrid::addObject(const BroadphaseObjectBinding& binding)
 	{
+		ZoneScopedN("[Grid] Add Object");
+
 		for(auto&& elem: m_objects)
 		{
 			if (elem.binding.objectId == binding.objectId)
@@ -32,26 +41,32 @@ namespace ST
 		GridObjectBinding objectBinding;
 		objectBinding.binding = binding;
 
-		for (CellIndex i = rowStart; i <= rowEnd; i++)
 		{
-			for (CellIndex j = colStart; j <= colEnd; j++)
+			ZoneScopedN("[Grid] Insert cell to object");
+			for (CellIndex i = rowStart; i <= rowEnd; i++)
 			{
-				CellPosition cellPos(i, j);
+				for (CellIndex j = colStart; j <= colEnd; j++)
+				{
+					CellPosition cellPos(i, j);
 
-				objectBinding.cells.insert(cellPos);
+					objectBinding.cells.insert(cellPos);
 
+				}
 			}
 		}
 
 		m_objects.push_back(objectBinding);
 
-		for (CellIndex i = rowStart; i <= rowEnd; i++)
 		{
-			for (CellIndex j = colStart; j <= colEnd; j++)
+			ZoneScopedN("[Grid] Insert object to usedCell");
+			for (CellIndex i = rowStart; i <= rowEnd; i++)
 			{
-				CellPosition cellPos(i, j);
+				for (CellIndex j = colStart; j <= colEnd; j++)
+				{
+					CellPosition cellPos(i, j);
 
-				m_usedCells[cellPos].push_back(objectBinding);
+					m_usedCells[cellPos].push_back(objectBinding);
+				}
 			}
 		}
 
@@ -63,6 +78,7 @@ namespace ST
 
 	void DynamicGrid::removeObject(int objectId)
 	{
+		ZoneScopedN("[Grid] Remove Object");
 		std::set<CellPosition> cells;
 		for (auto iter = m_objects.begin(); iter != m_objects.end(); iter++)
 		{
@@ -96,6 +112,7 @@ namespace ST
 
 	std::vector<ObjectPair> DynamicGrid::queryOverlaps()
 	{
+		ZoneScopedN("[Grid] Query Overlaps");
 		std::vector<ObjectPair> result;
 		std::unordered_set<ObjectPair, ObjectPairHash> uniquePairs;
 
@@ -137,6 +154,7 @@ namespace ST
 
 	std::vector<int> DynamicGrid::queryAABB(const AABB& aabb)
 	{
+		ZoneScopedN("[Grid] Query AABB");
 		std::vector<int> result;
 		std::unordered_set<int> uniqueObjects;
 
@@ -178,6 +196,7 @@ namespace ST
 
 	std::vector<int> DynamicGrid::queryRay(const Vector2& origin, const Vector2& direction, float maxDistance)
 	{
+		ZoneScopedN("[Grid] Query Ray");
 		std::vector<int> result;
 		std::unordered_set<int> uniqueObjects;
 
@@ -305,6 +324,7 @@ namespace ST
 	void DynamicGrid::getGridIndicesFromAABB(const AABB& aabb, CellIndex& rowStart, CellIndex& rowEnd, CellIndex& colStart,
 		CellIndex& colEnd) const
 	{
+		ZoneScopedN("[Grid] Get Grid Indices From AABB");
 		Vector2 bottomLeft = aabb.bottomLeft();
 		Vector2 topRight = aabb.topRight();
 
@@ -316,6 +336,7 @@ namespace ST
 
 	void DynamicGrid::getGridIndicesFromAABB(const AABB& aabb, CellPosition& start, CellPosition& end) const
 	{
+		ZoneScopedN("[Grid] Get Grid Indices From AABB");
 		Vector2 bottomLeft = aabb.bottomLeft();
 		Vector2 topRight = aabb.topRight();
 
@@ -327,30 +348,35 @@ namespace ST
 
 	void DynamicGrid::getGridIndicesFromVector(const Vector2& position, CellIndex& row, CellIndex& col) const
 	{
+		ZoneScopedN("[Grid] Get Grid Indices From Vector");
 		row = static_cast<CellIndex>(std::floor((position.y - m_gridShift.y) / m_cellHeight));
 		col = static_cast<CellIndex>(std::floor((position.x - m_gridShift.x) / m_cellWidth));
 	}
 
 	void DynamicGrid::getGridIndicesFromVector(const Vector2& position, CellPosition& cell) const
 	{
+		ZoneScopedN("[Grid] Get Grid Indices From Vector");
 		cell.row = static_cast<CellIndex>(std::floor((position.y - m_gridShift.y) / m_cellHeight));
 		cell.col = static_cast<CellIndex>(std::floor((position.x - m_gridShift.x) / m_cellWidth));
 	}
 
 	void DynamicGrid::getVectorFromGridIndices(const CellIndex& row, const CellIndex& col, Vector2& position) const
 	{
+		ZoneScopedN("[Grid] Get Vector From Grid Indices");
 		position.x = m_gridShift.x + static_cast<real>(col) * m_cellWidth;
 		position.y = m_gridShift.y + static_cast<real>(row) * m_cellHeight;
 	}
 
 	void DynamicGrid::getVectorFromGridIndices(const CellPosition& cell, Vector2& position) const
 	{
+		ZoneScopedN("[Grid] Get Vector From Grid Indices");
 		position.x = m_gridShift.x + static_cast<real>(cell.col) * m_cellWidth;
 		position.y = m_gridShift.y + static_cast<real>(cell.row) * m_cellHeight;
 	}
 
 	void DynamicGrid::incrementalUpdate(const BroadphaseObjectBinding& binding)
 	{
+		ZoneScopedN("[Grid] Incremental Update");
 		int index = -1;
 		for (int i = 0; i < m_objects.size(); i++)
 		{

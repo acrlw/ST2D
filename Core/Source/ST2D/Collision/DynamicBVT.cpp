@@ -604,8 +604,24 @@ namespace ST
 
 	}
 
+	void DynamicBVT::setOnlyInsert(bool onlyInsert)
+	{
+		m_onlyInsert = onlyInsert;
+	}
+
+	const std::vector<BVTNode>& DynamicBVT::nodes() const
+	{
+		return m_nodes;
+	}
+
+	int DynamicBVT::rootIndex() const
+	{
+		return m_rootIndex;
+	}
+
 	void DynamicBVT::checkHeight() const
 	{
+		ZoneScopedN("[DBVT] Check Height");
 		std::deque<int> stack;
 		stack.push_back(m_rootIndex);
 		int maxHeight = 0;

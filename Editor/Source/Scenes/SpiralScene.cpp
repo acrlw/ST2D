@@ -157,7 +157,7 @@ namespace STEditor
 		ImGui::Checkbox("Show Curvature Bezier", &m_showCurvatureBezier);
 		ImGui::Checkbox("Curvature Flip", &m_curvatureFlip);
 		ImGui::Checkbox("Draw Spiral Connector", &m_drawSpiralConnector);
-		ImGui::DragFloat("Thickness", &m_thickness, 0.05f, 0.1f, 20.0f);
+		ImGui::DragFloat("Thickness", &m_thickness, 0.05f, 0.1f, 50.0f);
 
 		if(ImGui::Button("Fit Inner") && !m_spiral.empty())
 		{
@@ -459,9 +459,9 @@ namespace STEditor
 
 	void SpiralScene::drawG1(Renderer2D& renderer)
 	{
-		renderer.line(m_p00, m_p01, DarkPalette::Green);
-		renderer.line(m_p11, m_p10, DarkPalette::Green);
-		renderer.polyLines(m_roundCurvatureStart, DarkPalette::Green);
+		renderer.line(m_p00, m_p01, Palette::Green);
+		renderer.line(m_p11, m_p10, Palette::Green);
+		renderer.polyLines(m_roundCurvatureStart, Palette::Green);
 		//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p00, m_p01, RenderConstant::Green);
 		//RenderSFMLImpl::renderLine(window, *m_settings.camera, m_p11, m_p10, RenderConstant::Green);
 
@@ -469,17 +469,17 @@ namespace STEditor
 
 
 		if(m_showRoundedCurvature)
-			drawCurvature(renderer, m_roundCurvatureStart, m_roundCurvatureEnd, DarkPalette::Gray, false);
+			drawCurvature(renderer, m_roundCurvatureStart, m_roundCurvatureEnd, Palette::Gray, false);
 	}
 
 	void SpiralScene::drawG2(Renderer2D& renderer)
 	{
-		drawCurve(renderer, m_g2Vertices, DarkPalette::Green);
+		drawCurve(renderer, m_g2Vertices, Palette::Green);
 		if(m_showG2Curvature)
 		{
-			drawCurvature(renderer, m_cubicBezierCurvatureStart1, m_cubicBezierCurvatureEnd1, DarkPalette::Green, false);
-			drawCurvature(renderer, m_cubicBezierCurvatureStart2, m_cubicBezierCurvatureEnd2, DarkPalette::Green, true);
-			drawCurvature(renderer, m_roundCurvatureStart, m_roundCurvatureEnd, DarkPalette::Green, false);
+			drawCurvature(renderer, m_cubicBezierCurvatureStart1, m_cubicBezierCurvatureEnd1, Palette::Green, false);
+			drawCurvature(renderer, m_cubicBezierCurvatureStart2, m_cubicBezierCurvatureEnd2, Palette::Green, true);
+			drawCurvature(renderer, m_roundCurvatureStart, m_roundCurvatureEnd, Palette::Green, false);
 		}
 	}
 
@@ -495,7 +495,7 @@ namespace STEditor
 		//Vector2 v = -m_endRoundedPos.perpendicular();
 		//RenderSFMLImpl::renderArrow(window, *m_settings.camera, {}, v, RenderConstant::Red);
 
-		auto color = DarkPalette::Yellow;
+		auto color = Palette::Yellow;
 
 		if(m_showSpiral)
 		{
@@ -563,9 +563,9 @@ namespace STEditor
 				p2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, p2);
 			}
 
-			renderer.point(p0, DarkPalette::Gray);
-			renderer.dashedLine(p0, p1, DarkPalette::Gray, 0.01f, 0.01f);
-			renderer.dashedLine(p0, p2, DarkPalette::Gray, 0.01f, 0.01f);
+			renderer.point(p0, Palette::Gray);
+			renderer.dashedLine(p0, p1, Palette::Gray, 0.01f, 0.01f);
+			renderer.dashedLine(p0, p2, Palette::Gray, 0.01f, 0.01f);
 			drawCurvature(renderer, m_spiralRoundCurvatureStart, m_spiralRoundCurvatureEnd, color, false);
 		}
 	}
@@ -574,30 +574,30 @@ namespace STEditor
 	{
 		if (m_showReferenceLine)
 		{
-			renderer.line(m_roundCenter, m_roundCorner, DarkPalette::LightGray);
+			renderer.line(m_roundCenter, m_roundCorner, Palette::LightGray);
 			
 			Vector2 ref1(m_p01.x, (m_halfHeight - m_currentRadius) * m_innerHeightFactor);
 			Vector2 ref2((m_halfWidth - m_currentRadius) * m_innerWidthFactor, m_p10.y);
 			Vector2 ref3, ref4;
 
-			renderer.line(m_p01, ref1, DarkPalette::LightGray);
-			renderer.line(m_p10, ref2, DarkPalette::LightGray);
+			renderer.line(m_p01, ref1, Palette::LightGray);
+			renderer.line(m_p10, ref2, Palette::LightGray);
 
 			ref1 = Vector2(m_halfWidth, m_halfHeight - m_currentRadius);
 			ref2 = Vector2(m_p01.x, m_halfHeight - m_currentRadius);
 			ref3 = Vector2(m_halfWidth - m_currentRadius, m_halfHeight);
 			ref4 = Vector2(m_halfWidth - m_currentRadius, m_p10.y);
 
-			renderer.line(ref1, ref2, DarkPalette::LightGray);
-			renderer.line(ref3, ref4, DarkPalette::LightGray);
+			renderer.line(ref1, ref2, Palette::LightGray);
+			renderer.line(ref3, ref4, Palette::LightGray);
 
 			ref1 = Vector2((m_halfWidth - m_currentRadius) * m_innerWidthFactor, m_roundCorner.y);
 			ref2 = Vector2(m_roundCorner.x, (m_halfHeight - m_currentRadius) * m_innerHeightFactor);
 
-			renderer.line(m_roundCenter, ref1, DarkPalette::LightGray);
-			renderer.line(m_roundCenter, ref2, DarkPalette::LightGray);
-			renderer.line(m_roundCenter, m_startRoundedPos, DarkPalette::LightGray);
-			renderer.line(m_roundCenter, m_endRoundedPos, DarkPalette::LightGray);
+			renderer.line(m_roundCenter, ref1, Palette::LightGray);
+			renderer.line(m_roundCenter, ref2, Palette::LightGray);
+			renderer.line(m_roundCenter, m_startRoundedPos, Palette::LightGray);
+			renderer.line(m_roundCenter, m_endRoundedPos, Palette::LightGray);
 
 		}
 	}
