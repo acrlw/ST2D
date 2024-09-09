@@ -113,7 +113,7 @@ namespace STEditor
 
         glDeleteProgram(m_id);
 
-		APP_INFO("Shader program destroyed");
+		APP_INFO("Shader program ({}) destroyed", m_id);
 
     }
 

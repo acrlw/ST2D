@@ -31,6 +31,9 @@ namespace STEditor
 		glDeleteVertexArrays(1, &m_fontVAO);
 		glDeleteBuffers(1, &m_fontVBO);
 
+		for(auto& value : m_characters | std::views::values)
+			glDeleteTextures(1, &value.textureID);
+
 		m_graphicsProgram.destroy();
 		m_pointProgram.destroy();
 		m_fontProgram.destroy();

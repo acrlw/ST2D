@@ -399,7 +399,7 @@ namespace STEditor
 		if (m_currentNightMode != m_nightMode)
 		{
 			m_nightMode = m_currentNightMode;
-			Palette::setThemeMode(m_nightMode ? Palette::ThemeMode::Dark : Palette::ThemeMode::Light);
+			Palette::setThemeMode(m_nightMode ? ThemeMode::Dark : ThemeMode::Light);
 			if (m_nightMode)
 				styleDarkUI();
 			else
