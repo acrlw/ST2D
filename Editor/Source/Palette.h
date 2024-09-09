@@ -10,6 +10,15 @@ namespace STEditor
 
 		constexpr Color(int red, int green, int blue, int alpha = 255)
 			: r(static_cast<float>(red) / 255.0f), g(static_cast<float>(green) / 255.0f), b(static_cast<float>(blue) / 255.0f), a(static_cast<float>(alpha) / 255.0f) {}
+
+		constexpr Color(const Color& color) = default;
+
+		constexpr Color(int hexValue)
+			: r(static_cast<float>((hexValue >> 16) & 0xFF) / 255.0f),
+			g(static_cast<float>((hexValue >> 8) & 0xFF) / 255.0f),
+			b(static_cast<float>((hexValue) & 0xFF) / 255.0f),
+			a(1.0f) {}
+
 	};
 
 	namespace DarkPalette
@@ -40,11 +49,11 @@ namespace STEditor
 
 	namespace LightPalette
 	{
-		constexpr Color Background(1.0f, 1.0f, 1.0f, 1.0f);
+		constexpr Color Background(237, 249, 245);
 		constexpr Color Red(229, 57, 53);
 		constexpr Color Green(67, 160, 71);
 		constexpr Color Blue(30, 136, 229);
-		constexpr Color Yellow(242, 190, 69);
+		constexpr Color Yellow(227, 156, 42);
 		constexpr Color Cyan(0, 131, 143);
 		constexpr Color Pink(194, 24, 91);
 		constexpr Color Gray(117, 117, 117);
@@ -53,7 +62,7 @@ namespace STEditor
 		constexpr Color Purple(106, 27, 154);
 
 		constexpr Color DarkRed(183, 28, 28);
-		constexpr Color DarkGreen(27, 94, 32);
+		constexpr Color DarkGreen(0x1b5e20);
 		constexpr Color DarkBlue(13, 71, 161);
 	}
 

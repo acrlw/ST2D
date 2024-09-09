@@ -45,6 +45,9 @@ namespace STEditor
 		void switchScene(int index);
 		void clearAll();
 
+		ImVec4 colorToImVec4(unsigned int hexValue);
+		ImVec4 colorToImVec4(int r, int g, int b, int a = 255);
+
 		bool m_userDrawVisible = true;
 
 		int m_currentSceneIndex = 0;

@@ -876,7 +876,7 @@ namespace STEditor
 		xP = transform.translatePoint(xP);
 		yP = transform.translatePoint(yP);
 		line(transform.position, xP, DarkPalette::Red);
-		line(transform.position, yP, DarkPalette::Green);
+		line(transform.position, yP, DarkPalette::Blue);
 	}
 
 	void Renderer2D::aabb(const AABB& aabb, const Color& color)
