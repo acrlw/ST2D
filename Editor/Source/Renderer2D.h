@@ -182,8 +182,6 @@ namespace STEditor
 		glm::mat4 m_view;
 		glm::mat4 m_projection;
 
-		int m_roundPointSampleCount = 12;
-
 		AABB m_screenAABB;
 
 		//graphics shader

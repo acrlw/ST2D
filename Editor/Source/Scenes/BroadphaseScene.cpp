@@ -82,8 +82,7 @@ namespace STEditor
 
 		if (m_showGrid)
 		{
-			auto color = DarkPalette::Yellow;
-			color.a = 50.0f / 255.0f;
+			auto color = Palette::Orange;
 			for (const auto& [key, value] : m_grid.usedCells())
 			{
 				if (value.empty())
@@ -121,9 +120,9 @@ namespace STEditor
 				if (m_dbvt.nodes()[index].height <= m_currentHeight)
 				{
 					if (index == m_dbvt.rootIndex())
-						renderer.aabb(aabb, DarkPalette::Red);
+						renderer.aabb(aabb, Palette::Red);
 					else
-						renderer.aabb(aabb, DarkPalette::Cyan);
+						renderer.aabb(aabb, Palette::Cyan);
 				}
 
 
@@ -137,7 +136,7 @@ namespace STEditor
 		if(m_idsObject.size() > 0)
 		{
 			for (auto&& id : m_idsObject)
-				renderer.shape(m_transforms[id], m_shapes[id], DarkPalette::Red);
+				renderer.shape(m_transforms[id], m_shapes[id], Palette::Red);
 		}
 
 		if (m_idsAABB.size() > 0)
@@ -146,7 +145,7 @@ namespace STEditor
 			{
 				AABB aabb = m_aabbs[id];
 				aabb.expand(m_expandRatio * static_cast<real>(1));
-				renderer.aabb(aabb, DarkPalette::Red);
+				renderer.aabb(aabb, Palette::Red);
 			}
 		}
 
@@ -156,13 +155,13 @@ namespace STEditor
 			{
 				AABB aabb = m_aabbs[id];
 				aabb.expand(m_expandRatio * static_cast<real>(1));
-				renderer.aabb(aabb, DarkPalette::Red);
+				renderer.aabb(aabb, Palette::Red);
 			}
 		}
 
 		if (m_showQueryRay)
 		{
-			renderer.line(m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance, DarkPalette::Yellow);
+			renderer.line(m_queryRayOrigin, m_queryRayOrigin + m_queryRayDirection * m_rayMaxDistance, Palette::Yellow);
 			
 			Vector2 start = m_queryRayOrigin;
 
@@ -178,8 +177,6 @@ namespace STEditor
 
 			int stepR = rStart < rEnd ? 1 : -1;
 			int stepC = cStart < cEnd ? 1 : -1;
-
-			bool addNew = stepR * stepC > 0;
 
 			std::unordered_set<CellPosition, CellPositionHash> uniqueCells;
 
@@ -248,7 +245,7 @@ namespace STEditor
 				Vector2 rayBottom = m_grid.gridShift() + Vector2((col + 1.0f) * m_grid.cellWidth(), (row + 1.0f) * m_grid.cellHeight());
 				AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
 
-				renderer.aabb(aabb, DarkPalette::Blue);
+				renderer.aabb(aabb, Palette::Blue);
 			}
 
 			real row = static_cast<real>(rStart);
@@ -258,7 +255,7 @@ namespace STEditor
 			Vector2 rayBottom = m_grid.gridShift() + Vector2((col + 1.0f) * m_grid.cellWidth(), (row + 1.0f) * m_grid.cellHeight());
 			AABB aabb = AABB::fromBox(rayTopLeft, rayBottom);
 
-			renderer.aabb(aabb, DarkPalette::Blue);
+			renderer.aabb(aabb, Palette::Blue);
 
 			row = static_cast<real>(rEnd);
 			col = static_cast<real>(cEnd);
@@ -267,13 +264,13 @@ namespace STEditor
 			rayBottom = m_grid.gridShift() + Vector2((col + 1.0f) * m_grid.cellWidth(), (row + 1.0f) * m_grid.cellHeight());
 			aabb = AABB::fromBox(rayTopLeft, rayBottom);
 
-			renderer.aabb(aabb, DarkPalette::Blue);
+			renderer.aabb(aabb, Palette::Blue);
 
 		}
 
 		if (m_showQueryAABB)
 		{
-			renderer.aabb(m_queryAABB, DarkPalette::Yellow);
+			renderer.aabb(m_queryAABB, Palette::Yellow);
 		}
 	}
 
@@ -494,49 +491,55 @@ namespace STEditor
 		Vector2 position;
 		Vector2 dir(1.0f, 1.0f);
 
-		for (int i = 0; i < m_count; ++i)
+		std::vector<BroadphaseObjectBinding> bindings;
+		bindings.reserve(m_count);
 		{
-			Transform t;
-			int shapeIndex = 0;
+			ZoneScopedN("[BroadphaseScene] Create Shapes - Add to List");
+
+			for (int i = 0; i < m_count; ++i)
 			{
-				ZoneScopedN("[BroadphaseScene] Create Shapes - Random");
+				Transform t;
+				int shapeIndex = 0;
+
 				t.position = Vector2(dist4(gen), dist1(gen));
 				t.rotation = dist3(gen);
 				shapeIndex = dist2(gen);
-			}
+				//position.x = static_cast<real>(i % 12);
+				//position.y = static_cast<real>(i / 12);
+				//position = Vector2(1, 1);
 
-			//position.x = static_cast<real>(i % 12);
-			//position.y = static_cast<real>(i / 12);
-			//position = Vector2(1, 1);
-
-			//t.position = position;
-			//t.rotation = rotation;
+				//t.position = position;
+				//t.rotation = rotation;
 
 
 
-			//int shapeIndex = 0;
-			{
-				ZoneScopedN("[BroadphaseScene] Create Shapes - Add to List");
+				//int shapeIndex = 0;
+
+
 				m_transforms.push_back(t);
 				m_shapes.push_back(m_shapesArray[shapeIndex]);
 				m_bitmasks.push_back(1);
 				m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
 				m_objectIds.push_back(m_objectIdPool.getNewId());
-			}
 
-			{
-				ZoneScopedN("[BroadphaseScene] Create Shapes - Add to Broadphase");
-				BroadphaseObjectBinding binding;
-				binding.aabb = m_aabbs[i];
-				binding.bitmask = 1;
-				binding.objectId = m_objectIds[i];
-				m_grid.addObject(binding);
-				m_dbvt.addObject(binding);
-			}
+				bindings.emplace_back(m_objectIds[i], 1, m_aabbs[i]);
 
-			//position += dir;
+				//position += dir;
+			}
 		}
 
+		{
+			ZoneScopedN("[BroadphaseScene] Create Shapes - Add to Grid");
+			for (auto&& binding : bindings)
+				m_grid.addObject(binding);
+		}
+
+		{
+			ZoneScopedN("[BroadphaseScene] Create Shapes - Add to DBVT");
+			for (auto&& binding : bindings)
+				m_dbvt.addObject(binding);
+			
+		}
 	}
 }
 

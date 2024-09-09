@@ -129,7 +129,6 @@ namespace STEditor
 
 			// ImGUI Rendering
 
-
 			ImGui::Render();
 
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -154,7 +153,7 @@ namespace STEditor
 		ImVec4* colors = ImGui::GetStyle().Colors;
 		colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
 		colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-		colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.10f, 0.10f, 0.21f);
+		colors[ImGuiCol_WindowBg] = ImVec4(0.10f, 0.10f, 0.10f, 0.58f);
 		colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
 		colors[ImGuiCol_PopupBg] = ImVec4(0.19f, 0.19f, 0.19f, 0.92f);
 		colors[ImGuiCol_Border] = ImVec4(0.19f, 0.19f, 0.19f, 0.29f);
@@ -233,7 +232,6 @@ namespace STEditor
 
 	void ST2DEditor::styleLightUI()
 	{
-		// light style from https://github.com/ocornut/imgui/pull/511#issuecomment-175719267
 
 		ImVec4* colors = ImGui::GetStyle().Colors;
 		colors[ImGuiCol_Text] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
@@ -257,7 +255,7 @@ namespace STEditor
 		colors[ImGuiCol_CheckMark] = ImVec4(0.26f, 0.63f, 0.28f, 1.00f);
 		colors[ImGuiCol_SliderGrab] = ImVec4(0.18f, 0.49f, 0.20f, 1.00f);
 		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.26f, 0.63f, 0.28f, 1.00f);
-		colors[ImGuiCol_Button] = ImVec4(0.65f, 0.84f, 0.65f, 1.00f);
+		colors[ImGuiCol_Button] = ImVec4(0.21f, 0.67f, 0.25f, 0.48f);
 		colors[ImGuiCol_ButtonHovered] = ImVec4(0.78f, 0.90f, 0.79f, 1.00f);
 		colors[ImGuiCol_ButtonActive] = ImVec4(0.78f, 0.90f, 0.79f, 1.00f);
 		colors[ImGuiCol_Header] = ImVec4(0.51f, 0.78f, 0.52f, 1.00f);
@@ -374,7 +372,6 @@ namespace STEditor
 	void ST2DEditor::onRenderUI()
 	{
 		ImGui::SetWindowPos("Panel", ImVec2(0, 0));
-
 		ImGui::Begin("Panel", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
 		ImGui::SeparatorText("Scenes");

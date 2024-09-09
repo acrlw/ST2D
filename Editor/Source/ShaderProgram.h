@@ -32,7 +32,7 @@ namespace STEditor
 			std::ifstream file(path);
 			if (!file)
 			{
-				APP_ERROR("Unable to read shader from {}", path);
+				APP_ERROR("Unable to read shader from \"{}\"", path);
 				return;
 			}
 			std::stringstream buffer;

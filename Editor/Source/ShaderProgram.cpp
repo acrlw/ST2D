@@ -150,7 +150,7 @@ namespace STEditor
         if (!success)
         {
             glGetShaderInfoLog(shaderId, 512, NULL, infoLog);
-			APP_ERROR("Shader compilation failed: {0}", infoLog);
+			APP_ERROR("Shader ({}) compilation failed: {0}", shaderId, infoLog);
         }
         else
         {
@@ -167,7 +167,7 @@ namespace STEditor
         if (!success)
         {
             glGetProgramInfoLog(programId, 512, NULL, infoLog);
-			APP_ERROR("Program compilation failed: {0}", infoLog);
+			APP_ERROR("Program ({}) compilation failed: {0}", programId, infoLog);
         }
         else
 			APP_INFO("Program ({}) compilation succeeded", programId);

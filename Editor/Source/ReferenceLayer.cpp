@@ -26,12 +26,12 @@ namespace STEditor
 		else if (meterToPixel <= 60)
 			h = 2;
 
-		bool isFine = meterToPixel >= 90;
+		bool isFine = meterToPixel > 60;
 
 		int f = 5;
 		if(isFine)
 		{
-			if (meterToPixel >= 180)
+			if (meterToPixel >= 150)
 				f = 1;
 		}
 
@@ -62,7 +62,7 @@ namespace STEditor
 			Vector2 end = { static_cast<real>(i), static_cast<real>(yMin) };
 			renderer.line(start, end, color);
 			if(m_coordsVisible)
-				renderer.text(Vector2(static_cast<real>(i), 0.0f) + offset, DarkPalette::DarkGreen, std::to_string(i), 1.0f, true);
+				renderer.text(Vector2(static_cast<real>(i), 0.0f) + offset, Palette::DarkGreen, std::to_string(i), 1.0f, true);
 
 			if(isFine)
 			{
@@ -92,8 +92,8 @@ namespace STEditor
 			Vector2 start = { static_cast<real>(xMax), static_cast<real>(i) };
 			Vector2 end = { static_cast<real>(xMin), static_cast<real>(i) };
 			renderer.line(start, end, color);
-			if (m_coordsVisible)
-				renderer.text(Vector2(0.0f, static_cast<real>(i)) + offset, DarkPalette::DarkGreen, std::to_string(i), 1.0f, true);
+			if (m_coordsVisible && i != 0)
+				renderer.text(Vector2(0.0f, static_cast<real>(i)) + offset, Palette::DarkGreen, std::to_string(i), 1.0f, true);
 
 			if (isFine)
 			{
