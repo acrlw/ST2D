@@ -12,12 +12,14 @@ namespace STEditor
 			int y2 = static_cast<int>(m_currentMouse.y);
 
 			renderer.arrow(x1, y1, x2, y2, Palette::Teal, 0.1f);
-			Vector2 start = Vector2(x1, y1);
-			Vector2 end = Vector2(x2, y2);
+			Vector2 start(x1, y1);
+			Vector2 end(x2, y2);
 
 			int offsetX = x2;
 			int offsetY = y2;
+
 			offsetY -= 25;
+
 			start = renderer.screenToWorld(start);
 			end = renderer.screenToWorld(end);
 			Vector2 diff = end - start;

@@ -168,10 +168,10 @@ namespace ST
 			bottom_dir = rot.multiply(bottom_dir);
 			right_dir = rot.multiply(right_dir);
 
-			Vector2 top = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), top_dir);
-			Vector2 left = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), left_dir);
-			Vector2 bottom = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), bottom_dir);
-			Vector2 right = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), right_dir);
+			Vector2 top = Algorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), top_dir);
+			Vector2 left = Algorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), left_dir);
+			Vector2 bottom = Algorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), bottom_dir);
+			Vector2 right = Algorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), right_dir);
 
 			rot.conjugate();
 
@@ -317,12 +317,13 @@ namespace ST
 	}
 	bool AABB::raycast(const AABB& aabb, const Vector2& start, const Vector2& direction)
 	{
-		auto result = GeometryAlgorithm2D::raycastAABB(start, direction, aabb.topLeft(), aabb.bottomRight());
-		if (!result.has_value())
+		Vector2 p1, p2;
+		auto result = Algorithm2D::raycastAABB(start, direction, aabb.topLeft(), aabb.bottomRight(), p1, p2);
+		if (!result)
 			return false;
-		auto [p1, p2] = result.value();
-		bool isP1Inside = GeometryAlgorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight());
-		bool isP2Inside = GeometryAlgorithm2D::checkPointOnAABB(p2, aabb.topLeft(), aabb.bottomRight());
+
+		bool isP1Inside = Algorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight());
+		bool isP2Inside = Algorithm2D::checkPointOnAABB(p2, aabb.topLeft(), aabb.bottomRight());
 
 		return isP1Inside && isP2Inside;
 	}

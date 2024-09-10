@@ -199,9 +199,9 @@ namespace STEditor
 
 		//		SimplexVertexWithOriginDistance pair;
 		//		pair.vertex = vertex;
-		//		const Vector2 t1 = GeometryAlgorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
+		//		const Vector2 t1 = Algorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
 		//		const real dist1 = t1.lengthSquare();
-		//		const Vector2 t2 = GeometryAlgorithm2D::pointToLineSegment(vertex.result, itB->vertex.result, { 0, 0 });
+		//		const Vector2 t2 = Algorithm2D::pointToLineSegment(vertex.result, itB->vertex.result, { 0, 0 });
 		//		const real dist2 = t2.lengthSquare();
 
 		//		itA->distance = dist1;

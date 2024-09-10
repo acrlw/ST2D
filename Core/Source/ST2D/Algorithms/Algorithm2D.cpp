@@ -5,7 +5,7 @@
 
 namespace ST
 {
-	std::vector<Vector2> GeometryAlgorithm2D::Clipper::sutherlandHodgmentPolygonClipping(const std::vector<Vector2>& polygon, const std::vector<Vector2>& clipRegion)
+	std::vector<Vector2> Clipper::sutherlandHodgmentPolygonClipping(const std::vector<Vector2>& polygon, const std::vector<Vector2>& clipRegion)
 	{
 		std::vector<Vector2> result = polygon;
 		for (auto iter = clipRegion.begin(); iter != clipRegion.end(); ++iter)
@@ -26,7 +26,7 @@ namespace ST
 			testResult.reserve(polygon.size());
 
 			for (auto it = result.begin(); it != result.end(); ++it)
-				testResult.emplace_back(checkPointsOnSameSide(clipPoint1, clipPoint2, clipDirectionPoint, *it));
+				testResult.emplace_back(Algorithm2D::checkPointsOnSameSide(clipPoint1, clipPoint2, clipDirectionPoint, *it));
 
 			std::vector<Vector2> newPolygon;
 			newPolygon.reserve(result.size());
@@ -46,14 +46,14 @@ namespace ST
 					//push last point
 					newPolygon.emplace_back(result[idxLast]);
 					//push intersection point
-					Vector2 p = lineIntersection(clipPoint1, clipPoint2, result[idxLast], result[idxCurr]);
+					Vector2 p = Algorithm2D::lineIntersection(clipPoint1, clipPoint2, result[idxLast], result[idxCurr]);
 					newPolygon.emplace_back(p);
 				}
 				//last outside and current inside
 				else if (!*last && *curr)
 				{
 					//push intersection point first
-					Vector2 p = lineIntersection(clipPoint1, clipPoint2, result[idxLast], result[idxCurr]);
+					Vector2 p = Algorithm2D::lineIntersection(clipPoint1, clipPoint2, result[idxLast], result[idxCurr]);
 					newPolygon.emplace_back(p);
 				}
 				//last outside and current outside
@@ -72,48 +72,48 @@ namespace ST
 		return result;
 	}
 
-	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastCircle(const Vector2& p, const Vector2& dir,
+	RaycastHit Algorithm2D::raycastCircle(const Vector2& p, const Vector2& dir,
 		const Vector2& center, const real& radius)
 	{
 		return {};
 	}
 
-	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastEllipse(const Vector2& p, const Vector2& dir,
+	RaycastHit Algorithm2D::raycastEllipse(const Vector2& p, const Vector2& dir,
 		const Vector2& center, const real& a, const real& b)
 	{
 		return {};
 	}
 
-	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastCapsule(const Vector2& p, const Vector2& dir,
+	RaycastHit Algorithm2D::raycastCapsule(const Vector2& p, const Vector2& dir,
 		const Vector2& center, const real& halfWidth, const real& halfHeight)
 	{
 		return {};
 	}
 
-	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastSegment(const Vector2& p, const Vector2& dir,
+	RaycastHit Algorithm2D::raycastSegment(const Vector2& p, const Vector2& dir,
 		const Vector2& a, const Vector2& b)
 	{
 		return {};
 	}
 
-	GeometryAlgorithm2D::RaycastHit GeometryAlgorithm2D::raycastPolygon(const Vector2& p, const Vector2& dir,
+	RaycastHit Algorithm2D::raycastPolygon(const Vector2& p, const Vector2& dir,
 		const std::vector<Vector2>& vertices)
 	{
 		return {};
 	}
 
-	Vector2 GeometryAlgorithm2D::axialSymmetry(const Vector2& center, const Vector2& dir, const Vector2& point)
+	Vector2 Algorithm2D::axialSymmetry(const Vector2& center, const Vector2& dir, const Vector2& point)
 	{
 		return 2.0 * ((point - center).dot(dir) * dir + center - point) + point;
 	}
 
-	bool GeometryAlgorithm2D::checkCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
+	bool Algorithm2D::checkCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		//triangle area = 0 then collinear
 		return realEqual(std::fabs((a - b).cross(a - c)), 0);
 	}
 
-	bool GeometryAlgorithm2D::checkPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c)
+	bool Algorithm2D::checkPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		const Vector2 ab = b - a;
 		const Vector2 ac = c - a;
@@ -121,17 +121,17 @@ namespace ST
 		return !Math::sameSign(ac.dot(ab), bc.dot(ab)) && checkCollinear(a, b, c);
 	}
 
-	bool GeometryAlgorithm2D::fuzzyCheckPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c,
+	bool Algorithm2D::fuzzyCheckPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c,
 		const real& epsilon)
 	{
 		return fuzzyRealEqual(pointToLineSegment(a, b, c).lengthSquare(), epsilon);
 	}
-	bool GeometryAlgorithm2D::fuzzyCheckCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
+	bool Algorithm2D::fuzzyCheckCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		return (c.x <= Math::max(a.x, b.x) && c.x >= Math::min(a.x, b.x) &&
 			c.y <= Math::max(a.y, b.y) && c.y >= Math::min(a.y, b.y));
 	}
-	std::optional<Vector2> GeometryAlgorithm2D::lineSegmentIntersection(const Vector2& a, const Vector2& b,
+	std::optional<Vector2> Algorithm2D::lineSegmentIntersection(const Vector2& a, const Vector2& b,
 		const Vector2& c, const Vector2& d)
 	{
 		const Vector2 ab = b - a;
@@ -174,68 +174,18 @@ namespace ST
 			: std::nullopt;
 	}
 
-	Vector2 GeometryAlgorithm2D::lineIntersection(const Vector2& p1, const Vector2& p2, const Vector2& q1,
+	Vector2 Algorithm2D::lineIntersection(const Vector2& p1, const Vector2& p2, const Vector2& q1,
 		const Vector2& q2)
 	{
 		const real d = (p1.x - p2.x) * (q1.y - q2.y) - (p1.y - p2.y) * (q1.x - q2.x);
 		if (realEqual(d, 0))
-			return Vector2();
+			return {};
 		const real x = ((p1.x * p2.y - p1.y * p2.x) * (q1.x - q2.x) - (q1.x * q2.y - q1.y * q2.x) * (p1.x - p2.x)) / d;
 		const real y = ((p1.x * p2.y - p1.y * p2.x) * (q1.y - q2.y) - (q1.x * q2.y - q1.y * q2.x) * (p1.y - p2.y)) / d;
-		return Vector2(x, y);
+		return { x, y };
 	}
 
-	std::optional<Vector2> GeometryAlgorithm2D::triangleCircumcenter(const Vector2& a, const Vector2& b,
-		const Vector2& c)
-	{
-		if (realEqual(triangleArea(a, b, c), 0))
-			return std::nullopt;
-
-		//2 * (x2 - x1) * x + 2 * (y2 - y1) y = x2 ^ 2 + y2 ^ 2 - x1 ^ 2 - y1 ^ 2;
-		//2 * (x3 - x2) * x + 2 * (y3 - y2) y = x3 ^ 2 + y3 ^ 2 - x2 ^ 2 - y2 ^ 2;
-		Matrix2x2 coef_mat{ 2.0f * (b.x - a.x), 2.0f * (c.x - b.x), 2.0f * (b.y - a.y), 2 * (c.y - b.y) };
-		const Vector2 constant{ b.lengthSquare() - a.lengthSquare(), c.lengthSquare() - b.lengthSquare() };
-		return std::optional(coef_mat.invert().multiply(constant));
-	}
-
-	std::optional<Vector2> GeometryAlgorithm2D::triangleIncenter(const Vector2& a, const Vector2& b, const Vector2& c)
-	{
-		if (triangleArea(a, b, c) == 0)
-			return std::nullopt;
-
-		const real ab = (b - a).length();
-		const real bc = (c - b).length();
-		const real ca = (a - c).length();
-		Vector2 p = (ab * c + bc * a + ca * b) / (ab + bc + ca);
-		return std::optional(p);
-	}
-
-	std::optional<std::tuple<Vector2, real>> GeometryAlgorithm2D::computeCircumcircle(
-		const Vector2& a, const Vector2& b, const Vector2& c)
-	{
-		if (triangleArea(a, b, c) == 0)
-			return std::nullopt;
-		auto point = triangleCircumcenter(a, b, c);
-		real radius = (point.value() - a).length();
-		return std::make_tuple(point.value(), radius);
-	}
-
-	std::optional<std::tuple<Vector2, real>> GeometryAlgorithm2D::computeInscribedCircle(
-		const Vector2& a, const Vector2& b, const Vector2& c)
-	{
-		const real area = triangleArea(a, b, c);
-		if (area == 0)
-			return std::nullopt;
-
-		const real ab = (b - a).length();
-		const real bc = (c - b).length();
-		const real ca = (a - c).length();
-		Vector2 p = (ab * c + bc * a + ca * b) / (ab + bc + ca);
-		real radius = 2.0f * area / (ab + bc + ca);
-		return std::make_tuple(p, radius);
-	}
-
-	bool GeometryAlgorithm2D::checkConvexPolygon(const std::vector<Vector2>& vertices)
+	bool Algorithm2D::checkConvexPolygon(const std::vector<Vector2>& vertices)
 	{
 		if (vertices.size() == 3)
 			return true;
@@ -243,7 +193,7 @@ namespace ST
 		int positive = 0;
 		int zero = 0;
 		int negative = 0;
-		for (auto itLast = vertices.begin(); itLast != vertices.end(); itLast++)
+		for (auto itLast = vertices.begin(); itLast != vertices.end(); ++itLast)
 		{
 			auto itCurr = itLast + 1;
 
@@ -269,7 +219,7 @@ namespace ST
 		return !(positive != 0 && negative != 0);
 	}
 
-	std::vector<Vector2> GeometryAlgorithm2D::grahamScan(const std::vector<Vector2>& vertices)
+	std::vector<Vector2> Algorithm2D::grahamScan(const std::vector<Vector2>& vertices)
 	{
 		std::vector<Vector2> points = vertices;
 		std::vector<uint32_t> stack;
@@ -329,7 +279,7 @@ namespace ST
 	}
 
 
-	Vector2 GeometryAlgorithm2D::shortestLengthPointOfEllipse(const real& a, const real& b, const Vector2& p,
+	Vector2 Algorithm2D::shortestLengthPointOfEllipse(const real& a, const real& b, const Vector2& p,
 		const real& epsilon)
 	{
 		if (realEqual(a, 0) || realEqual(b, 0))
@@ -386,17 +336,17 @@ namespace ST
 		return t0;
 	}
 
-	Vector2 GeometryAlgorithm2D::triangleCentroid(const Vector2& a1, const Vector2& a2, const Vector2& a3)
+	Vector2 Algorithm2D::triangleCentroid(const Vector2& a1, const Vector2& a2, const Vector2& a3)
 	{
 		return Vector2(a1 + a2 + a3) / 3.0f;
 	}
 
-	real GeometryAlgorithm2D::triangleArea(const Vector2& a1, const Vector2& a2, const Vector2& a3)
+	real Algorithm2D::triangleArea(const Vector2& a1, const Vector2& a2, const Vector2& a3)
 	{
 		return std::fabs(Vector2::crossProduct(a1 - a2, a1 - a3)) / 2.0f;
 	}
 
-	Vector2 GeometryAlgorithm2D::computeCenter(const std::vector<Vector2>& vertices)
+	Vector2 Algorithm2D::computeCenter(const std::vector<Vector2>& vertices)
 	{
 		if (vertices.size() >= 3)
 		{
@@ -421,7 +371,7 @@ namespace ST
 		return Vector2();
 	}
 
-	Vector2 GeometryAlgorithm2D::computeCenter(const std::list<Vector2>& vertices)
+	Vector2 Algorithm2D::computeCenter(const std::list<Vector2>& vertices)
 	{
 		if (vertices.size() >= 3)
 		{
@@ -445,7 +395,7 @@ namespace ST
 		return Vector2();
 	}
 
-	std::tuple<Vector2, Vector2> GeometryAlgorithm2D::shortestLengthLineSegmentEllipse(
+	PointsResult Algorithm2D::shortestLengthLineSegmentEllipse(
 		const real& a, const real& b, const Vector2& p1, const Vector2& p2)
 	{
 		Vector2 p_line;
@@ -534,26 +484,29 @@ namespace ST
 				}
 			}
 		}
-		return std::make_tuple(p_ellipse, p_line);
+		return { p_ellipse, p_line };
 	}
 
-	std::optional<Vector2> GeometryAlgorithm2D::raycast(const Vector2& p, const Vector2& dir, const Vector2& a,
-		const Vector2& b)
+	bool Algorithm2D::raycast(const Vector2& p, const Vector2& dir, const Vector2& a,
+		const Vector2& b, Vector2& result)
 	{
 		const real denominator = (p.x - dir.x) * (a.y - b.y) - (p.y - dir.y) * (a.x - b.x);
 
 		if (realEqual(denominator, 0))
-			return std::nullopt;
+			return false;
 
 		const real t = ((p.x - a.x) * (a.y - b.y) - (p.y - a.y) * (a.x - b.x)) / denominator;
 		const real u = ((dir.x - p.x) * (p.y - a.y) - (dir.y - p.y) * (p.x - a.x)) / denominator;
 		if (t >= 0 && u <= 1.0 && u >= 0)
-			return std::optional<Vector2>({ p.x + t * (dir.x - p.x), p.y + t * (dir.y - p.y) });
-		return std::nullopt;
+		{
+			result = p + t * (dir - p);
+			return true;
+		}
+		return false;
 	}
 
 
-	std::optional<std::pair<Vector2, Vector2>> GeometryAlgorithm2D::raycastAABB(const Vector2& p, const Vector2& dir, const Vector2& topLeft, const Vector2& bottomRight)
+	bool Algorithm2D::raycastAABB(const Vector2& p, const Vector2& dir, const Vector2& topLeft, const Vector2& bottomRight, Vector2& enter, Vector2& exit)
 	{
 		const real xmin = topLeft.x;
 		const real xmax = bottomRight.x;
@@ -591,31 +544,32 @@ namespace ST
 			texit = Math::min(txexit, tyexit);
 		}
 		if (tenter < 0 && texit < 0)
-			return std::nullopt;
-		Vector2 enter = p + tenter * dir;
-		Vector2 exit = p + texit * dir;
+			return false;
 
-		return std::make_pair(enter, exit);
+		enter = p + tenter * dir;
+		exit = p + texit * dir;
+
+		return true;
 
 	}
 
-	bool GeometryAlgorithm2D::checkPointInsideAABB(const Vector2&pos, const Vector2& topLeft, const Vector2& bottomRight)
+	bool Algorithm2D::checkPointInsideAABB(const Vector2&pos, const Vector2& topLeft, const Vector2& bottomRight)
 	{
 		return !(pos.x > bottomRight.x || pos.x < topLeft.x && pos.y > topLeft.y || pos.y < bottomRight.y);
 	}
 
-	bool GeometryAlgorithm2D::checkPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight)
+	bool Algorithm2D::checkPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight)
 	{
 		return Math::isInRange(p.x, topLeft.x, bottomRight.x) &&
 			Math::isInRange(p.y, bottomRight.y, topLeft.y);
 	}
 
-	Vector2 GeometryAlgorithm2D::rotateAround(const Vector2& p, const Vector2& center, const real& radians)
+	Vector2 Algorithm2D::rotateAround(const Vector2& p, const Vector2& center, const real& radians)
 	{
 		return Complex(radians).multiply(p - center) + center;
 	}
 
-	Vector2 GeometryAlgorithm2D::computeEllipseProjectionPoint(const real& a, const real& b, const Vector2& direction)
+	Vector2 Algorithm2D::computeEllipseProjectionPoint(const real& a, const real& b, const Vector2& direction)
 	{
 		Vector2 target;
 		if (realEqual(direction.x, 0))
@@ -644,7 +598,7 @@ namespace ST
 		}
 		return target;
 	}
-	Vector2 GeometryAlgorithm2D::computeCapsuleProjectionPoint(const real& halfWidth, const real& halfHeight, const Vector2& direction)
+	Vector2 Algorithm2D::computeCapsuleProjectionPoint(const real& halfWidth, const real& halfHeight, const Vector2& direction)
 	{
 		Vector2 target;
 		if (halfWidth >= halfHeight) // Horizontal
@@ -664,7 +618,7 @@ namespace ST
 		return target;
 	}
 
-	Vector2 GeometryAlgorithm2D::computeSectorProjectionPoint(const real& startRadian, const real& spanRadian,
+	Vector2 Algorithm2D::computeSectorProjectionPoint(const real& startRadian, const real& spanRadian,
 		const real& radius, const Vector2& direction)
 	{
 		Vector2 result;
@@ -722,14 +676,14 @@ namespace ST
 		return result;
 	}
 
-	bool GeometryAlgorithm2D::checkOriginInTriangle(const Vector2& a, const Vector2& b, const Vector2& c)
+	bool Algorithm2D::checkOriginInTriangle(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
 		real ra = (b - a).cross(-a);
 		real rb = (c - b).cross(-b);
 		real rc = (a - c).cross(-c);
 		return Math::sameSign(ra, rb, rc);
 	}
-	bool GeometryAlgorithm2D::checkPointsOnSameSide(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refPoint, const Vector2 targetPoint)
+	bool Algorithm2D::checkPointsOnSameSide(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refPoint, const Vector2 targetPoint)
 	{
 		Vector2 u = edgePoint2 - edgePoint1;
 		Vector2 v = refPoint - edgePoint1;
@@ -737,14 +691,14 @@ namespace ST
 		//same side or on the edge
 		return Math::sameSign(u.cross(v), u.cross(w));
 	}
-	Vector2 GeometryAlgorithm2D::lineSegmentNormal(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refDirection)
+	Vector2 Algorithm2D::lineSegmentNormal(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refDirection)
 	{
 		Vector2 normal = (edgePoint2 - edgePoint1).normal().perpendicular();
 		if (refDirection.dot(normal) < 0)
 			normal.negate();
 		return normal;
 	}
-	Vector2 GeometryAlgorithm2D::pointToLineSegment(const Vector2& a, const Vector2& b, const Vector2& p)
+	Vector2 Algorithm2D::pointToLineSegment(const Vector2& a, const Vector2& b, const Vector2& p)
 	{
 		if (a == b)
 			return a;
@@ -766,7 +720,7 @@ namespace ST
 		//return point p_proj
 		return op_proj;
 	}
-	Vector2 GeometryAlgorithm2D::rayRayIntersectionUnsafe(const Vector2& p1, const Vector2& dir1, const Vector2& p2, const Vector2& dir2)
+	Vector2 Algorithm2D::rayRayIntersectionUnsafe(const Vector2& p1, const Vector2& dir1, const Vector2& p2, const Vector2& dir2)
 	{
 		//https://stackoverflow.com/a/2932601
 

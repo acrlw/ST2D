@@ -303,7 +303,7 @@ namespace STEditor
 		m_spiralSymmetryCurvatureStart.clear();
 		m_spiralSymmetryCurvatureEnd.clear();
 
-		Vector2 end = GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, {0,0});
+		Vector2 end = Algorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, {0,0});
 		transform += Vector2(m_halfWidth - end.x, 0);
 
 		offset += transform;
@@ -314,13 +314,13 @@ namespace STEditor
 		for (int i = 0; i < N; ++i)
 		{
 			m_spiral[i] += transform;
-			m_spiralSymmetry.emplace_back(GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, m_spiral[i]));
+			m_spiralSymmetry.emplace_back(Algorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, m_spiral[i]));
 
 			Vector2 p1 = m_spiralCurvatureStart[i] + transform;
 			Vector2 p2 = m_spiralCurvatureEnd[i] + transform;
 
-			Vector2 np1 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1);
-			Vector2 np2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2);
+			Vector2 np1 = Algorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1);
+			Vector2 np2 = Algorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2);
 
 
 			m_spiralCurvatureStart[i] = p1;
@@ -332,13 +332,13 @@ namespace STEditor
 				m_spiralCurvatureEnd[i] = np2;
 			}
 
-			p1 = GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, p1);
-			p2 = GeometryAlgorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, p2);
+			p1 = Algorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, p1);
+			p2 = Algorithm2D::axialSymmetry(m_spiralCircleCenter, m_spiralAxialSymmetryDir, p2);
 
 			if (m_curvatureFlip)
 			{
-				p1 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1);
-				p2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2);
+				p1 = Algorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p1);
+				p2 = Algorithm2D::axialSymmetry({}, { 1.0, 0.0 }, p2);
 			}
 
 			m_spiralSymmetryCurvatureStart.emplace_back(p1);
@@ -406,8 +406,8 @@ namespace STEditor
 
 			if(m_curvatureFlip)
 			{
-				from = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, from);
-				point = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, point);
+				from = Algorithm2D::axialSymmetry({}, { 1.0, 0 }, from);
+				point = Algorithm2D::axialSymmetry({}, { 1.0, 0 }, point);
 			}
 
 			m_spiralRoundCurvatureStart.push_back(from);
@@ -558,9 +558,9 @@ namespace STEditor
 
 			if(m_curvatureFlip)
 			{
-				p0 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, p0);
-				p1 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, p1);
-				p2 = GeometryAlgorithm2D::axialSymmetry({}, { 1.0, 0 }, p2);
+				p0 = Algorithm2D::axialSymmetry({}, { 1.0, 0 }, p0);
+				p1 = Algorithm2D::axialSymmetry({}, { 1.0, 0 }, p1);
+				p2 = Algorithm2D::axialSymmetry({}, { 1.0, 0 }, p2);
 			}
 
 			renderer.point(p0, Palette::Gray);

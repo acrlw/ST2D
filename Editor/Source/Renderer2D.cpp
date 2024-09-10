@@ -1283,7 +1283,7 @@ namespace STEditor
 
 	void Renderer2D::polytope(const std::vector<Vector2>& points, const Color& color, float pointSize, bool showIndex)
 	{
-		Vector2 center = GeometryAlgorithm2D::computeCenter(points);
+		Vector2 center = Algorithm2D::computeCenter(points);
 		std::vector<Vector2> offsets;
 
 		for (const auto& p : points)

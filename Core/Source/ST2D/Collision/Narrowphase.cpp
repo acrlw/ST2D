@@ -98,7 +98,7 @@ namespace ST
 
 			//check if new vertex is located in support direction
 
-			bool validSide = GeometryAlgorithm2D::checkPointsOnSameSide(info.simplex.vertices[0].result,
+			bool validSide = Algorithm2D::checkPointsOnSameSide(info.simplex.vertices[0].result,
 				info.simplex.vertices[1].result, info.simplex.vertices[0].result + direction,
 				vertex.result);
 
@@ -118,9 +118,9 @@ namespace ST
 
 			SimplexVertexWithOriginDistance pair;
 			pair.vertex = vertex;
-			const Vector2 t1 = GeometryAlgorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
+			const Vector2 t1 = Algorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
 			const real dist1 = t1.lengthSquare();
-			const Vector2 t2 = GeometryAlgorithm2D::pointToLineSegment(vertex.result, itB->vertex.result, { 0, 0 });
+			const Vector2 t2 = Algorithm2D::pointToLineSegment(vertex.result, itB->vertex.result, { 0, 0 });
 			const real dist2 = t2.lengthSquare();
 
 			itA->distance = dist1;
@@ -158,7 +158,7 @@ namespace ST
 
 		}
 
-		const Vector2 temp = -GeometryAlgorithm2D::pointToLineSegment(info.simplex.vertices[0].result,
+		const Vector2 temp = -Algorithm2D::pointToLineSegment(info.simplex.vertices[0].result,
 			info.simplex.vertices[1].result
 			, { 0, 0 });
 
@@ -213,7 +213,7 @@ namespace ST
 		case ShapeType::Ellipse:
 		{
 			auto ellipse = static_cast<const Ellipse*>(shape);
-			target = GeometryAlgorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), rot_dir);
+			target = Algorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), rot_dir);
 			break;
 		}
 		case ShapeType::Edge:
@@ -227,7 +227,7 @@ namespace ST
 		case ShapeType::Capsule:
 		{
 			auto capsule = static_cast<const Capsule*>(shape);
-			target = GeometryAlgorithm2D::computeCapsuleProjectionPoint(
+			target = Algorithm2D::computeCapsuleProjectionPoint(
 				capsule->halfWidth(), capsule->halfHeight(), rot_dir);
 			finalIndex = 0;
 			const Vector2 test(Math::abs(target.x), Math::abs(target.y));
@@ -507,9 +507,9 @@ namespace ST
 
 			SimplexVertexWithOriginDistance pair;
 			pair.vertex = vertex;
-			const Vector2 t1 = GeometryAlgorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
+			const Vector2 t1 = Algorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
 			const real dist1 = t1.lengthSquare();
-			const Vector2 t2 = GeometryAlgorithm2D::pointToLineSegment(vertex.result, itB->vertex.result, { 0, 0 });
+			const Vector2 t2 = Algorithm2D::pointToLineSegment(vertex.result, itB->vertex.result, { 0, 0 });
 			const real dist2 = t2.lengthSquare();
 
 			itA->distance = dist1;
@@ -750,7 +750,7 @@ namespace ST
 	{
 		ContactPair pair;
 		const Vector2 refEdgeDir = (refEdge[1] - refEdge[0]).normal();
-		const Vector2 refEdgeNormal = GeometryAlgorithm2D::lineSegmentNormal(refEdge[0], refEdge[1], normal);
+		const Vector2 refEdgeNormal = Algorithm2D::lineSegmentNormal(refEdge[0], refEdge[1], normal);
 
 		//check ref1
 		const bool isRef1Inc1Valid = refEdgeDir.dot(incEdge[0].vertex - refEdge[0]) >= 0;
@@ -764,7 +764,7 @@ namespace ST
 		if (!isRef1Inc1Valid && isRef1Inc2Valid)
 		{
 			incEdge[0].isClip = true;
-			incEdge[0].vertex = GeometryAlgorithm2D::rayRayIntersectionUnsafe(refEdge[0], refEdgeNormal,
+			incEdge[0].vertex = Algorithm2D::rayRayIntersectionUnsafe(refEdge[0], refEdgeNormal,
 				incEdge[0].vertex,
 				incEdge[1].vertex - incEdge[0].vertex);
 			incEdge[0].clipperVertex = refEdge[0];
@@ -772,7 +772,7 @@ namespace ST
 		else if (isRef1Inc1Valid && !isRef1Inc2Valid)
 		{
 			incEdge[1].isClip = true;
-			incEdge[1].vertex = GeometryAlgorithm2D::rayRayIntersectionUnsafe(refEdge[0], refEdgeNormal,
+			incEdge[1].vertex = Algorithm2D::rayRayIntersectionUnsafe(refEdge[0], refEdgeNormal,
 				incEdge[0].vertex,
 				incEdge[1].vertex - incEdge[0].vertex);
 			incEdge[1].clipperVertex = refEdge[0];
@@ -792,7 +792,7 @@ namespace ST
 		if (!isRef2Inc1Valid && isRef2Inc2Valid)
 		{
 			incEdge[0].isClip = true;
-			incEdge[0].vertex = GeometryAlgorithm2D::rayRayIntersectionUnsafe(refEdge[1], refEdgeNormal,
+			incEdge[0].vertex = Algorithm2D::rayRayIntersectionUnsafe(refEdge[1], refEdgeNormal,
 				incEdge[0].vertex,
 				incEdge[1].vertex - incEdge[0].vertex);
 			incEdge[0].clipperVertex = refEdge[1];
@@ -800,7 +800,7 @@ namespace ST
 		else if (isRef2Inc1Valid && !isRef2Inc2Valid)
 		{
 			incEdge[1].isClip = true;
-			incEdge[1].vertex = GeometryAlgorithm2D::rayRayIntersectionUnsafe(refEdge[1], refEdgeNormal,
+			incEdge[1].vertex = Algorithm2D::rayRayIntersectionUnsafe(refEdge[1], refEdgeNormal,
 				incEdge[0].vertex,
 				incEdge[1].vertex - incEdge[0].vertex);
 			incEdge[1].clipperVertex = refEdge[1];
@@ -821,7 +821,7 @@ namespace ST
 			if (!incEdge[0].isClip)
 			{
 				incContact1 = incEdge[0].vertex;
-				refContact1 = GeometryAlgorithm2D::pointToLineSegment(refEdge[0], refEdge[1], incEdge[0].vertex);
+				refContact1 = Algorithm2D::pointToLineSegment(refEdge[0], refEdge[1], incEdge[0].vertex);
 			}
 
 			if (swap)
@@ -838,7 +838,7 @@ namespace ST
 			if (!incEdge[1].isClip)
 			{
 				incContact2 = incEdge[1].vertex;
-				refContact2 = GeometryAlgorithm2D::pointToLineSegment(refEdge[0], refEdge[1], incEdge[1].vertex);
+				refContact2 = Algorithm2D::pointToLineSegment(refEdge[0], refEdge[1], incEdge[1].vertex);
 			}
 
 			if (swap)
@@ -858,12 +858,12 @@ namespace ST
 			if (!incEdge[0].isClip)
 			{
 				incContact1 = incEdge[0].vertex;
-				refContact1 = GeometryAlgorithm2D::pointToLineSegment(refEdge[0], refEdge[1], incEdge[0].vertex);
+				refContact1 = Algorithm2D::pointToLineSegment(refEdge[0], refEdge[1], incEdge[0].vertex);
 			}
 			if (!incEdge[1].isClip)
 			{
 				incContact2 = incEdge[1].vertex;
-				refContact2 = GeometryAlgorithm2D::pointToLineSegment(refEdge[0], refEdge[1], incEdge[1].vertex);
+				refContact2 = Algorithm2D::pointToLineSegment(refEdge[0], refEdge[1], incEdge[1].vertex);
 			}
 
 			if (swap)
@@ -970,8 +970,8 @@ namespace ST
 			Vector2 b = vb2 - va1;
 
 			if (!Math::sameSign(b.dot(va2 - va1), b.dot(vb2 - va2)) &&
-				GeometryAlgorithm2D::checkPointsOnSameSide(va1, va2, va1 + info.normal, vb2))
-				pair.addContact(GeometryAlgorithm2D::pointToLineSegment(va1, va2, vb2), vb2);
+				Algorithm2D::checkPointsOnSameSide(va1, va2, va1 + info.normal, vb2))
+				pair.addContact(Algorithm2D::pointToLineSegment(va1, va2, vb2), vb2);
 		}
 
 		return pair;
@@ -1051,8 +1051,8 @@ namespace ST
 			Vector2 b = vb2 - va1;
 
 			if (!Math::sameSign(b.dot(va2 - va1), b.dot(vb2 - va2)) &&
-				GeometryAlgorithm2D::checkPointsOnSameSide(va1, va2, va1 + info.normal, vb2))
-				pair.addContact(GeometryAlgorithm2D::pointToLineSegment(va1, va2, vb2), vb2);
+				Algorithm2D::checkPointsOnSameSide(va1, va2, va1 + info.normal, vb2))
+				pair.addContact(Algorithm2D::pointToLineSegment(va1, va2, vb2), vb2);
 		}
 
 		return pair;
@@ -1293,7 +1293,7 @@ namespace ST
 				next = simplex.vertices.begin();
 			SimplexVertexWithOriginDistance pair;
 			pair.vertex = *iter;
-			pair.distance = GeometryAlgorithm2D::pointToLineSegment(iter->result, next->result, { 0, 0 })
+			pair.distance = Algorithm2D::pointToLineSegment(iter->result, next->result, { 0, 0 })
 				.lengthSquare(); //use lengthSquare() to avoid sqrt
 			polytope.emplace_back(pair);
 		}

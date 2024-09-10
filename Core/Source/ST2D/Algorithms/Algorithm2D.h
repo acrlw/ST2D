@@ -4,30 +4,39 @@
 
 namespace ST
 {
-	class ST_API GeometryAlgorithm2D
+	class ST_API Clipper
 	{
 	public:
-		class ST_API Clipper
-		{
-		public:
-			/**
-			 * \brief Sutherland Hodgman Polygon Clipping. All points is stored in counter clock winding.\n
-			 * By convention:\n
-			 *		p0 -> p1 -> p2 -> p0 constructs a triangle
-			 * \param polygon
-			 * \param clipRegion
-			 * \return
-			 */
-			static std::vector<Vector2> sutherlandHodgmentPolygonClipping(const std::vector<Vector2>& polygon, const std::vector<Vector2>& clipRegion);
-		};
+		/**
+		 * \brief Sutherland Hodgman Polygon Clipping. All points is stored in counter clock winding.\n
+		 * By convention:\n
+		 *		p0 -> p1 -> p2 -> p0 constructs a triangle
+		 * \param polygon
+		 * \param clipRegion
+		 * \return
+		 */
+		static std::vector<Vector2> sutherlandHodgmentPolygonClipping(const std::vector<Vector2>& polygon, const std::vector<Vector2>& clipRegion);
+	};
 
-		struct ST_API RaycastHit
-		{
-			Vector2 point;
-			Vector2 normal;
-			real distance;
-			bool hit;
-		};
+	struct ST_API RaycastHit
+	{
+		Vector2 point;
+		Vector2 normal;
+		real distance;
+		bool hit = false;
+	};
+
+	struct ST_API PointsResult
+	{
+		PointsResult(const Vector2& p1, const Vector2& p2) : points{ p1, p2 } {}
+		std::array<Vector2, 2> points;
+	};
+
+
+
+	class ST_API Algorithm2D
+	{
+	public:
 
 		static RaycastHit raycastCircle(const Vector2& p, const Vector2& dir, const Vector2& center, const real& radius);
 
@@ -87,38 +96,6 @@ namespace ST
 		 */
 		static Vector2 lineIntersection(const Vector2& p1, const Vector2& p2, const Vector2& q1, const Vector2& q2);
 		/**
-		 * \brief Calculate the center of circum-circle from triangle abc
-		 * \param a
-		 * \param b
-		 * \param c
-		 * \return
-		 */
-		static std::optional<Vector2> triangleCircumcenter(const Vector2& a, const Vector2& b, const Vector2& c);
-		/**
-		 * \brief Calculate the center of inscribed-circle from triangle abc. If a,b,c can not form a triangle, return nothing
-		 * \param a
-		 * \param b
-		 * \param c
-		 * \return
-		 */
-		static std::optional<Vector2> triangleIncenter(const Vector2& a, const Vector2& b, const Vector2& c);
-		/**
-		 * \brief Calculate circum-circle given three points that can form a triangle. If a,b,c can not form a triangle, return nothing
-		 * \param a
-		 * \param b
-		 * \param c
-		 * \return
-		 */
-		static std::optional<std::tuple<Vector2, real>> computeCircumcircle(const Vector2& a, const Vector2& b, const Vector2& c);
-		/**
-		 * \brief Calculate inscribed circle given three points that can form a triangle. If a,b,c can not form a triangle, return nothing.
-		 * \param a
-		 * \param b
-		 * \param c
-		 * \return
-		 */
-		static std::optional<std::tuple<Vector2, real>> computeInscribedCircle(const Vector2& a, const Vector2& b, const Vector2& c);
-		/**
 		 * \brief Check if a polygon is convex
 		 * \param vertices
 		 * \return
@@ -170,7 +147,7 @@ namespace ST
 		 * \param p2 line segment point 2
 		 * \return
 		 */
-		static std::tuple<Vector2, Vector2> shortestLengthLineSegmentEllipse(const real& a, const real& b, const Vector2& p1, const Vector2& p2);
+		static PointsResult shortestLengthLineSegmentEllipse(const real& a, const real& b, const Vector2& p1, const Vector2& p2);
 		/**
 		 * \brief Calculate point on line segment ab, if point 'p' can cast ray in 'dir' direction on line segment ab. \n
 		 * Algorithm from wikipedia Line-line intersection.
@@ -180,8 +157,8 @@ namespace ST
 		 * \param b line segment point b
 		 * \return
 		 */
-		static std::optional<Vector2> raycast(const Vector2& p, const Vector2& dir, const Vector2& a, const Vector2& b);
-		static std::optional<std::pair<Vector2, Vector2>> raycastAABB(const Vector2& p, const Vector2& dir, const Vector2& topLeft, const Vector2& bottomRight);
+		static bool raycast(const Vector2& p, const Vector2& dir, const Vector2& a, const Vector2& b, Vector2& result);
+		static bool raycastAABB(const Vector2& p, const Vector2& dir, const Vector2& topLeft, const Vector2& bottomRight, Vector2& enter, Vector2& exit);
 		inline static bool checkPointInsideAABB(const Vector2& pos, const Vector2& topLeft, const Vector2& bottomRight);
 		static bool checkPointOnAABB(const Vector2& p, const Vector2& topLeft, const Vector2& bottomRight);
 		/**

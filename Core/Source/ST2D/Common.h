@@ -7,6 +7,8 @@
 
 namespace ST
 {
+	using ObjectID = int;
+	using ObjectPairID = int64_t;
 	using Index = uint32_t;
 	using real = float;
 
@@ -14,13 +16,13 @@ namespace ST
 	{
 		struct
 		{
-			int32_t objectIdA;
-			int32_t objectIdB;
+			ObjectID objectIdA;
+			ObjectID objectIdB;
 		};
-		int64_t key = 0;
+		ObjectPairID key = 0;
 
 		ObjectPair() : key(0) {}
-		ObjectPair(int32_t a, int32_t b)
+		ObjectPair(ObjectID a, ObjectID b)
 		{
 			objectIdA = std::min(a, b);
 			objectIdB = std::max(a, b);
