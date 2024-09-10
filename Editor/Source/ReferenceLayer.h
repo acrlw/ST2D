@@ -19,19 +19,23 @@ namespace STEditor
 
 		bool& coordsVisible() { return m_coordsVisible; }
 		bool& gridVisible() { return m_gridVisible; }
-		bool& distanceCheck() { return m_distanceCheck; }
+		bool& enableDistanceCheck() { return m_enableDistanceCheck; }
 
 	private:
 
-		bool m_distanceCheck = true;
+		bool m_enableDistanceCheck = true;
+		bool m_distanceCheck = false;
+		bool m_distanceCheckMoved = false;
 		bool m_coordsVisible = true;
 		bool m_gridVisible = true;
 
 		int m_gridMaxPoint = 100;
-		Color axisColor = Palette::Green;
-		Color thin = Palette::DarkGreen;
-		Color thick = Palette::DarkGreen;
-		float numberPixelOffset = 6.0f;
+		Color m_axisColor = Palette::Green;
+		Color m_thinColor = Palette::DarkGreen;
+		Color m_thickColor = Palette::DarkGreen;
+		float m_coordsOffsetPixel = 6.0f;
 
+		Vector2 m_mouseStart;
+		Vector2 m_currentMouse;
 	};
 }

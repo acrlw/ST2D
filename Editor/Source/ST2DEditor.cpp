@@ -391,7 +391,7 @@ namespace STEditor
 		ImGui::NextColumn();
 		ImGui::Checkbox("Smooth Zooming", &m_renderer2D->smoothZooming());
 		ImGui::SliderFloat("Zoom", &m_renderer2D->scaleRatio(), 0.1f, 0.8f, "%.1f");
-		ImGui::Checkbox("Distance Check", &m_referenceLayer.distanceCheck());
+		ImGui::Checkbox("Enable Distance Check", &m_referenceLayer.enableDistanceCheck());
 
 		ImGui::NextColumn();
 		ImGui::Columns(1, nullptr);
@@ -488,7 +488,6 @@ namespace STEditor
 		unsigned int hexValue = (a << 24) | (b << 16) | (g << 8) | r;
 		return ImGui::ColorConvertU32ToFloat4(hexValue);
 	}
-
 
 	void ST2DEditor::onDestroy()
 	{

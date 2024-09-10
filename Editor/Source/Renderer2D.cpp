@@ -410,6 +410,164 @@ namespace STEditor
 		m_ndcPoints.push_back(size);
 	}
 
+	void Renderer2D::arrow(int x1, int y1, int x2, int y2, const Color& color, const float& size, const float& degree)
+	{
+		Vector2 start(x1, y1);
+		Vector2 end(x2, y2);
+
+		start = screenToWorld(start);
+		end = screenToWorld(end);
+
+		arrow(start, end, color, size, degree);
+		line(x1, y1, x2, y2, color);
+
+	}
+
+	void Renderer2D::text(int screenX, int screenY, const Color& color, const std::string& text, const float& scale, bool centered)
+	{
+		if (text.empty())
+			return;
+
+		Vector2 screenPos(screenX, screenY);
+		screenPos.y = m_frameBufferHeight - screenPos.y;
+
+		float x = screenPos.x;
+		float y = screenPos.y;
+
+		if (centered)
+		{
+			float tx = x;
+			float textWidth = 0.0f;
+			float minHeight = m_fontHeight;
+			float maxHeight = 0.0f;
+			float firstCharWidth = 0.0f;
+
+			for (auto iter = text.begin(); iter != text.end(); ++iter)
+			{
+				Char ch = m_characters[*iter];
+
+				float xpos = tx + ch.bearing.x * scale;
+
+				float w = ch.size.x * scale;
+
+				char c = *iter;
+
+				if (c != '.' && c != ',' && c != ' ' && c != '+' && c != '-' && c != '*')
+					minHeight = Math::min(minHeight, ch.size.y * scale);
+
+				maxHeight = Math::max(maxHeight, ch.size.y * scale);
+
+				if (iter == text.begin())
+				{
+					textWidth = xpos;
+					firstCharWidth = ch.size.x * scale;
+				}
+				else if (iter == text.end() - 1)
+				{
+					textWidth = xpos + w - textWidth;
+				}
+
+				tx += (ch.advance >> 6) * scale;
+			}
+
+			if (text.size() == 1)
+				textWidth = firstCharWidth;
+
+			textWidth *= 0.5f;
+
+			if (minHeight == m_fontHeight)
+				minHeight = maxHeight;
+
+			minHeight *= 0.5f;
+
+			if (x < -textWidth || x > m_frameBufferWidth + textWidth || y < -minHeight || y > m_frameBufferHeight + minHeight)
+				return;
+
+			for (auto&& elem : text)
+			{
+				Char ch = m_characters[elem];
+
+				float xpos = x + ch.bearing.x * scale;
+				float ypos = y - (ch.size.y - ch.bearing.y) * scale;
+
+				xpos -= textWidth;
+				ypos -= minHeight;
+
+				int px = xpos;
+				int py = m_frameBufferHeight - ypos;
+
+				float w = ch.size.x * scale;
+				float h = ch.size.y * scale;
+
+				std::array vertices =
+				{
+					xpos, ypos + h, 0.0f, 0.0f,
+					xpos, ypos, 0.0f, 1.0f,
+					xpos + w, ypos, 1.0f, 1.0f,
+
+					xpos, ypos + h, 0.0f, 0.0f,
+					xpos + w, ypos, 1.0f, 1.0f,
+					xpos + w, ypos + h, 1.0f, 0.0f
+				};
+
+				m_text.insert(m_text.end(), vertices.begin(), vertices.end());
+
+				m_textureIDs.push_back(ch.textureID);
+
+				m_textColors.push_back(color);
+
+				x += (ch.advance >> 6) * scale;
+			}
+		}
+		else
+		{
+			float maxHeight = 0.0f;
+
+			for (auto&& elem : text)
+			{
+				Char ch = m_characters[elem];
+
+				if (ch.size.y - ch.bearing.y > 0)
+					maxHeight = Math::max(maxHeight, ch.size.y * scale);
+			}
+
+			if (x < -m_fontHeight || x > m_frameBufferWidth + m_fontHeight || y < -maxHeight || y > m_frameBufferHeight + maxHeight)
+				return;
+
+			for (auto&& elem : text)
+			{
+				Char ch = m_characters[elem];
+
+				float xpos = x + ch.bearing.x * scale;
+				float ypos = y - (ch.size.y - ch.bearing.y) * scale;
+
+				ypos -= maxHeight;
+
+				float w = ch.size.x * scale;
+				float h = ch.size.y * scale;
+
+				std::array vertices =
+				{
+					xpos, ypos + h, 0.0f, 0.0f,
+					xpos, ypos, 0.0f, 1.0f,
+					xpos + w, ypos, 1.0f, 1.0f,
+					xpos, ypos + h, 0.0f, 0.0f,
+					xpos + w, ypos, 1.0f, 1.0f,
+					xpos + w, ypos + h, 1.0f, 0.0f
+				};
+
+				m_text.insert(m_text.end(), vertices.begin(), vertices.end());
+
+				m_textureIDs.push_back(ch.textureID);
+
+				m_textColors.push_back(color);
+
+				x += (ch.advance >> 6) * scale;
+			}
+		}
+
+	}
+
 	void Renderer2D::point(const Vector2& position, const Color& color, float size)
 	{
 		AABB aabb = m_screenAABB;
