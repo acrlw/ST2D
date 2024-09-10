@@ -1,10 +1,11 @@
 #include "ObjectGraph.h"
 
+#include "ST2D/Log.h"
+
 namespace ST
 {
 	void ObjectGraph::buildGraph(const std::vector<ObjectPair>& pairs)
 	{
-		clearGraph();
 		for (const ObjectPair& pair : pairs)
 		{
 			m_graph[pair.objectIdA].push_back(pair.objectIdB);
@@ -14,6 +15,24 @@ namespace ST
 			addToUF(pair.objectIdB);
 			unionUF(pair.objectIdA, pair.objectIdB);
 		}
+
+		for (const auto& key : m_unionFind | std::views::keys)
+		{
+			ObjectID root = findUF(key);
+			m_islandGraph[root].push_back(key);
+		}
+
+		//CORE_INFO("Island count: {0}", m_islandGraph.size());
+		//for (const auto& [key, value] : m_islandGraph)
+		//{
+		//	std::string result = std::format("Island ObjectID ({0}) : ", key);
+		//	for (const auto& id : value)
+		//		result += std::to_string(id) + " ";
+		//	CORE_INFO(result);
+		//}
+
+
+
 		// compute islands
 
 	}
@@ -25,23 +44,23 @@ namespace ST
 		m_graph.clear();
 		m_islands.clear();
 		m_unionFind.clear();
+		m_islandGraph.clear();
 	}
 
 	void ObjectGraph::addToUF(ObjectID id)
 	{
-		if (!m_unionFind.contains(id))
-		{
-			m_unionFind[id] = id;
-			m_rank[id] = 1;
-		}
+		if (m_unionFind.contains(id))
+			return;
+
+		m_unionFind[id] = id;
+		m_rank[id] = 1;
 	}
 
 	ObjectID ObjectGraph::findUF(ObjectID id)
 	{
 		if (m_unionFind[id] != id)
-		{
 			m_unionFind[id] = findUF(m_unionFind[id]);
-		}
+		
 		return m_unionFind[id];
 	}
 

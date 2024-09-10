@@ -4,12 +4,12 @@
 
 namespace ST
 {
-	struct Island
+	struct ST_API Island
 	{
 		std::vector<ObjectPair> pairs;
 	};
 
-	class ObjectGraph
+	class ST_API ObjectGraph
 	{
 	public:
 
@@ -26,5 +26,6 @@ namespace ST
 		std::vector<Island> m_islands;
 		std::unordered_map<ObjectID, ObjectID> m_unionFind;
 		std::unordered_map<ObjectID, int> m_rank;
+		std::unordered_map<ObjectID, std::vector<ObjectID>> m_islandGraph;
 	};
 }

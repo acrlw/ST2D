@@ -19,6 +19,7 @@
 #include "ST2D/Collision/Narrowphase.h"
 #include "ST2D/Collision/DynamicBVT.h"
 #include "ST2D/Collision/DynamicGrid.h"
+#include "ST2D/Collision/ObjectGraph.h"
 #include "ST2D/ObjectPool.h"
 #include "ST2D/IdPool.h"
 

@@ -358,6 +358,9 @@ namespace STEditor
 				str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
 			
 			CORE_INFO("Overlaps: {}", str);
+
+			m_objectGraph.clearGraph();
+			m_objectGraph.buildGraph(pairs);
 		}
 
 		ImGui::SameLine();

@@ -52,6 +52,7 @@ namespace STEditor
 
 		DynamicBVT m_dbvt;
 		DynamicGrid m_grid;
+		ObjectGraph m_objectGraph;
 
 		int m_count = 6;
 		int m_maxHeight = 0;
