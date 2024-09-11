@@ -1,8 +1,9 @@
 # ST2D
-Simple Tool 2D
+Simple 2D Debug Draw Tool
 ## Requirement
 - vcpkg
-- SFML
-- ImGui-SFML
 - ImGui
+- glfw3
+- glad
 - spdlog
+- Tracy
