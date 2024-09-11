@@ -8,29 +8,48 @@ namespace ST
 	{
 		for (const ObjectPair& pair : pairs)
 		{
-			m_graph[pair.objectIdA].push_back(pair.objectIdB);
-			m_graph[pair.objectIdB].push_back(pair.objectIdA);
 			//find union
 			addToUF(pair.objectIdA);
 			addToUF(pair.objectIdB);
 			unionUF(pair.objectIdA, pair.objectIdB);
 		}
 
-		for (const auto& key : m_unionFind | std::views::keys)
+		for (const auto& pair : pairs)
 		{
-			ObjectID root = findUF(key);
-			m_islandGraph[root].push_back(key);
+			ObjectID root = findUF(pair.objectIdA);
+			auto& subgraph = m_subGraph[root];
+			subgraph[pair.objectIdA].push_back(pair.objectIdB);
+			subgraph[pair.objectIdB].push_back(pair.objectIdA);
 		}
 
-		//CORE_INFO("Island count: {0}", m_islandGraph.size());
+		//for (const auto& key : m_unionFind | std::views::keys)
+		//{
+		//	ObjectID root = findUF(key);
+		//	m_islandGraph[root].push_back(key);
+		//}
+
+		CORE_INFO("Island count: {0}", m_subGraph.size());
 		//for (const auto& [key, value] : m_islandGraph)
 		//{
 		//	std::string result = std::format("Island ObjectID ({0}) : ", key);
 		//	for (const auto& id : value)
-		//		result += std::to_string(id) + " ";
+		//		result += std::format("({}, {}) ", id.objectIdA, id.objectIdB);
 		//	CORE_INFO(result);
 		//}
 
+		for(const auto& [key, value] : m_subGraph)
+		{
+			std::string result = std::format("SubGraph ObjectID ({0}) : \n", key);
+			for (const auto& [id, ids] : value)
+			{
+				result += std::format("[{0}] : ", id);
+				for (const auto& id : ids)
+					result += std::format("{0} ", id);
+
+				result += "\n";
+			}
+			CORE_INFO(result);
+		}
 
 
 		// compute islands
@@ -41,10 +60,9 @@ namespace ST
 
 	void ObjectGraph::clearGraph()
 	{
-		m_graph.clear();
-		m_islands.clear();
+		m_rank.clear();
 		m_unionFind.clear();
-		m_islandGraph.clear();
+		m_subGraph.clear();
 	}
 
 	void ObjectGraph::addToUF(ObjectID id)

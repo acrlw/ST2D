@@ -15,7 +15,7 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Load");
 
-		m_rectangle.set(0.2f, 0.2f);
+		m_rectangle.set(0.5f, 0.5f);
 		m_circle.setRadius(0.15f);
 		m_capsule.set(0.4f, 0.2f);
 		m_triangle.append({ {-1.0f, -1.0f}, {1.0f, -1.0f}, {0.0f, Math::sqrt(2.0f)} });
@@ -60,7 +60,7 @@ namespace STEditor
 
 		//renderer.text(pos, DarkPalette::Green, "This is a sample text.", 0.25f, true);
 
-		for(int i = 0; i < m_count; ++i)
+		for(int i = 0; i < m_objectIds.size(); ++i)
 		{
 			if(m_showObjectId)
 			{
@@ -483,52 +483,106 @@ namespace STEditor
 			m_objectIdPool.reset();
 		}
 
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		std::uniform_real_distribution<> dist1(-9.0f, 9.0f);
-		std::uniform_int_distribution<> dist2(0, m_shapesArray.size() - 1);
-		std::uniform_real_distribution<> dist3(-Constant::Pi, Constant::Pi);
-		std::uniform_real_distribution<> dist4(-9.0f, 9.0f);
+		//std::random_device rd;
+		//std::mt19937 gen(rd());
+		//std::uniform_real_distribution<> dist1(-9.0f, 9.0f);
+		//std::uniform_int_distribution<> dist2(0, m_shapesArray.size() - 1);
+		//std::uniform_real_distribution<> dist3(-Constant::Pi, Constant::Pi);
+		//std::uniform_real_distribution<> dist4(-9.0f, 9.0f);
 
-		real rotation = 0.0f;
-		Vector2 position;
-		Vector2 dir(1.0f, 1.0f);
+		//real rotation = 0.0f;
+		//Vector2 position;
+		//Vector2 dir(1.0f, 1.0f);
 
 		std::vector<BroadphaseObjectBinding> bindings;
 		bindings.reserve(m_count);
+
 		{
 			ZoneScopedN("[BroadphaseScene] Create Shapes - Add to List");
 
-			for (int i = 0; i < m_count; ++i)
+			real offset = 0.6f;
+			real max = 5.0;
+			real xSpacing = 0.01f;
+			real ySpacing = -0.01f;
+			for (real j = 0; j < max; j += 0.5f)
 			{
-				Transform t;
-				int shapeIndex = 0;
+				for (real i = 0.0; i < max - j; i += 0.5f)
+				{
+					Transform t;
+					t.position.set({  i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.25f});
+					t.rotation = 0;
+					int shapeIndex = 0;
 
-				t.position = Vector2(dist4(gen), dist1(gen));
-				t.rotation = dist3(gen);
-				shapeIndex = dist2(gen);
-				//position.x = static_cast<real>(i % 12);
-				//position.y = static_cast<real>(i / 12);
-				//position = Vector2(1, 1);
+					m_transforms.push_back(t);
+					m_shapes.push_back(m_shapesArray[shapeIndex]);
+					m_bitmasks.push_back(1);
+					m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
 
-				//t.position = position;
-				//t.rotation = rotation;
+					auto id = m_objectIdPool.getNewId();
+					m_objectIds.push_back(id);
 
+					bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
 
-
-				//int shapeIndex = 0;
-
-
-				m_transforms.push_back(t);
-				m_shapes.push_back(m_shapesArray[shapeIndex]);
-				m_bitmasks.push_back(1);
-				m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
-				m_objectIds.push_back(m_objectIdPool.getNewId());
-
-				bindings.emplace_back(m_objectIds[i], 1, m_aabbs[i]);
-
-				//position += dir;
+				}
+				offset += 0.25f;
 			}
+
+			offset = max + 2.0f;
+
+			for (real j = 0; j < max; j += 0.5f)
+			{
+				for (real i = 0.0; i < max - j; i += 0.5f)
+				{
+					Transform t;
+					t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.25f });
+					t.rotation = 0;
+					int shapeIndex = 0;
+
+					m_transforms.push_back(t);
+					m_shapes.push_back(m_shapesArray[shapeIndex]);
+					m_bitmasks.push_back(1);
+					m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
+
+					auto id = m_objectIdPool.getNewId();
+					m_objectIds.push_back(id);
+
+					bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
+
+				}
+				offset += 0.25f;
+			}
+
+			//for (int i = 0; i < m_count; ++i)
+			//{
+			//	Transform t;
+			//	int shapeIndex = 0;
+
+			//	//t.position = Vector2(dist4(gen), dist1(gen));
+			//	//t.rotation = dist3(gen);
+			//	//shapeIndex = dist2(gen);
+
+			//	//position.x = static_cast<real>(i % 12);
+			//	//position.y = static_cast<real>(i / 12);
+			//	//position = Vector2(1, 1);
+
+			//	//t.position = position;
+			//	//t.rotation = rotation;
+
+
+
+			//	//int shapeIndex = 0;
+
+
+			//	m_transforms.push_back(t);
+			//	m_shapes.push_back(m_shapesArray[shapeIndex]);
+			//	m_bitmasks.push_back(1);
+			//	m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
+			//	m_objectIds.push_back(m_objectIdPool.getNewId());
+
+			//	bindings.emplace_back(m_objectIds[i], 1, m_aabbs[i]);
+
+			//	//position += dir;
+			//}
 		}
 
 		{
