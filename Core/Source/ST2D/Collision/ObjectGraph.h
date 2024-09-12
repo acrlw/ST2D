@@ -4,17 +4,9 @@
 
 namespace ST
 {
-	struct ST_API GraphNode
-	{
-		ObjectID id;
-		bool visited = false;
-	};
 
 
-	struct ST_API ObjectSubGraph
-	{
-		std::unordered_map<ObjectID, std::vector<ObjectID>> subGraph;
-	};
+
 
 	using SubGraph = std::unordered_map<ObjectID, std::vector<ObjectID>>;
 
@@ -24,6 +16,8 @@ namespace ST
 
 
 		// require there is no duplicate pairs
+
+		void addEnableColorRepeated(ObjectID id);
 		void buildGraph(const std::vector<ObjectPair>& edges);
 		void clearGraph();
 
@@ -42,5 +36,9 @@ namespace ST
 		std::map<ObjectID, std::vector<ObjectPair>> m_nodeToEdges;
 		std::map<ObjectPair, int> m_edgeToColor;
 		std::map<int, std::vector<ObjectPair>> m_colorToEdges;
+
+		std::unordered_set<ObjectID> m_enableColorRepeated;
+		std::unordered_map<ObjectID, bool> m_visited;
+		std::vector<ObjectPair> m_staticEdges;
 	};
 }

@@ -4,11 +4,19 @@
 
 namespace ST
 {
+	void ObjectGraph::addEnableColorRepeated(ObjectID id)
+	{
+		if (m_enableColorRepeated.contains(id))
+			return;
+		m_enableColorRepeated.insert(id);
+	}
+
 	void ObjectGraph::buildGraph(const std::vector<ObjectPair>& edges)
 	{
 		for (const auto& edge : edges)
 		{
 			//find union
+
 			addToUF(edge.objectIdA);
 			addToUF(edge.objectIdB);
 			unionUF(edge.objectIdA, edge.objectIdB);
@@ -19,7 +27,6 @@ namespace ST
 			m_edgeToColor[edge] = -1;
 		}
 
-		std::set<int> usedColors;
 
 		for (const auto& edge : edges)
 		{
@@ -28,8 +35,16 @@ namespace ST
 			subgraph[edge.objectIdA].push_back(edge.objectIdB);
 			subgraph[edge.objectIdB].push_back(edge.objectIdA);
 
+			//subgraph[edge.objectIdA].push_back(edge.objectIdB);
+			//subgraph[edge.objectIdB].push_back(edge.objectIdA);
+
 			// edge coloring
-			usedColors.clear();
+			
+		}
+
+		for (const auto& edge : edges)
+		{
+			std::set<int> usedColors;
 
 			for (const auto& edgeA : m_nodeToEdges[edge.objectIdA])
 			{
@@ -59,6 +74,7 @@ namespace ST
 
 			m_edgeToColor[edge] = color;
 		}
+
 
 		CORE_INFO("Island count: {0}", m_subGraph.size());
 
@@ -103,6 +119,8 @@ namespace ST
 		m_colorToEdges.clear();
 		m_edgeToColor.clear();
 		m_nodeToEdges.clear();
+		m_enableColorRepeated.clear();
+		m_visited.clear();
 	}
 
 	void ObjectGraph::addToUF(ObjectID id)
