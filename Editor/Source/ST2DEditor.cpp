@@ -115,6 +115,7 @@ namespace STEditor
 			glClearColor(Palette::Background.r, Palette::Background.g, Palette::Background.b, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
 			//render
 			onRender();
 

@@ -13,7 +13,7 @@ namespace ST
 
 	struct ST_API ObjectSubGraph
 	{
-		std::map<ObjectID, std::vector<ObjectID>> subGraph;
+		std::unordered_map<ObjectID, std::vector<ObjectID>> subGraph;
 	};
 
 	using SubGraph = std::unordered_map<ObjectID, std::vector<ObjectID>>;

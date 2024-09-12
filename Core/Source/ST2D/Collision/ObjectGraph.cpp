@@ -51,8 +51,9 @@ namespace ST
 			CORE_INFO(result);
 		}
 
+		// edge coloring
 
-		// compute islands
+
 
 	}
 
