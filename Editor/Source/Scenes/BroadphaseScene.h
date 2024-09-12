@@ -32,12 +32,13 @@ namespace STEditor
 
 		bool m_showObject = true;
 		bool m_showAABB = false;
-		bool m_showGrid = true;
+		bool m_showGrid = false;
 		bool m_showBVT = false;
 		bool m_showTransform = false;
 		bool m_showObjectId = true;
 
 		ST::Rectangle m_rectangle;
+		ST::Rectangle m_land;
 		ST::Circle m_circle;
 		ST::Polygon m_polygon;
 		ST::Capsule m_capsule;
@@ -75,6 +76,8 @@ namespace STEditor
 
 		int m_pointRadius = 10;
 		bool m_onlyInsert = false;
+
+		std::map<int, std::vector<Vector2>> m_graphColorPoints;
 
 	};
 }

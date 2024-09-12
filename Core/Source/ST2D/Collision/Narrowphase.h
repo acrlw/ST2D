@@ -102,8 +102,8 @@ namespace ST
 		static VertexIndexPair findFurthestPoint(const std::vector<Vector2>& vertices,
 			const Vector2& direction);
 
-		static ContactPair generateContacts(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, CollisionInfo& info);
+		static ContactPair generateContacts(CollisionInfo& info, const Transform& transformA, const Shape* shapeA,
+		                                    const Transform& transformB, const Shape* shapeB);
 
 		static CollisionInfo gjkDistance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const size_t& iteration = 30);

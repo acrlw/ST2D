@@ -2,6 +2,69 @@
 
 namespace STEditor
 {
+	Color jetColorMap(float value)
+	{
+		value = std::clamp(value, 0.0f, 1.0f);
+
+		Color color;
+		if (value < 0.25f) {
+			color.r = 0.0f;
+			color.g = 4.0f * value;
+			color.b = 1.0f;
+		}
+		else if (value < 0.5f) {
+			color.r = 0.0f;
+			color.g = 1.0f;
+			color.b = 1.0f - 4.0f * (value - 0.25f);
+		}
+		else if (value < 0.75f) {
+			color.r = 4.0f * (value - 0.5f);
+			color.g = 1.0f;
+			color.b = 0.0f;
+		}
+		else {
+			color.r = 1.0f;
+			color.g = 1.0f - 4.0f * (value - 0.75f);
+			color.b = 0.0;
+		}
+
+		return color;
+	}
+
+	Color hsvToRgb(double h, double s, double v)
+	{
+		float r, g, b;
+
+		int i = static_cast<int>(h * 6);
+		float f = h * 6 - i;
+		float p = v * (1 - s);
+		float q = v * (1 - f * s);
+		float t = v * (1 - (1 - f) * s);
+
+		switch (i % 6) {
+		case 0: r = v, g = t, b = p; break;
+		case 1: r = q, g = v, b = p; break;
+		case 2: r = p, g = v, b = t; break;
+		case 3: r = p, g = q, b = v; break;
+		case 4: r = t, g = p, b = v; break;
+		case 5: r = v, g = p, b = q; break;
+		}
+
+		return { r, g, b };
+	}
+
+	Color gistRainbowColormap(double value)
+	{
+
+		value = std::max(0.0, std::min(1.0, value));
+
+		float h = value;
+		float s = 1.0;
+		float v = 1.0;
+
+		return hsvToRgb(h, s, v);
+	}
+
 	void ColorManager::setThemeMode(ThemeMode mode)
 	{
 		auto& inst = instance();

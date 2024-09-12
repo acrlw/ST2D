@@ -278,8 +278,8 @@ namespace ST
 		return VertexIndexPair{ target, index };
 	}
 
-	ContactPair Narrowphase::generateContacts(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, CollisionInfo& info)
+	ContactPair Narrowphase::generateContacts(CollisionInfo& info, const Transform& transformA, const Shape* shapeA,
+	                                          const Transform& transformB, const Shape* shapeB)
 	{
 		ContactPair pair;
 		ShapeType typeA = shapeA->type();

@@ -33,6 +33,11 @@ namespace ST
 			return key == other.key;
 		}
 
+		bool operator<(const ObjectPair& other) const
+		{
+			return key < other.key;
+		}
+
 	};
 
 	struct ObjectPairHash

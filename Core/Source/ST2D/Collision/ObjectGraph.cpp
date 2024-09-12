@@ -4,38 +4,63 @@
 
 namespace ST
 {
-	void ObjectGraph::buildGraph(const std::vector<ObjectPair>& pairs)
+	void ObjectGraph::buildGraph(const std::vector<ObjectPair>& edges)
 	{
-		for (const ObjectPair& pair : pairs)
+		for (const auto& edge : edges)
 		{
 			//find union
-			addToUF(pair.objectIdA);
-			addToUF(pair.objectIdB);
-			unionUF(pair.objectIdA, pair.objectIdB);
+			addToUF(edge.objectIdA);
+			addToUF(edge.objectIdB);
+			unionUF(edge.objectIdA, edge.objectIdB);
+
+			//prepare for edge coloring
+			m_nodeToEdges[edge.objectIdA].push_back(edge);
+			m_nodeToEdges[edge.objectIdB].push_back(edge);
+			m_edgeToColor[edge] = -1;
 		}
 
-		for (const auto& pair : pairs)
+		std::set<int> usedColors;
+
+		for (const auto& edge : edges)
 		{
-			ObjectID root = findUF(pair.objectIdA);
+			ObjectID root = findUF(edge.objectIdA);
 			auto& subgraph = m_subGraph[root];
-			subgraph[pair.objectIdA].push_back(pair.objectIdB);
-			subgraph[pair.objectIdB].push_back(pair.objectIdA);
-		}
+			subgraph[edge.objectIdA].push_back(edge.objectIdB);
+			subgraph[edge.objectIdB].push_back(edge.objectIdA);
 
-		//for (const auto& key : m_unionFind | std::views::keys)
-		//{
-		//	ObjectID root = findUF(key);
-		//	m_islandGraph[root].push_back(key);
-		//}
+			// edge coloring
+			usedColors.clear();
+
+			for (const auto& edgeA : m_nodeToEdges[edge.objectIdA])
+			{
+				if (edgeA.key == edge.key)
+					continue;
+
+				if (m_edgeToColor[edgeA] != -1)
+					usedColors.insert(m_edgeToColor[edgeA]);
+			}
+
+			for (const auto& edgeB : m_nodeToEdges[edge.objectIdB])
+			{
+				if (edgeB.key == edge.key)
+					continue;
+
+				if (m_edgeToColor[edgeB] != -1)
+					usedColors.insert(m_edgeToColor[edgeB]);
+			}
+
+			int color = 0;
+			for (const auto& usedColor : usedColors)
+			{
+				if (color != usedColor)
+					break;
+				color++;
+			}
+
+			m_edgeToColor[edge] = color;
+		}
 
 		CORE_INFO("Island count: {0}", m_subGraph.size());
-		//for (const auto& [key, value] : m_islandGraph)
-		//{
-		//	std::string result = std::format("Island ObjectID ({0}) : ", key);
-		//	for (const auto& id : value)
-		//		result += std::format("({}, {}) ", id.objectIdA, id.objectIdB);
-		//	CORE_INFO(result);
-		//}
 
 		for(const auto& [key, value] : m_subGraph)
 		{
@@ -51,8 +76,19 @@ namespace ST
 			CORE_INFO(result);
 		}
 
-		// edge coloring
 
+		for (const auto& [key, value] : m_edgeToColor)
+			m_colorToEdges[value].push_back(key);
+
+		CORE_INFO("Color count: {0}", m_colorToEdges.size());
+		for (const auto& [key, value] : m_colorToEdges)
+		{
+			std::string result = std::format("Color ({0}) : \n", key);
+			for (const auto& edge : value)
+				result += std::format("({0}, {1}) ", edge.objectIdA, edge.objectIdB);
+
+			CORE_INFO(result);
+		}
 
 
 	}
@@ -64,6 +100,9 @@ namespace ST
 		m_rank.clear();
 		m_unionFind.clear();
 		m_subGraph.clear();
+		m_colorToEdges.clear();
+		m_edgeToColor.clear();
+		m_nodeToEdges.clear();
 	}
 
 	void ObjectGraph::addToUF(ObjectID id)

@@ -19,7 +19,35 @@ namespace STEditor
 			b(static_cast<float>((hexValue) & 0xFF) / 255.0f),
 			a(1.0f) {}
 
+		Color operator*(float value) const
+		{
+			return Color(r * value, g * value, b * value, a);
+		}
+
+		Color operator+(const Color& color) const
+		{
+			return Color(r + color.r, g + color.g, b + color.b, a + color.a);
+		}
+
+		Color operator-(const Color& color) const
+		{
+			return Color(r - color.r, g - color.g, b - color.b, a - color.a);
+		}
+
+		Color lerp(const Color& color, float t) const
+		{
+			return Color(r + (color.r - r) * t, g + (color.g - g) * t, b + (color.b - b) * t, a + (color.a - a) * t);
+		}
+
 	};
+
+	Color jetColorMap(float value);
+
+
+	Color hsvToRgb(double h, double s, double v);
+
+
+	Color gistRainbowColormap(double value);
 
 	namespace DarkPalette
 	{
