@@ -90,7 +90,10 @@ namespace ST
 
 				if (leftObjectId == 351 || rightObjectId == 351)
 				{
-					int a = 0;
+					if((leftObjectId >= 0 && leftObjectId <= 23) || (rightObjectId >= 0 && rightObjectId <= 23))
+					{
+						int a = 0;
+					}
 				}
 
 				if(leftBitmask & rightBitmask && leftBox.collide(rightBox))

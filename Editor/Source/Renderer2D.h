@@ -72,7 +72,7 @@ namespace STEditor
 		void text(int screenX, int screenY, const Color& color, const std::string& text, const float& scale = 1.0f, bool centered = true);
 
 		//world space
-		void point(const Vector2& position, const Color& color, float size = 6.0f);
+		void point(const Vector2& position, const Color& color, float size = 4.0f);
 		void line(const Vector2& start, const Vector2& end, int r, int g, int b, int a);
 		void line(const Vector2& start, const Vector2& end, float r, float g, float b, float a);
 		void line(const Vector2& start, const Vector2& end, const Color& color);
