@@ -36,8 +36,6 @@ namespace ST
 			m_visited[edge.objectIdB] = false;
 		}
 
-		int maxKey = -1;
-
 		for (const auto& edge : edges)
 		{
 			bool enableRepeatedA = m_enableColorRepeated.contains(edge.objectIdA);
@@ -55,12 +53,8 @@ namespace ST
 			auto& subgraph = m_subGraph[root];
 			subgraph[edge.objectIdA].push_back(edge.objectIdB);
 			subgraph[edge.objectIdB].push_back(edge.objectIdA);
-			maxKey = edge.objectIdA;
-			if (subgraph[edge.objectIdA].size() < subgraph[edge.objectIdB].size())
-				maxKey = edge.objectIdB;
-		}
 
-		CORE_INFO("Max Key:{}", maxKey);
+		}
 
 		for (const auto& value : m_subGraph | std::views::values)
 		{
@@ -68,7 +62,7 @@ namespace ST
 
 			std::set<int> usedColors;
 
-			nodeStack.push_back(maxKey);
+			nodeStack.push_back(value.begin()->first);
 
 			for (const auto& repeated : m_enableColorRepeated)
 				nodeStack.push_back(repeated);

@@ -15,7 +15,7 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Load");
 
-		m_land.set(35.0f, 0.1f);
+		m_land.set(40.0f, 0.1f);
 		m_rectangle.set(0.5f, 0.5f);
 		m_circle.setRadius(0.15f);
 		m_capsule.set(0.4f, 0.2f);
@@ -606,30 +606,30 @@ namespace STEditor
 				offset += 0.3f;
 			}
 
-			offset = max + 3.0f;
+			offset = max + 6.0f;
 
-			//for (real j = 0; j < max; j += 0.5f)
-			//{
-			//	for (real i = 0.0; i < max - j; i += 0.5f)
-			//	{
-			//		Transform t;
-			//		t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.25f });
-			//		t.rotation = 0;
-			//		int shapeIndex = 0;
+			for (real j = 0; j < max; j += 0.5f)
+			{
+				for (real i = 0.0; i < max - j; i += 0.5f)
+				{
+					Transform t;
+					t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.25f });
+					t.rotation = 0;
+					int shapeIndex = 0;
 
-			//		m_transforms.push_back(t);
-			//		m_shapes.push_back(m_shapesArray[shapeIndex]);
-			//		m_bitmasks.push_back(1);
-			//		m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
+					m_transforms.push_back(t);
+					m_shapes.push_back(m_shapesArray[shapeIndex]);
+					m_bitmasks.push_back(1);
+					m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
 
-			//		auto id = m_objectIdPool.getNewId();
-			//		m_objectIds.push_back(id);
+					auto id = m_objectIdPool.getNewId();
+					m_objectIds.push_back(id);
 
-			//		bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
+					bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
 
-			//	}
-			//	offset += 0.3f;
-			//}
+				}
+				offset += 0.3f;
+			}
 
 			//for (int i = 0; i < m_count; ++i)
 			//{
@@ -666,7 +666,7 @@ namespace STEditor
 		{
 
 			Transform trans;
-			trans.position.set(15.0f, -0.045);
+			trans.position.set(20.0f, -0.045);
 
 			m_transforms.push_back(trans);
 			m_shapes.push_back(&m_land);
