@@ -77,7 +77,9 @@ namespace ST
 			bool isLeftLeaf = m_nodes[leftIndex].isLeaf();
 			bool isRightLeaf = m_nodes[rightIndex].isLeaf();
 
-			if(isLeftLeaf && isRightLeaf)
+			bool isCollide = leftBox.collide(rightBox);
+
+			if (isLeftLeaf && isRightLeaf)
 			{
 				int leftLeafIndex = m_nodes[leftIndex].leafIndex;
 				int rightLeafIndex = m_nodes[rightIndex].leafIndex;
@@ -85,18 +87,7 @@ namespace ST
 				int leftBitmask = m_leaves[leftLeafIndex].binding.bitmask;
 				int rightBitmask = m_leaves[rightLeafIndex].binding.bitmask;
 
-				int leftObjectId = m_leaves[leftLeafIndex].binding.objectId;
-				int rightObjectId = m_leaves[rightLeafIndex].binding.objectId;
-
-				if (leftObjectId == 351 || rightObjectId == 351)
-				{
-					if((leftObjectId >= 0 && leftObjectId <= 23) || (rightObjectId >= 0 && rightObjectId <= 23))
-					{
-						int a = 0;
-					}
-				}
-
-				if(leftBitmask & rightBitmask && leftBox.collide(rightBox))
+				if (leftBitmask & rightBitmask && isCollide)
 				{
 					int leftId = m_leaves[leftLeafIndex].binding.objectId;
 					int rightId = m_leaves[rightLeafIndex].binding.objectId;
@@ -106,11 +97,11 @@ namespace ST
 					else
 						result.push_back({ rightId, leftId });
 				}
-				
+
 			}
-			else if (leftBox.collide(rightBox))
+			else if (isCollide)
 			{
-				if(isLeftLeaf)
+				if (isLeftLeaf)
 				{
 					stack.push_back({ leftIndex, m_nodes[rightIndex].left, false });
 					stack.push_back({ leftIndex, m_nodes[rightIndex].right, false });
@@ -122,7 +113,7 @@ namespace ST
 				}
 			}
 
-			if(!isLeftLeaf && selfTest)
+			if (!isLeftLeaf && selfTest)
 				stack.push_back({ m_nodes[leftIndex].left, m_nodes[leftIndex].right, true });
 
 			if (!isRightLeaf && selfTest)
@@ -303,10 +294,11 @@ namespace ST
 			if (index == -1)
 				continue;
 
-			std::string line = prefix + (isLeft ? "©À©¤©¤ " : "©¸©¤©¤ ") + std::to_string(index);
+			//std::string line = prefix + (isLeft ? "©À©¤©¤ " : "©¸©¤©¤ ") + std::to_string(index);
+			std::string line = prefix + "- " + std::to_string(index);
 
-
-			std::string newPrefix = prefix + (isLeft ? "©¦   " : "    ");
+			//std::string newPrefix = prefix + (isLeft ? "©¦   " : "    ");
+			std::string newPrefix = prefix + "  ";
 
 			if (m_nodes[index].isLeaf())
 			{
@@ -328,7 +320,8 @@ namespace ST
 		}
 
 		for (auto it = lines.begin(); it != lines.end(); ++it)
-			CORE_INFO(*it);
+			std::cout << *it << std::endl;
+			//CORE_INFO(*it);
 
 		std::string splitter(maxLength, '-');
 
@@ -370,6 +363,8 @@ namespace ST
 				m_nodes[mergeIndex].parent = parentIndex;
 
 				m_nodes[parentIndex].height = 1 + std::max(m_nodes[m_nodes[parentIndex].left].height, m_nodes[m_nodes[parentIndex].right].height);
+
+				updateAABB(mergeIndex, nodeIndex);
 
 				queue.push_back(newNodeIndex);
 				queue.push_back(targetIndex);
@@ -708,6 +703,20 @@ namespace ST
 
 		int currentIndex = m_nodes[nodeIndex].parent;
 		while (currentIndex != -1)
+		{
+			int leftIndex = m_nodes[currentIndex].left;
+			int rightIndex = m_nodes[currentIndex].right;
+			m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
+			currentIndex = m_nodes[currentIndex].parent;
+		}
+	}
+
+	void DynamicBVT::updateAABB(int nodeIndex, int stopIndex)
+	{
+		CORE_ASSERT(nodeIndex >= 0, "Invalid node index");
+
+		int currentIndex = m_nodes[nodeIndex].parent;
+		while (currentIndex != stopIndex)
 		{
 			int leftIndex = m_nodes[currentIndex].left;
 			int rightIndex = m_nodes[currentIndex].right;

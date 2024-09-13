@@ -81,6 +81,7 @@ namespace ST
 
 		void updateHeight(int nodeIndex);
 		void updateAABB(int nodeIndex);
+		void updateAABB(int nodeIndex, int stopIndex);
 
 		void onlyInsertLeaf(const BVTNodeBinding& leaf);
 		void insertLeaf(const BVTNodeBinding& leaf);
