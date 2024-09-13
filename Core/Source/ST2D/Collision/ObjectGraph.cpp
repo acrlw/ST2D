@@ -16,67 +16,157 @@ namespace ST
 		for (const auto& edge : edges)
 		{
 			//find union
+			bool enableRepeatedA = m_enableColorRepeated.contains(edge.objectIdA);
+			bool enableRepeatedB = m_enableColorRepeated.contains(edge.objectIdB);
+			if(!enableRepeatedA)
+				addToUF(edge.objectIdA);
 
-			addToUF(edge.objectIdA);
-			addToUF(edge.objectIdB);
-			unionUF(edge.objectIdA, edge.objectIdB);
+			if(!enableRepeatedB)
+				addToUF(edge.objectIdB);
+
+			if (!enableRepeatedA && !enableRepeatedB)
+				unionUF(edge.objectIdA, edge.objectIdB);
 
 			//prepare for edge coloring
 			m_nodeToEdges[edge.objectIdA].push_back(edge);
 			m_nodeToEdges[edge.objectIdB].push_back(edge);
 			m_edgeToColor[edge] = -1;
+
+			m_visited[edge.objectIdA] = false;
+			m_visited[edge.objectIdB] = false;
 		}
 
 
 		for (const auto& edge : edges)
 		{
-			ObjectID root = findUF(edge.objectIdA);
+			bool enableRepeatedA = m_enableColorRepeated.contains(edge.objectIdA);
+			bool enableRepeatedB = m_enableColorRepeated.contains(edge.objectIdB);
+
+			ObjectID root = -1;
+
+			if (!enableRepeatedA)
+				root = findUF(edge.objectIdA);
+			else if (!enableRepeatedB)
+				root = findUF(edge.objectIdB);
+			else if (enableRepeatedA && enableRepeatedB) // this should not happen
+				__debugbreak();
+
 			auto& subgraph = m_subGraph[root];
 			subgraph[edge.objectIdA].push_back(edge.objectIdB);
 			subgraph[edge.objectIdB].push_back(edge.objectIdA);
-
-			//subgraph[edge.objectIdA].push_back(edge.objectIdB);
-			//subgraph[edge.objectIdB].push_back(edge.objectIdA);
-
-			// edge coloring
-			
 		}
 
-		for (const auto& edge : edges)
+		for (const auto& value : m_subGraph | std::views::values)
 		{
+			CORE_INFO("--------------------");
+			std::stack<ObjectID> nodeStack;
+
 			std::set<int> usedColors;
+			ObjectID startNode = value.begin()->first;
+			nodeStack.push(startNode);
 
-			for (const auto& edgeA : m_nodeToEdges[edge.objectIdA])
+			while (!nodeStack.empty()) 
 			{
-				if (edgeA.key == edge.key)
+				ObjectID currentNode = nodeStack.top();
+				nodeStack.pop();
+
+				usedColors.clear();
+
+				if(m_visited[currentNode])
 					continue;
 
-				if (m_edgeToColor[edgeA] != -1)
-					usedColors.insert(m_edgeToColor[edgeA]);
+				m_visited[currentNode] = true;
+
+				const auto& nodeEdges = m_nodeToEdges[currentNode];
+
+				for(const auto& edge : nodeEdges)
+				{
+					if (m_edgeToColor[edge] == -1)
+					{
+						bool enableRepeatedA = m_enableColorRepeated.contains(edge.objectIdA);
+						bool enableRepeatedB = m_enableColorRepeated.contains(edge.objectIdB);
+
+						if (!enableRepeatedA)
+						{
+							for (const auto& edgeA : m_nodeToEdges[edge.objectIdA])
+							{
+								if (edgeA.key == edge.key)
+									continue;
+
+								if (m_edgeToColor[edgeA] != -1)
+									usedColors.insert(m_edgeToColor[edgeA]);
+							}
+						}
+
+						if (!enableRepeatedB)
+						{
+							for (const auto& edgeB : m_nodeToEdges[edge.objectIdB])
+							{
+								if (edgeB.key == edge.key)
+									continue;
+
+								if (m_edgeToColor[edgeB] != -1)
+									usedColors.insert(m_edgeToColor[edgeB]);
+							}
+						}
+
+						int color = 0;
+						for (const auto& usedColor : usedColors)
+						{
+							if (color != usedColor)
+								break;
+							color++;
+						}
+
+						CORE_INFO("Draw ({},{}) to {}", edge.objectIdA, edge.objectIdB, color);
+
+						m_edgeToColor[edge] = color;
+
+					}
+				}
+
+				for(const auto& nextId : value.at(currentNode))
+					nodeStack.push(nextId);
 			}
-
-			for (const auto& edgeB : m_nodeToEdges[edge.objectIdB])
-			{
-				if (edgeB.key == edge.key)
-					continue;
-
-				if (m_edgeToColor[edgeB] != -1)
-					usedColors.insert(m_edgeToColor[edgeB]);
-			}
-
-			int color = 0;
-			for (const auto& usedColor : usedColors)
-			{
-				if (color != usedColor)
-					break;
-				color++;
-			}
-
-			m_edgeToColor[edge] = color;
 		}
+		
+
+		//for (const auto& edge : edges)
+		//{
+		//  std::set<int> usedColors;
+		//	for (const auto& edgeA : m_nodeToEdges[edge.objectIdA])
+		//	{
+		//		if (edgeA.key == edge.key)
+		//			continue;
+
+		//		if (m_edgeToColor[edgeA] != -1)
+		//			usedColors.insert(m_edgeToColor[edgeA]);
+		//	}
+
+		//	for (const auto& edgeB : m_nodeToEdges[edge.objectIdB])
+		//	{
+		//		if (edgeB.key == edge.key)
+		//			continue;
+
+		//		if (m_edgeToColor[edgeB] != -1)
+		//			usedColors.insert(m_edgeToColor[edgeB]);
+		//	}
+
+		//	int color = 0;
+		//	for (const auto& usedColor : usedColors)
+		//	{
+		//		if (color != usedColor)
+		//			break;
+		//		color++;
+		//	}
+
+		//	m_edgeToColor[edge] = color;
+		//}
 
 
 		CORE_INFO("Island count: {0}", m_subGraph.size());
+
+
 
 		for(const auto& [key, value] : m_subGraph)
 		{

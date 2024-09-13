@@ -5,9 +5,6 @@
 namespace ST
 {
 
-
-
-
 	using SubGraph = std::unordered_map<ObjectID, std::vector<ObjectID>>;
 
 	class ST_API ObjectGraph
@@ -28,7 +25,7 @@ namespace ST
 		ObjectID findUF(ObjectID id);
 		void unionUF(ObjectID id1, ObjectID id2);
 
-		std::vector<std::vector<ObjectPair>> m_colorGraph;
+
 		std::unordered_map<ObjectID, ObjectID> m_unionFind;
 		std::unordered_map<ObjectID, int> m_rank;
 		std::unordered_map<ObjectID, SubGraph> m_subGraph;
@@ -39,6 +36,5 @@ namespace ST
 
 		std::unordered_set<ObjectID> m_enableColorRepeated;
 		std::unordered_map<ObjectID, bool> m_visited;
-		std::vector<ObjectPair> m_staticEdges;
 	};
 }

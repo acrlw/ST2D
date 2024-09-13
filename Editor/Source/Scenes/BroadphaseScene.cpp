@@ -15,7 +15,7 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Load");
 
-		m_land.set(7.0f, 0.1f);
+		m_land.set(15.0f, 0.1f);
 		m_rectangle.set(0.5f, 0.5f);
 		m_circle.setRadius(0.15f);
 		m_capsule.set(0.4f, 0.2f);
@@ -356,45 +356,44 @@ namespace STEditor
 		{
 			auto pairs = m_dbvt.queryOverlaps();
 
-			m_objectGraph.clearGraph();
 			m_objectGraph.buildGraph(pairs);
 			m_graphColorPoints.clear();
 
-			//for (auto& [color, edges] : m_objectGraph.m_colorToEdges)
-			//{
-			//	for (auto&& edge : edges)
-			//	{
-			//		auto simplex = Narrowphase::gjk(m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
-			//		if (simplex.containsOrigin())
-			//		{
-			//			auto collisionInfo = Narrowphase::epa(simplex, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
-			//			auto contacts = Narrowphase::generateContacts(collisionInfo, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
-
-			//			m_graphColorPoints[color].push_back(contacts.points[0]);
-			//			m_graphColorPoints[color].push_back(contacts.points[1]);
-			//			if(contacts.count == 4)
-			//			{
-			//				m_graphColorPoints[color].push_back(contacts.points[2]);
-			//				m_graphColorPoints[color].push_back(contacts.points[3]);
-			//			}
-			//		}
-			//	}
-			//}
-
-			std::ranges::sort(pairs, [](const auto& a, const auto& b)
+			for (auto& [color, edges] : m_objectGraph.m_colorToEdges)
+			{
+				for (auto&& edge : edges)
 				{
-					if (a.objectIdA < b.objectIdA)
-						return true;
-					if (a.objectIdA == b.objectIdA)
-						return a.objectIdB < b.objectIdB;
+					auto simplex = Narrowphase::gjk(m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
+					if (simplex.containsOrigin())
+					{
+						auto collisionInfo = Narrowphase::epa(simplex, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
+						auto contacts = Narrowphase::generateContacts(collisionInfo, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
 
-					return false;
-				});
-			std::string str;
-			for (auto&& elem : pairs)
-				str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
+						m_graphColorPoints[color].push_back(contacts.points[0]);
+						m_graphColorPoints[color].push_back(contacts.points[1]);
+						if(contacts.count == 4)
+						{
+							m_graphColorPoints[color].push_back(contacts.points[2]);
+							m_graphColorPoints[color].push_back(contacts.points[3]);
+						}
+					}
+				}
+			}
 
-			CORE_INFO("Overlaps: {}", str);
+			//std::ranges::sort(pairs, [](const auto& a, const auto& b)
+			//	{
+			//		if (a.objectIdA < b.objectIdA)
+			//			return true;
+			//		if (a.objectIdA == b.objectIdA)
+			//			return a.objectIdB < b.objectIdB;
+
+			//		return false;
+			//	});
+			//std::string str;
+			//for (auto&& elem : pairs)
+			//	str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
+
+			//CORE_INFO("Overlaps: {}", str);
 
 		}
 
@@ -516,6 +515,7 @@ namespace STEditor
 			m_shapes.clear();
 			m_objectIds.clear();
 			m_objectIdPool.reset();
+			m_objectGraph.clearGraph();
 		}
 
 		//std::random_device rd;
@@ -622,7 +622,7 @@ namespace STEditor
 		{
 
 			Transform trans;
-			trans.position.set(3.0f, -0.045);
+			trans.position.set(7.5f, -0.045);
 
 			m_transforms.push_back(trans);
 			m_shapes.push_back(&m_land);
@@ -632,23 +632,7 @@ namespace STEditor
 			m_objectIds.push_back(landId);
 
 			bindings.emplace_back(landId, 1, m_aabbs.back());
-
-		}
-
-		{
-
-			Transform trans;
-			trans.position.set(10.5f, -0.045);
-
-			m_transforms.push_back(trans);
-			m_shapes.push_back(&m_land);
-			m_bitmasks.push_back(1);
-			m_aabbs.push_back(AABB::fromShape(trans, &m_land));
-			auto landId = m_objectIdPool.getNewId();
-			m_objectIds.push_back(landId);
-
-			bindings.emplace_back(landId, 1, m_aabbs.back());
-
+			m_objectGraph.addEnableColorRepeated(landId);
 		}
 
 		{
