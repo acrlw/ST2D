@@ -15,7 +15,7 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Load");
 
-		m_land.set(15.0f, 0.1f);
+		m_land.set(35.0f, 0.1f);
 		m_rectangle.set(0.5f, 0.5f);
 		m_circle.setRadius(0.15f);
 		m_capsule.set(0.4f, 0.2f);
@@ -356,44 +356,25 @@ namespace STEditor
 		{
 			auto pairs = m_dbvt.queryOverlaps();
 
-			m_objectGraph.buildGraph(pairs);
-			m_graphColorPoints.clear();
-
-			for (auto& [color, edges] : m_objectGraph.m_colorToEdges)
-			{
-				for (auto&& edge : edges)
+			std::ranges::sort(pairs, [](const auto& a, const auto& b)
 				{
-					auto simplex = Narrowphase::gjk(m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
-					if (simplex.containsOrigin())
-					{
-						auto collisionInfo = Narrowphase::epa(simplex, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
-						auto contacts = Narrowphase::generateContacts(collisionInfo, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
+					if (a.objectIdA < b.objectIdA)
+						return true;
+					if (a.objectIdA == b.objectIdA)
+						return a.objectIdB < b.objectIdB;
 
-						m_graphColorPoints[color].push_back(contacts.points[0]);
-						m_graphColorPoints[color].push_back(contacts.points[1]);
-						if(contacts.count == 4)
-						{
-							m_graphColorPoints[color].push_back(contacts.points[2]);
-							m_graphColorPoints[color].push_back(contacts.points[3]);
-						}
-					}
-				}
+					return false;
+				});
+			std::string str;
+			for (auto iter = pairs.begin(); iter != pairs.end(); ++iter)
+			{
+				str += std::format("({0}, {1})", iter->objectIdA, iter->objectIdB);
+				if (iter != pairs.end() - 1)
+					str += ", ";
 			}
 
-			//std::ranges::sort(pairs, [](const auto& a, const auto& b)
-			//	{
-			//		if (a.objectIdA < b.objectIdA)
-			//			return true;
-			//		if (a.objectIdA == b.objectIdA)
-			//			return a.objectIdB < b.objectIdB;
-
-			//		return false;
-			//	});
-			//std::string str;
-			//for (auto&& elem : pairs)
-			//	str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
-
-			//CORE_INFO("Overlaps: {}", str);
+			CORE_INFO("Overlaps Count: {}", pairs.size());
+			CORE_INFO("Overlaps: {}", str);
 
 		}
 
@@ -431,9 +412,14 @@ namespace STEditor
 				});
 
 			std::string str;
-			for (auto&& elem : pairs)
-				str += std::format("({0}, {1}) ", elem.objectIdA, elem.objectIdB);
+			for (auto iter = pairs.begin(); iter != pairs.end(); ++iter)
+			{
+				str += std::format("({0}, {1})", iter->objectIdA, iter->objectIdB);
+				if (iter != pairs.end() - 1)
+					str += ", ";
+			}
 
+			CORE_INFO("Overlaps Count: {}", pairs.size());
 			CORE_INFO("Overlaps: {}", str);
 
 			//std::unordered_set<int> uniqueObjects;
@@ -494,6 +480,35 @@ namespace STEditor
 			m_dbvt.updateObject(binding);
 		}
 
+		if(ImGui::Button("Edge Coloring"))
+		{
+			auto pairs = m_dbvt.queryOverlaps();
+
+			m_objectGraph.buildGraph(pairs);
+			m_graphColorPoints.clear();
+
+			for (auto& [color, edges] : m_objectGraph.m_colorToEdges)
+			{
+				for (auto&& edge : edges)
+				{
+					auto simplex = Narrowphase::gjk(m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
+					if (simplex.containsOrigin())
+					{
+						auto collisionInfo = Narrowphase::epa(simplex, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
+						auto contacts = Narrowphase::generateContacts(collisionInfo, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
+
+						m_graphColorPoints[color].push_back(contacts.points[0]);
+						m_graphColorPoints[color].push_back(contacts.points[1]);
+						if (contacts.count == 4)
+						{
+							m_graphColorPoints[color].push_back(contacts.points[2]);
+							m_graphColorPoints[color].push_back(contacts.points[3]);
+						}
+					}
+				}
+			}
+		}
+
 
 		ImGui::End();
 	}
@@ -536,7 +551,7 @@ namespace STEditor
 			ZoneScopedN("[BroadphaseScene] Create Shapes - Add to List");
 
 			real offset = 0.6f;
-			real max = 5.0;
+			real max = 13.0;
 			real xSpacing = 0.2f;
 			real ySpacing = -0.01f;
 			for (real j = 0; j < max; j += 0.5f)
@@ -564,28 +579,28 @@ namespace STEditor
 
 			offset = max + 3.0f;
 
-			for (real j = 0; j < max; j += 0.5f)
-			{
-				for (real i = 0.0; i < max - j; i += 0.5f)
-				{
-					Transform t;
-					t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.25f });
-					t.rotation = 0;
-					int shapeIndex = 0;
+			//for (real j = 0; j < max; j += 0.5f)
+			//{
+			//	for (real i = 0.0; i < max - j; i += 0.5f)
+			//	{
+			//		Transform t;
+			//		t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.25f });
+			//		t.rotation = 0;
+			//		int shapeIndex = 0;
 
-					m_transforms.push_back(t);
-					m_shapes.push_back(m_shapesArray[shapeIndex]);
-					m_bitmasks.push_back(1);
-					m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
+			//		m_transforms.push_back(t);
+			//		m_shapes.push_back(m_shapesArray[shapeIndex]);
+			//		m_bitmasks.push_back(1);
+			//		m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
 
-					auto id = m_objectIdPool.getNewId();
-					m_objectIds.push_back(id);
+			//		auto id = m_objectIdPool.getNewId();
+			//		m_objectIds.push_back(id);
 
-					bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
+			//		bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
 
-				}
-				offset += 0.3f;
-			}
+			//	}
+			//	offset += 0.3f;
+			//}
 
 			//for (int i = 0; i < m_count; ++i)
 			//{
@@ -622,7 +637,7 @@ namespace STEditor
 		{
 
 			Transform trans;
-			trans.position.set(7.5f, -0.045);
+			trans.position.set(15.0f, -0.045);
 
 			m_transforms.push_back(trans);
 			m_shapes.push_back(&m_land);

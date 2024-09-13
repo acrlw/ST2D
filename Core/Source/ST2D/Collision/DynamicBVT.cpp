@@ -85,6 +85,14 @@ namespace ST
 				int leftBitmask = m_leaves[leftLeafIndex].binding.bitmask;
 				int rightBitmask = m_leaves[rightLeafIndex].binding.bitmask;
 
+				int leftObjectId = m_leaves[leftLeafIndex].binding.objectId;
+				int rightObjectId = m_leaves[rightLeafIndex].binding.objectId;
+
+				if (leftObjectId == 351 || rightObjectId == 351)
+				{
+					int a = 0;
+				}
+
 				if(leftBitmask & rightBitmask && leftBox.collide(rightBox))
 				{
 					int leftId = m_leaves[leftLeafIndex].binding.objectId;

@@ -36,6 +36,7 @@ namespace ST
 			m_visited[edge.objectIdB] = false;
 		}
 
+		int maxKey = -1;
 
 		for (const auto& edge : edges)
 		{
@@ -54,21 +55,28 @@ namespace ST
 			auto& subgraph = m_subGraph[root];
 			subgraph[edge.objectIdA].push_back(edge.objectIdB);
 			subgraph[edge.objectIdB].push_back(edge.objectIdA);
+			maxKey = edge.objectIdA;
+			if (subgraph[edge.objectIdA].size() < subgraph[edge.objectIdB].size())
+				maxKey = edge.objectIdB;
 		}
+
+		CORE_INFO("Max Key:{}", maxKey);
 
 		for (const auto& value : m_subGraph | std::views::values)
 		{
-			CORE_INFO("--------------------");
-			std::stack<ObjectID> nodeStack;
+			std::vector<ObjectID> nodeStack;
 
 			std::set<int> usedColors;
-			ObjectID startNode = value.begin()->first;
-			nodeStack.push(startNode);
+
+			nodeStack.push_back(maxKey);
+
+			for (const auto& repeated : m_enableColorRepeated)
+				nodeStack.push_back(repeated);
 
 			while (!nodeStack.empty()) 
 			{
-				ObjectID currentNode = nodeStack.top();
-				nodeStack.pop();
+				ObjectID currentNode = nodeStack.back();
+				nodeStack.pop_back();
 
 				usedColors.clear();
 
@@ -118,69 +126,32 @@ namespace ST
 							color++;
 						}
 
-						CORE_INFO("Draw ({},{}) to {}", edge.objectIdA, edge.objectIdB, color);
-
 						m_edgeToColor[edge] = color;
 
 					}
 				}
 
 				for(const auto& nextId : value.at(currentNode))
-					nodeStack.push(nextId);
+					nodeStack.push_back(nextId);
 			}
 		}
-		
-
-		//for (const auto& edge : edges)
-		//{
-		//  std::set<int> usedColors;
-		//	for (const auto& edgeA : m_nodeToEdges[edge.objectIdA])
-		//	{
-		//		if (edgeA.key == edge.key)
-		//			continue;
-
-		//		if (m_edgeToColor[edgeA] != -1)
-		//			usedColors.insert(m_edgeToColor[edgeA]);
-		//	}
-
-		//	for (const auto& edgeB : m_nodeToEdges[edge.objectIdB])
-		//	{
-		//		if (edgeB.key == edge.key)
-		//			continue;
-
-		//		if (m_edgeToColor[edgeB] != -1)
-		//			usedColors.insert(m_edgeToColor[edgeB]);
-		//	}
-
-		//	int color = 0;
-		//	for (const auto& usedColor : usedColors)
-		//	{
-		//		if (color != usedColor)
-		//			break;
-		//		color++;
-		//	}
-
-		//	m_edgeToColor[edge] = color;
-		//}
 
 
 		CORE_INFO("Island count: {0}", m_subGraph.size());
 
+		//for(const auto& [key, value] : m_subGraph)
+		//{
+		//	std::string result = std::format("SubGraph ObjectID ({0}) : \n", key);
+		//	for (const auto& [id, ids] : value)
+		//	{
+		//		result += std::format("[{0}] : ", id);
+		//		for (const auto& id : ids)
+		//			result += std::format("{0} ", id);
 
-
-		for(const auto& [key, value] : m_subGraph)
-		{
-			std::string result = std::format("SubGraph ObjectID ({0}) : \n", key);
-			for (const auto& [id, ids] : value)
-			{
-				result += std::format("[{0}] : ", id);
-				for (const auto& id : ids)
-					result += std::format("{0} ", id);
-
-				result += "\n";
-			}
-			CORE_INFO(result);
-		}
+		//		result += "\n";
+		//	}
+		//	CORE_INFO(result);
+		//}
 
 
 		for (const auto& [key, value] : m_edgeToColor)
@@ -195,11 +166,7 @@ namespace ST
 
 			CORE_INFO(result);
 		}
-
-
 	}
-
-
 
 	void ObjectGraph::clearGraph()
 	{
