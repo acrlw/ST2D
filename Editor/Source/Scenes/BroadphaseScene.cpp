@@ -393,7 +393,7 @@ namespace STEditor
 			}
 
 			CORE_INFO("Overlaps Count: {}", pairs.size());
-			CORE_INFO("Overlaps: {}", str);
+			//CORE_INFO("Overlaps: {}", str);
 
 		}
 
@@ -439,7 +439,7 @@ namespace STEditor
 			}
 
 			CORE_INFO("Overlaps Count: {}", pairs.size());
-			CORE_INFO("Overlaps: {}", str);
+			//CORE_INFO("Overlaps: {}", str);
 
 			//std::unordered_set<int> uniqueObjects;
 
@@ -483,6 +483,8 @@ namespace STEditor
 		if(ImGui::Button("Edge Coloring"))
 		{
 			auto pairs = m_dbvt.queryOverlaps();
+
+			CORE_INFO("Overlaps Count: {}", pairs.size());
 
 			m_objectGraph.buildGraph(pairs);
 			m_graphColorPoints.clear();

@@ -30,7 +30,7 @@ namespace ST
 		std::unordered_map<ObjectID, int> m_rank;
 		std::set<ObjectID> m_roots;
 
-		std::unordered_map<ObjectID, std::vector<ObjectPair>> m_nodeToEdges;
+		std::unordered_map<ObjectID, std::set<ObjectPair>> m_nodeToEdges;
 		std::unordered_map<ObjectPair, int, ObjectPairHash> m_edgeToColor;
 		std::unordered_map<int, std::vector<ObjectPair>> m_colorToEdges;
 

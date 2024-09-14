@@ -28,8 +28,8 @@ namespace ST
 				unionUF(edge.objectIdA, edge.objectIdB);
 
 			//prepare for edge coloring
-			m_nodeToEdges[edge.objectIdA].push_back(edge);
-			m_nodeToEdges[edge.objectIdB].push_back(edge);
+			m_nodeToEdges[edge.objectIdA].insert(edge);
+			m_nodeToEdges[edge.objectIdB].insert(edge);
 			m_edgeToColor[edge] = -1;
 
 			m_visited[edge.objectIdA] = false;
@@ -198,8 +198,16 @@ namespace ST
 			}
 			else
 			{
-				m_unionFind[root2] = root1;
-				m_rank[root1]++;
+				if (root1 < root2)
+				{
+					m_unionFind[root2] = root1;
+					m_rank[root1]++;
+				}
+				else
+				{
+					m_unionFind[root1] = root2;
+					m_rank[root2]++;
+				}
 			}
 		}
 	}
