@@ -580,7 +580,7 @@ namespace STEditor
 			ZoneScopedN("[BroadphaseScene] Create Shapes - Add to List");
 
 			real offset = 0.6f;
-			real max = 13.0;
+			real max = 15.0;
 			real xSpacing = 0.2f;
 			real ySpacing = -0.01f;
 			for (real j = 0; j < max; j += 0.5f)

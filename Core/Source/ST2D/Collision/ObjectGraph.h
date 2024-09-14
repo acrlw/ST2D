@@ -28,7 +28,7 @@ namespace ST
 
 		std::unordered_map<ObjectID, ObjectID> m_unionFind;
 		std::unordered_map<ObjectID, int> m_rank;
-		std::map<ObjectID, SubGraph> m_subGraph;
+		std::set<ObjectID> m_roots;
 
 		std::unordered_map<ObjectID, std::vector<ObjectPair>> m_nodeToEdges;
 		std::unordered_map<ObjectPair, int, ObjectPairHash> m_edgeToColor;

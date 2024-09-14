@@ -50,38 +50,34 @@ namespace ST
 			else if (enableRepeatedA && enableRepeatedB) // this should not happen
 				__debugbreak();
 
-			auto& subgraph = m_subGraph[root];
-			subgraph[edge.objectIdA].push_back(edge.objectIdB);
-			subgraph[edge.objectIdB].push_back(edge.objectIdA);
-
+			if (!m_roots.contains(root))
+				m_roots.insert(root);
 		}
 
-		for (const auto& value : m_subGraph | std::views::values)
+		for(const auto& root: m_roots)
 		{
 			std::vector<ObjectID> nodeStack;
-
 			std::set<int> usedColors;
-
-			nodeStack.push_back(value.begin()->first);
+			nodeStack.push_back(root);
 
 			for (const auto& repeated : m_enableColorRepeated)
 				nodeStack.push_back(repeated);
 
-			while (!nodeStack.empty()) 
+			while (!nodeStack.empty())
 			{
 				ObjectID currentNode = nodeStack.back();
 				nodeStack.pop_back();
 
 				usedColors.clear();
 
-				if(m_visited[currentNode])
+				if (m_visited[currentNode])
 					continue;
 
 				m_visited[currentNode] = true;
 
 				const auto& nodeEdges = m_nodeToEdges[currentNode];
 
-				for(const auto& edge : nodeEdges)
+				for (const auto& edge : nodeEdges)
 				{
 					if (m_edgeToColor[edge] == -1)
 					{
@@ -125,28 +121,23 @@ namespace ST
 					}
 				}
 
-				for(const auto& nextId : value.at(currentNode))
-					nodeStack.push_back(nextId);
+				for (const auto& nextEdge : m_nodeToEdges[currentNode])
+				{
+					if (nextEdge.objectIdA == currentNode)
+						nodeStack.push_back(nextEdge.objectIdB);
+					else
+						nodeStack.push_back(nextEdge.objectIdA);
+				}
 			}
+
 		}
 
 
-		CORE_INFO("Island count: {0}", m_subGraph.size());
-
-		//for(const auto& [key, value] : m_subGraph)
-		//{
-		//	std::string result = std::format("SubGraph ObjectID ({0}) : \n", key);
-		//	for (const auto& [id, ids] : value)
-		//	{
-		//		result += std::format("[{0}] : ", id);
-		//		for (const auto& id : ids)
-		//			result += std::format("{0} ", id);
-
-		//		result += "\n";
-		//	}
-		//	CORE_INFO(result);
-		//}
-
+		CORE_INFO("Island count: {0}", m_roots.size());
+		for(const auto& root: m_roots)
+		{
+			CORE_INFO("Root ID: ({})", root);
+		}
 
 		for (const auto& [key, value] : m_edgeToColor)
 			m_colorToEdges[value].push_back(key);
@@ -166,12 +157,12 @@ namespace ST
 	{
 		m_rank.clear();
 		m_unionFind.clear();
-		m_subGraph.clear();
 		m_colorToEdges.clear();
 		m_edgeToColor.clear();
 		m_nodeToEdges.clear();
 		m_enableColorRepeated.clear();
 		m_visited.clear();
+		m_roots.clear();
 	}
 
 	void ObjectGraph::addToUF(ObjectID id)
