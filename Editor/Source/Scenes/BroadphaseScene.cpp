@@ -485,6 +485,8 @@ namespace STEditor
 			auto pairs = m_dbvt.queryOverlaps();
 
 			CORE_INFO("Overlaps Count: {}", pairs.size());
+			m_objectGraph.clearGraph();
+			m_objectGraph.addEnableColorRepeated(m_landID);
 
 			m_objectGraph.buildGraph(pairs);
 			m_graphColorPoints.clear();
@@ -610,28 +612,28 @@ namespace STEditor
 
 			offset = max + 6.0f;
 
-			for (real j = 0; j < max; j += 0.5f)
-			{
-				for (real i = 0.0; i < max - j; i += 0.5f)
-				{
-					Transform t;
-					t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.25f });
-					t.rotation = 0;
-					int shapeIndex = 0;
+			//for (real j = 0; j < max; j += 0.5f)
+			//{
+			//	for (real i = 0.0; i < max - j; i += 0.5f)
+			//	{
+			//		Transform t;
+			//		t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.25f });
+			//		t.rotation = 0;
+			//		int shapeIndex = 0;
 
-					m_transforms.push_back(t);
-					m_shapes.push_back(m_shapesArray[shapeIndex]);
-					m_bitmasks.push_back(1);
-					m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
+			//		m_transforms.push_back(t);
+			//		m_shapes.push_back(m_shapesArray[shapeIndex]);
+			//		m_bitmasks.push_back(1);
+			//		m_aabbs.push_back(AABB::fromShape(t, m_shapesArray[shapeIndex]));
 
-					auto id = m_objectIdPool.getNewId();
-					m_objectIds.push_back(id);
+			//		auto id = m_objectIdPool.getNewId();
+			//		m_objectIds.push_back(id);
 
-					bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
+			//		bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
 
-				}
-				offset += 0.3f;
-			}
+			//	}
+			//	offset += 0.3f;
+			//}
 
 			//for (int i = 0; i < m_count; ++i)
 			//{
@@ -674,11 +676,12 @@ namespace STEditor
 			m_shapes.push_back(&m_land);
 			m_bitmasks.push_back(1);
 			m_aabbs.push_back(AABB::fromShape(trans, &m_land));
-			auto landId = m_objectIdPool.getNewId();
-			m_objectIds.push_back(landId);
 
-			bindings.emplace_back(landId, 1, m_aabbs.back());
-			m_objectGraph.addEnableColorRepeated(landId);
+			m_landID = m_objectIdPool.getNewId();
+			m_objectIds.push_back(m_landID);
+
+			bindings.emplace_back(m_landID, 1, m_aabbs.back());
+			m_objectGraph.addEnableColorRepeated(m_landID);
 		}
 
 		{

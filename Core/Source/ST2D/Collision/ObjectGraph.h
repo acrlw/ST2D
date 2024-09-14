@@ -4,8 +4,14 @@
 
 namespace ST
 {
-
-	using SubGraph = std::unordered_map<ObjectID, std::vector<ObjectID>>;
+	struct GraphNode
+	{
+		ObjectID id;
+		ObjectID ufParent;
+		int rank = 1;
+		std::set<ObjectPair> edges;
+		bool visited = false;
+	};
 
 	class ST_API ObjectGraph
 	{
@@ -26,15 +32,13 @@ namespace ST
 		ObjectID findUF(ObjectID id);
 		void unionUF(ObjectID id1, ObjectID id2);
 
-		std::unordered_map<ObjectID, ObjectID> m_unionFind;
-		std::unordered_map<ObjectID, int> m_rank;
+		std::unordered_map<ObjectID, GraphNode> m_nodes;
 		std::set<ObjectID> m_roots;
 
-		std::unordered_map<ObjectID, std::set<ObjectPair>> m_nodeToEdges;
 		std::unordered_map<ObjectPair, int, ObjectPairHash> m_edgeToColor;
-		std::unordered_map<int, std::vector<ObjectPair>> m_colorToEdges;
+		std::map<int, std::vector<ObjectPair>> m_colorToEdges;
 
 		std::unordered_set<ObjectID> m_enableColorRepeated;
-		std::unordered_map<ObjectID, bool> m_visited;
+
 	};
 }
