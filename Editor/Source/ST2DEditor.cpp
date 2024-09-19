@@ -10,6 +10,7 @@ namespace STEditor
 				[&]() { return std::make_unique<CurveScene>(); },
 				[&]() { return std::make_unique<BroadphaseScene>(); },
 				[&]() { return std::make_unique<NarrowphaseScene>(); },
+				[&]() { return std::make_unique<PhysicsScene>(); },
 				[&]() { return std::make_unique<EmptyScene>(); },
 				[&]() { return std::make_unique<SplineScene>(); },
 				[&]() { return std::make_unique<SpiralScene>(); }

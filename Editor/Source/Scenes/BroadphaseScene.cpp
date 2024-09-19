@@ -15,7 +15,7 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Load");
 
-		m_land.set(40.0f, 0.1f);
+		m_land.set(80.0f, 0.1f);
 		m_rectangle.set(0.5f, 0.5f);
 		m_circle.setRadius(0.15f);
 		m_capsule.set(0.4f, 0.2f);
@@ -491,9 +491,9 @@ namespace STEditor
 			m_objectGraph.buildGraph(pairs);
 			m_graphColorPoints.clear();
 
-			for (auto& [color, edges] : m_objectGraph.m_colorToEdges)
+			for (int color = 0; color < m_objectGraph.m_colorToEdges.size(); ++color)
 			{
-				for (auto&& edge : edges)
+				for (auto&& edge : m_objectGraph.m_colorToEdges[color])
 				{
 					auto simplex = Narrowphase::gjk(m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
 					if (simplex.containsOrigin())
@@ -584,7 +584,7 @@ namespace STEditor
 			ZoneScopedN("[BroadphaseScene] Create Shapes - Add to List");
 
 			real offset = 0.6f;
-			real max = 15.0;
+			real max = static_cast<real>(m_count);
 			real xSpacing = 0.2f;
 			real ySpacing = -0.01f;
 			for (real j = 0; j < max; j += 0.5f)
@@ -670,7 +670,7 @@ namespace STEditor
 		{
 
 			Transform trans;
-			trans.position.set(20.0f, -0.045);
+			trans.position.set(40.0f, -0.045);
 
 			m_transforms.push_back(trans);
 			m_shapes.push_back(&m_land);

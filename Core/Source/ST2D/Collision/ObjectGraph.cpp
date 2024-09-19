@@ -58,6 +58,8 @@ namespace ST
 				__debugbreak();
 		}
 
+		int maxColor = 0;
+
 		for(const auto& root: m_roots)
 		{
 			std::vector<ObjectID> nodeStack;
@@ -119,7 +121,7 @@ namespace ST
 								break;
 							color++;
 						}
-
+						maxColor = std::max(maxColor, color);
 						m_edgeToColor[edge] = color;
 
 					}
@@ -136,6 +138,8 @@ namespace ST
 
 		}
 
+		m_colorToEdges.resize(maxColor + 1);
+
 		for (const auto& [key, value] : m_edgeToColor)
 			m_colorToEdges[value].push_back(key);
 
@@ -147,11 +151,10 @@ namespace ST
 			CORE_INFO("Root ID: ({})", root);
 		}
 
-
-		for (const auto& [key, value] : m_colorToEdges)
+		for (int i = 0; i < m_colorToEdges.size(); i++)
 		{
-			std::string result = std::format("Color ({0}) : \n", key);
-			for (const auto& edge : value)
+			std::string result = std::format("Color ({0}) : \n", i);
+			for (const auto& edge : m_colorToEdges[i])
 				result += std::format("({0}, {1}) ", edge.objectIdA, edge.objectIdB);
 
 			CORE_INFO(result);

@@ -36,7 +36,7 @@ namespace ST
 		std::set<ObjectID> m_roots;
 
 		std::unordered_map<ObjectPair, int, ObjectPairHash> m_edgeToColor;
-		std::map<int, std::vector<ObjectPair>> m_colorToEdges;
+		std::vector<std::vector<ObjectPair>> m_colorToEdges;
 
 		std::unordered_set<ObjectID> m_enableColorRepeated;
 

@@ -7,7 +7,7 @@
 #include "Scenes/HelloWorldScene.h"
 #include "Scenes/EmptyScene.h"
 #include "Scenes/SplineScene.h"
-
+#include "Scenes/PhysicsScene.h"
 #include "ReferenceLayer.h"
 
 namespace STEditor
@@ -52,9 +52,9 @@ namespace STEditor
 
 		int m_currentSceneIndex = 2;
 
-		std::array<const char*, 7> m_sceneName = { "HelloWorld", "Curve", "Broadphase", "Narrowphase", "Empty", "Spline", "Spiral" };
+		std::array<const char*, 8> m_sceneName = { "HelloWorld", "Curve", "Broadphase", "Narrowphase", "Physics", "Empty", "Spline", "Spiral" };
 
-		std::array<std::function<std::unique_ptr<AbstractScene>()>, 7> m_sceneList;
+		std::array<std::function<std::unique_ptr<AbstractScene>()>, 8> m_sceneList;
 		
 
 		GLFWwindow* m_window;
