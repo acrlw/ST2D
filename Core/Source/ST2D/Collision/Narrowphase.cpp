@@ -72,7 +72,6 @@ namespace ST
 		//return 1d simplex with edge closest to origin
 		CollisionInfo info;
 		info.simplex = simplex;
-		info.simplex.removeEnd();
 
 		//initiate polytope
 
@@ -164,6 +163,9 @@ namespace ST
 		if (!realEqual(info.penetration, 0))
 			info.normal = temp / info.penetration;
 
+		//make sure simplex is always a 1-d line segment
+		info.simplex.removeEnd();
+
 		return info;
 	}
 
@@ -173,11 +175,31 @@ namespace ST
 		//return 1d simplex with edge closest to origin
 		CollisionInfo info;
 		info.simplex = simplex;
-		info.simplex.removeEnd();
+
+		std::priority_queue<SimplexDistPair> queue;
+
+		{
+			//build queue from simplex;
+			std::array<Vector2, 3> points;
+			for (Index i = 0; i < 3; ++i)
+				points[i] = info.simplex.vertices[i].result;
+
+
+			for (Index i = 0; i < 3; ++i)
+			{
+				real dist = Algorithm2D::pointToLineSegment(points[i], points[(i + 1) % 3], { 0, 0 }).length();
+				Simplex tempSimplex;
+				tempSimplex.addSimplexVertex(info.simplex.vertices[i]);
+				tempSimplex.addSimplexVertex(info.simplex.vertices[(i + 1) % 3]);
+				queue.push(SimplexDistPair{ tempSimplex, dist });
+			}
+		}
+
 
 		for (Index iter = 0; iter < iteration; ++iter)
 		{
 			//indices of closest edge are set to 0 and 1
+			info.simplex = queue.top().simplex;
 			const Vector2 direction = findDirectionByEdge(info.simplex.vertices[0], info.simplex.vertices[1], false);
 
 			const SimplexVertex vertex = support(transformA, shapeA, transformB, shapeB, direction);
@@ -192,18 +214,35 @@ namespace ST
 				info.simplex.vertices[1].result, info.simplex.vertices[0].result + direction,
 				vertex.result);
 
-			Vector2 ab = info.simplex.vertices[1].result - info.simplex.vertices[0].result;
-			Vector2 ac = vertex.result - info.simplex.vertices[0].result;
-			Vector2 bc = vertex.result - info.simplex.vertices[1].result;
-
-			bool validVoronoi = ab.dot(ac) > 0.0f && -ab.dot(bc) > 0.0f;
-
-			if (!validSide || !validVoronoi)
+			if (!validSide)
 				break;
 
+			queue.pop();
+
+			real dist = Algorithm2D::pointToLineSegment(info.simplex.vertices[0].result, vertex.result, { 0, 0 }).length();
+			Simplex tempSimplex;
+			tempSimplex.addSimplexVertex(info.simplex.vertices[0]);
+			tempSimplex.addSimplexVertex(vertex);
+
+			queue.push(SimplexDistPair{ tempSimplex, dist });
+
+			dist = Algorithm2D::pointToLineSegment(vertex.result, info.simplex.vertices[1].result, { 0, 0 }).length();
+			tempSimplex.vertices[0] = info.simplex.vertices[1];
+
+			queue.push(SimplexDistPair{ tempSimplex, dist });
 
 		}
 
+		const Vector2 temp = -Algorithm2D::pointToLineSegment(info.simplex.vertices[0].result,
+			info.simplex.vertices[1].result
+			, { 0, 0 });
+
+		info.penetration = temp.length();
+		//assert(!realEqual(info.penetration, 0));
+		info.normal.clear();
+		//penetration is close to zero, just return
+		if (!realEqual(info.penetration, 0))
+			info.normal = temp / info.penetration;
 
 		return info;
 	}

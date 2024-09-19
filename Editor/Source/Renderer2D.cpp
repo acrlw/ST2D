@@ -1227,7 +1227,7 @@ namespace STEditor
 	void Renderer2D::simplex(const Simplex& simplex, const Color& color, bool showIndex)
 	{
 		Color lineColor = color;
-		lineColor.a = 150.0f / 255.0f;
+		lineColor.a = 200.0f / 255.0f;
 
 		switch (simplex.count)
 		{

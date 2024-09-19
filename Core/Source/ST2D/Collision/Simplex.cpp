@@ -22,9 +22,9 @@ namespace ST
 		}
 	}
 
-	bool Simplex::contains(const SimplexVertex& vertex, const real& epsilon)
+	bool Simplex::contains(const SimplexVertex& vertex, const real& epsilon) const
 	{
-		for (SimplexVertex& element : vertices)
+		for (const SimplexVertex& element : vertices)
 			if (!element.isEmpty() && (element == vertex || element.result.fuzzyEqual(vertex.result, epsilon)))
 				return true;
 		return false;

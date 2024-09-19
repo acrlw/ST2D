@@ -80,7 +80,7 @@ namespace ST
 		bool isContainOrigin = false;
 		bool containsOrigin(bool strict = false) const;
 		static bool containOrigin(const Simplex& simplex, bool strict = false);
-		bool contains(const SimplexVertex& vertex, const real& epsilon = Constant::GeometryEpsilon);
+		bool contains(const SimplexVertex& vertex, const real& epsilon = Constant::GeometryEpsilon)const;
 		void addSimplexVertex(const SimplexVertex& vertex);
 		void removeByIndex(const Index& index);
 		void removeEnd();

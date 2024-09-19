@@ -13,6 +13,17 @@ namespace ST
 		real distance = 0.0f;
 	};
 
+	struct ST_API SimplexDistPair
+	{
+		Simplex simplex;
+		real distance = 0.0f;
+		bool operator<(const SimplexDistPair& other) const
+		{
+			return distance > other.distance;
+		}
+
+	};
+
 	struct ST_API Feature
 	{
 		//circle and ellipse, use index 0
@@ -93,7 +104,7 @@ namespace ST
 			const Shape* shapeB, const size_t& iteration = 12, const real& epsilon = Constant::GeometryEpsilon);
 
 		static CollisionInfo findClosestSimplex(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 30);
+			const Shape* shapeB, const size_t& iteration = 12);
 
 		static SimplexVertex support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const Vector2& direction);

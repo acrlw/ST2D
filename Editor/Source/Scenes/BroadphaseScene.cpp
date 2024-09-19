@@ -485,11 +485,13 @@ namespace STEditor
 			auto pairs = m_dbvt.queryOverlaps();
 
 			CORE_INFO("Overlaps Count: {}", pairs.size());
+
 			m_objectGraph.clearGraph();
+			m_graphColorPoints.clear();
+
 			m_objectGraph.addEnableColorRepeated(m_landID);
 
 			m_objectGraph.buildGraph(pairs);
-			m_graphColorPoints.clear();
 
 			for (int color = 0; color < m_objectGraph.m_colorToEdges.size(); ++color)
 			{
@@ -681,7 +683,6 @@ namespace STEditor
 			m_objectIds.push_back(m_landID);
 
 			bindings.emplace_back(m_landID, 1, m_aabbs.back());
-			m_objectGraph.addEnableColorRepeated(m_landID);
 		}
 
 		{

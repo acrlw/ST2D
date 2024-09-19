@@ -70,7 +70,7 @@ namespace STEditor
 		if(gjkSimplex.isContainOrigin)
 		{
 			{
-				auto info = Narrowphase::epa(gjkSimplex, tf1, &rect, tf2, &ellipse);
+				auto info = Narrowphase::findClosestSimplex(gjkSimplex, tf1, &rect, tf2, &ellipse);
 
 				auto contacts = Narrowphase::generateContacts(info, tf1, &rect, tf2, &ellipse);
 
