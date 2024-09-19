@@ -78,7 +78,7 @@ namespace ST
 		std::array<SimplexVertex, 3> vertices;
 		size_t count = 0;
 		bool isContainOrigin = false;
-		bool containsOrigin(bool strict = false);
+		bool containsOrigin(bool strict = false) const;
 		static bool containOrigin(const Simplex& simplex, bool strict = false);
 		bool contains(const SimplexVertex& vertex, const real& epsilon = Constant::GeometryEpsilon);
 		void addSimplexVertex(const SimplexVertex& vertex);

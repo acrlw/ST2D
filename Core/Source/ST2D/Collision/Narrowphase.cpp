@@ -32,7 +32,8 @@ namespace ST
 		//WARN: this can be used to check collision but not friendly with EPA, here adding perturbation to avoid 1d simplex
 
 		//try to reconfigure simplex to avoid 1d simplex cross origin
-		if (simplex.containsOrigin())
+		simplex.isContainOrigin = simplex.containsOrigin();
+		if (simplex.isContainOrigin)
 		{
 			const bool result = perturbSimplex(simplex, transformA, shapeA, transformB, shapeB, direction);
 			if (!result)
@@ -102,13 +103,7 @@ namespace ST
 				info.simplex.vertices[1].result, info.simplex.vertices[0].result + direction,
 				vertex.result);
 
-			Vector2 ab = info.simplex.vertices[1].result - info.simplex.vertices[0].result;
-			Vector2 ac = vertex.result - info.simplex.vertices[0].result;
-			Vector2 bc = vertex.result - info.simplex.vertices[1].result;
-
-			bool validVoronoi = ab.dot(ac) > 0.0f && -ab.dot(bc) > 0.0f;
-
-			if (!validSide || !validVoronoi)
+			if (!validSide)
 				break;
 
 			auto itA = iterStart;
@@ -172,8 +167,49 @@ namespace ST
 		return info;
 	}
 
+	CollisionInfo Narrowphase::findClosestSimplex(const Simplex& simplex, const Transform& transformA, const Shape* shapeA,
+		const Transform& transformB, const Shape* shapeB, const size_t& iteration)
+	{
+		//return 1d simplex with edge closest to origin
+		CollisionInfo info;
+		info.simplex = simplex;
+		info.simplex.removeEnd();
+
+		for (Index iter = 0; iter < iteration; ++iter)
+		{
+			//indices of closest edge are set to 0 and 1
+			const Vector2 direction = findDirectionByEdge(info.simplex.vertices[0], info.simplex.vertices[1], false);
+
+			const SimplexVertex vertex = support(transformA, shapeA, transformB, shapeB, direction);
+
+			//cannot find any new vertex
+			if (info.simplex.contains(vertex))
+				break;
+
+			//check if new vertex is located in support direction
+
+			bool validSide = Algorithm2D::checkPointsOnSameSide(info.simplex.vertices[0].result,
+				info.simplex.vertices[1].result, info.simplex.vertices[0].result + direction,
+				vertex.result);
+
+			Vector2 ab = info.simplex.vertices[1].result - info.simplex.vertices[0].result;
+			Vector2 ac = vertex.result - info.simplex.vertices[0].result;
+			Vector2 bc = vertex.result - info.simplex.vertices[1].result;
+
+			bool validVoronoi = ab.dot(ac) > 0.0f && -ab.dot(bc) > 0.0f;
+
+			if (!validSide || !validVoronoi)
+				break;
+
+
+		}
+
+
+		return info;
+	}
+
 	SimplexVertex Narrowphase::support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Vector2& direction)
+	                                   const Shape* shapeB, const Vector2& direction)
 	{
 		SimplexVertex vertex;
 		VertexIndexPair pair1 = findFurthestPoint(transformA, shapeA, direction);
@@ -375,7 +411,7 @@ namespace ST
 		return pair;
 	}
 
-	CollisionInfo Narrowphase::gjkDistance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+	CollisionInfo Narrowphase::distance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 		const Shape* shapeB, const size_t& iteration)
 	{
 		VertexPair result;
@@ -659,7 +695,8 @@ namespace ST
 			v = support(transformA, shapeA, transformB, shapeB, direction);
 			simplex.vertices[1] = v;
 
-			if (!simplex.containsOrigin())
+			simplex.isContainOrigin = simplex.containsOrigin();
+			if (!simplex.isContainOrigin)
 				return true;
 		}
 		//can't reconstruct

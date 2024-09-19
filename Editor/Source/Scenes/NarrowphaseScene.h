@@ -27,6 +27,7 @@ namespace STEditor
 		ST::Ellipse ellipse;
 		ST::Capsule capsule;
 		ST::Circle circle;
+		ST::Polygon discreteEllipse;
 		Transform tf1, tf2;
 		Transform* selectedTransform = nullptr;
 		Transform oldTransform;
@@ -36,5 +37,7 @@ namespace STEditor
 		//int m_maxPolytopeIndex = 0;
 		bool m_showSimplex = false;
 		bool m_showPolytope = false;
+		bool m_showGJKSimplex = false;
+		std::vector<Vector2> m_ellipseVertices;
 	};
 }

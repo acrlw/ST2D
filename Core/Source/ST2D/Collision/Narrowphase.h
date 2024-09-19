@@ -90,7 +90,10 @@ namespace ST
 			const Shape* shapeB, const size_t& iteration = 30);
 
 		static CollisionInfo epa(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 30, const real& epsilon = Constant::GeometryEpsilon);
+			const Shape* shapeB, const size_t& iteration = 12, const real& epsilon = Constant::GeometryEpsilon);
+
+		static CollisionInfo findClosestSimplex(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+			const Shape* shapeB, const size_t& iteration = 30);
 
 		static SimplexVertex support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const Vector2& direction);
@@ -105,7 +108,7 @@ namespace ST
 		static ContactPair generateContacts(CollisionInfo& info, const Transform& transformA, const Shape* shapeA,
 		                                    const Transform& transformB, const Shape* shapeB);
 
-		static CollisionInfo gjkDistance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+		static CollisionInfo distance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const size_t& iteration = 30);
 
 	private:

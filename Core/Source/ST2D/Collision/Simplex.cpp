@@ -1,10 +1,9 @@
 #include "Simplex.h"
 namespace ST
 {
-	bool Simplex::containsOrigin(bool strict)
+	bool Simplex::containsOrigin(bool strict) const
 	{
-		isContainOrigin = containOrigin(*this, strict);
-		return isContainOrigin;
+		return containOrigin(*this, strict);
 	}
 
 	bool Simplex::containOrigin(const Simplex& simplex, bool strict)

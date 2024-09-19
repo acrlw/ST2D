@@ -14,16 +14,16 @@ namespace ST
 		return m_vertices;
 	}
 
-	void Polygon::append(const std::initializer_list<Vector2>& vertices)
+	void Polygon::set(const std::initializer_list<Vector2>& vertices)
 	{
 		for (const Vector2& vertex : vertices)
 			m_vertices.emplace_back(vertex);
 		updateVertices();
 	}
 
-	void Polygon::append(const Vector2& vertex)
+	void Polygon::set(std::vector<Vector2>& vertices)
 	{
-		m_vertices.emplace_back(vertex);
+		m_vertices = std::move(vertices);
 		updateVertices();
 	}
 

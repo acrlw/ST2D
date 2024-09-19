@@ -14,7 +14,29 @@ namespace STEditor
 		capsule.set(1.0f, 2.0f);
 		circle.setRadius(1.0f);
 
-		tf1.position.set(-0.561019301f, 0.842656434f);
+		real innerRadius = ellipse.A();
+		real outerRadius = ellipse.B();
+
+		if (innerRadius > outerRadius)
+		{
+			innerRadius = ellipse.B();
+			outerRadius = ellipse.A();
+		}
+
+		int pointCount = 60;
+		real step = Constant::DoublePi / static_cast<float>(pointCount);
+
+		for (real radian = 0; radian <= Constant::DoublePi; radian += step)
+		{
+			Vector2 point(outerRadius * Math::cosx(radian), innerRadius * Math::sinx(radian));
+			m_ellipseVertices.push_back(point);
+		}
+
+		m_ellipseVertices.push_back(m_ellipseVertices.front());
+		discreteEllipse.set(m_ellipseVertices);
+
+		//bug: -0.122633040, -0.174755722
+		tf1.position.set(-0.122633040f, -0.174755722f);
 		tf2.position.set(-1.0f, -1.0f);
 		tf1.rotation = Math::radians(45.0f);
 		tf2.rotation = Math::radians(100.0f);
@@ -32,31 +54,117 @@ namespace STEditor
 
 	void NarrowphaseScene::onRender(Renderer2D& renderer)
 	{
-		auto distInfo = Narrowphase::gjkDistance(tf1, &rect, tf2, &ellipse);
+		renderer.shape(tf1, &rect, Palette::Yellow);
+		renderer.shape(tf2, &ellipse, Palette::Cyan);
 
-		renderer.point(distInfo.pair.pointA, Palette::Yellow);
-		renderer.point(distInfo.pair.pointB, Palette::Cyan);
-
-		renderer.dashedLine(distInfo.pair.pointA, distInfo.pair.pointB, Palette::LightGray);
 		Color simplexColor = Palette::Purple;
 
 		Color polytopeColor = Palette::Teal;
 		polytopeColor.a = 150.0f / 255.0f;
 
-		renderer.shape(tf1, &rect, Palette::Yellow);
-		renderer.shape(tf2, &ellipse, Palette::Cyan);
+		auto gjkSimplex = Narrowphase::gjk(tf1, &rect, tf2, &ellipse);
 
-		if(m_showPolytope)
+		if (m_showGJKSimplex)
+			renderer.simplex(gjkSimplex, Palette::Green);
+
+		if(gjkSimplex.isContainOrigin)
 		{
-			std::vector<Vector2> points;
-			for (auto&& elem : distInfo.polytope)
-				points.push_back(elem.vertex.result);
+			{
+				auto info = Narrowphase::epa(gjkSimplex, tf1, &rect, tf2, &ellipse);
 
-			renderer.polytope(points, polytopeColor);
+				auto contacts = Narrowphase::generateContacts(info, tf1, &rect, tf2, &ellipse);
+
+				renderer.point(contacts.points[0], Palette::Yellow);
+				renderer.point(contacts.points[1], Palette::Cyan);
+				renderer.dashedLine(contacts.points[0], contacts.points[1], Palette::LightGray);
+
+				//renderer.arrow({}, info.normal, Palette::Red);
+				if (contacts.count == 4)
+				{
+					renderer.point(contacts.points[2], Palette::Yellow);
+					renderer.point(contacts.points[3], Palette::Cyan);
+					renderer.dashedLine(contacts.points[2], contacts.points[3], Palette::LightGray);
+				}
+
+				if (m_showPolytope)
+				{
+					std::vector<Vector2> points;
+					for (auto&& elem : info.polytope)
+						points.push_back(elem.vertex.result);
+
+					renderer.polytope(points, polytopeColor);
+				}
+
+				if (m_showSimplex)
+				{
+					renderer.simplex(info.simplex, simplexColor);
+				}
+
+			}
+
+			//{
+			//	CollisionInfo info;
+			//	info.simplex = gjkSimplex;
+			//	info.simplex.removeEnd();
+
+			//	renderer.simplex(info.simplex, simplexColor);
+
+			//	for (Index iter = 0; iter < 1; ++iter)
+			//	{
+			//		//indices of closest edge are set to 0 and 1
+			//		const Vector2 direction = Narrowphase::findDirectionByEdge(info.simplex.vertices[0], info.simplex.vertices[1], false);
+
+			//		const SimplexVertex vertex = Narrowphase::support(tf1, &rect, tf2, &discreteEllipse, direction);
+
+			//		renderer.point(vertex.result, Palette::Orange);
+			//		renderer.arrow({}, direction, Palette::Red);
+
+			//		//cannot find any new vertex
+			//		if (info.simplex.contains(vertex))
+			//			break;
+
+			//		//check if new vertex is located in support direction
+
+			//		bool validSide = Algorithm2D::checkPointsOnSameSide(info.simplex.vertices[0].result,
+			//			info.simplex.vertices[1].result, info.simplex.vertices[0].result + direction,
+			//			vertex.result);
+
+			//		Vector2 ab = info.simplex.vertices[1].result - info.simplex.vertices[0].result;
+			//		Vector2 ac = vertex.result - info.simplex.vertices[0].result;
+			//		Vector2 bc = vertex.result - info.simplex.vertices[1].result;
+
+			//		bool validVoronoi = ab.dot(ac) > 0.0f && -ab.dot(bc) > 0.0f;
+
+			//		if (!validSide || !validVoronoi)
+			//			break;
+
+
+			//	}
+			//}
 		}
+		else
+		{
 
-		if (m_showSimplex)
-			renderer.simplex(distInfo.simplex, simplexColor);
+			auto distInfo = Narrowphase::distance(tf1, &rect, tf2, &ellipse);
+
+			renderer.point(distInfo.pair.pointA, Palette::Yellow);
+			renderer.point(distInfo.pair.pointB, Palette::Cyan);
+
+			renderer.dashedLine(distInfo.pair.pointA, distInfo.pair.pointB, Palette::LightGray);
+
+			if (m_showPolytope)
+			{
+				std::vector<Vector2> points;
+				for (auto&& elem : distInfo.polytope)
+					points.push_back(elem.vertex.result);
+
+				renderer.polytope(points, polytopeColor);
+			}
+
+			if (m_showSimplex)
+				renderer.simplex(distInfo.simplex, simplexColor);
+
+		}
 
 		//std::vector<std::vector<Vector2>> polytopes;
 		//std::vector<Simplex> simplexes;
@@ -320,6 +428,7 @@ namespace STEditor
 		//ImGui::SliderInt("Polytope Index", &m_currentPolytopeIndex, 0, m_maxPolytopeIndex);
 		ImGui::Checkbox("Show Simplex", &m_showSimplex);
 		ImGui::Checkbox("Show Polytope", &m_showPolytope);
+		ImGui::Checkbox("Show GJK Simplex", &m_showGJKSimplex);
 
 		ImGui::End();
 	}
