@@ -159,13 +159,13 @@ namespace STEditor
 
 		ImGui::SeparatorText("Visibility");
 		ImGui::Checkbox("Show Reference Line", &m_showReferenceLine);
-		ImGui::Checkbox("Show Rounded Curvature", &m_showRoundedCurvature);
-		ImGui::Checkbox("Show Bezier Curvature", &m_showBezierCurvature);
-		ImGui::Checkbox("Show Quintic Bezier Curve", &m_showQuinticBezier);
-		ImGui::Checkbox("Show Quintic Bezier Curvature", &m_showQuinticBezierCurvature);
+
 		ImGui::Checkbox("Show G1 Continuity", &m_showG1);
 		ImGui::Checkbox("Show G2 Continuity", &m_showG2);
 		ImGui::Checkbox("Show G3 Continuity", &m_showG3);
+
+		ImGui::Checkbox("Show Rounded Curvature", &m_showRoundedCurvature);
+		ImGui::Checkbox("Show Bezier Curvature", &m_showBezierCurvature);
 		ImGui::Checkbox("Show G3 Curvature", &m_showG3Curvature);
 
 		ImGui::End();

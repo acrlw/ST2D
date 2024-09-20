@@ -105,11 +105,6 @@ namespace STEditor
 
 		if (m_showBVT)
 		{
-			m_isBoxCollide = false;
-			if(m_canDraw)
-			{
-				m_isBoxCollide = m_dbvt.nodes()[m_boxIndex1].aabb.collide(m_dbvt.nodes()[m_boxIndex2].aabb);
-			}
 
 			m_dbvtStack.push_back(m_dbvt.rootIndex());
 			while (!m_dbvtStack.empty())
@@ -130,19 +125,6 @@ namespace STEditor
 					else
 						renderer.aabb(aabb, Palette::Cyan);
 				}
-
-				if(m_canDraw)
-				{
-					if(index == m_boxIndex1)
-					{
-						renderer.aabb(aabb, Palette::Orange);
-					}
-					else if(index == m_boxIndex2)
-					{
-						renderer.aabb(aabb, Palette::Purple);
-					}
-				}
-
 
 				m_dbvtStack.push_back(m_dbvt.nodes()[index].left);
 				m_dbvtStack.push_back(m_dbvt.nodes()[index].right);
@@ -309,7 +291,7 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Render UI");
 
-		ImGui::Begin("Broad-phase");
+		ImGui::Begin("Broadphase");
 
 		int count = m_count;
 		ImGui::DragInt("Count", &count, 2, 4, 5000);
@@ -536,14 +518,6 @@ namespace STEditor
 			m_grid.updateObject(binding);
 			m_dbvt.updateObject(binding);
 		}
-
-		ImGui::DragInt("Index1", &m_boxIndex1, 1, 0, 1000);
-		ImGui::DragInt("Index2", &m_boxIndex2, 1, 0, 1000);
-
-		ImGui::Checkbox("Can Draw", &m_canDraw);
-
-		ImGui::SameLine();
-		ImGui::Text("-- Is Collide: %s", m_isBoxCollide ? "True" : "False");
 
 		ImGui::End();
 	}

@@ -79,11 +79,6 @@ namespace STEditor
 
 		std::map<int, std::vector<Vector2>> m_graphColorPoints;
 
-		int m_boxIndex1 = 0;
-		int m_boxIndex2 = 0;
-		bool m_canDraw = false;
-		bool m_isBoxCollide = false;
-
 		ObjectID m_landID;
 	};
 }

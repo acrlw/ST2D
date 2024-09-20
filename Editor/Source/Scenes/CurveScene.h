@@ -59,8 +59,6 @@ namespace STEditor
 		bool m_showRoundedCurvature = true;
 		bool m_showReferenceLine = true;
 		bool m_showBezierCurvature = false;
-		bool m_showQuinticBezier = false;
-		bool m_showQuinticBezierCurvature = false;
 
 		int m_currentIndex = -1;
 		bool m_isMoving = false;

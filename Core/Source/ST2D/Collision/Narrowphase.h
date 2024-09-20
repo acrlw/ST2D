@@ -130,6 +130,7 @@ namespace ST
 		static SweepVolume linearSweep(const Transform& start, const Transform& end, const Shape* shape);
 
 
+
 	private:
 		static void reconstructSimplexByVoronoi(Simplex& simplex);
 
