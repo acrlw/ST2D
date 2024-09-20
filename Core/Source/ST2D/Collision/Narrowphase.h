@@ -7,7 +7,12 @@
 
 namespace ST
 {
-	struct ST_API SimplexVertexWithOriginDistance
+	struct ST_API SweepVolume
+	{
+		std::array<Vector2, 4> points;
+	};
+
+	struct ST_API SimplexVertexDistPair
 	{
 		SimplexVertex vertex;
 		real distance = 0.0f;
@@ -17,7 +22,7 @@ namespace ST
 	{
 		Simplex simplex;
 		real distance = 0.0f;
-		bool operator<(const SimplexDistPair& other) const
+		bool operator>(const SimplexDistPair& other) const
 		{
 			return distance > other.distance;
 		}
@@ -88,7 +93,7 @@ namespace ST
 		VertexPair pair;
 		//[Debug]
 		Simplex originalSimplex;
-		std::list<SimplexVertexWithOriginDistance> polytope;
+		std::list<SimplexVertexDistPair> polytope;
 	};
 
 
@@ -121,6 +126,9 @@ namespace ST
 
 		static CollisionInfo distance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const size_t& iteration = 30);
+
+		static SweepVolume linearSweep(const Transform& start, const Transform& end, const Shape* shape);
+
 
 	private:
 		static void reconstructSimplexByVoronoi(Simplex& simplex);
@@ -167,12 +175,12 @@ namespace ST
 		static ContactPair clipEdgeVertex(const Vector2& va1, const Vector2& va2, const Vector2& vb,
 			CollisionInfo& info);
 
-		static void polytopeIterNext(std::list<SimplexVertexWithOriginDistance>::iterator& targetIter,
-			std::list<SimplexVertexWithOriginDistance>& list);
-		static void polytopeIterPrev(std::list<SimplexVertexWithOriginDistance>::iterator& targetIter,
-			std::list<SimplexVertexWithOriginDistance>& list);
+		static void polytopeIterNext(std::list<SimplexVertexDistPair>::iterator& targetIter,
+			std::list<SimplexVertexDistPair>& list);
+		static void polytopeIterPrev(std::list<SimplexVertexDistPair>::iterator& targetIter,
+			std::list<SimplexVertexDistPair>& list);
 
-		static void buildPolytopeFromSimplex(std::list<SimplexVertexWithOriginDistance>& polytope,
+		static void buildPolytopeFromSimplex(std::list<SimplexVertexDistPair>& polytope,
 			const Simplex& simplex);
 	};
 }

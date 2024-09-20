@@ -23,7 +23,7 @@ namespace STEditor
 			outerRadius = ellipse.A();
 		}
 
-		int pointCount = 60;
+		int pointCount = 120;
 		real step = Constant::DoublePi / static_cast<float>(pointCount);
 
 		for (real radian = 0; radian <= Constant::DoublePi; radian += step)
@@ -64,13 +64,52 @@ namespace STEditor
 
 		auto gjkSimplex = Narrowphase::gjk(tf1, &rect, tf2, &ellipse);
 
+		if(selectedTransform != nullptr)
+		{
+			if (selectedTransform == &tf1)
+			{
+				Vector2 diff = selectedTransform->position - oldTransform.position;
+				if (diff.length() > 0.0f)
+				{
+					auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, &rect);
+					renderer.shape(oldTransform, &rect, Palette::Gray);
+					std::vector<Vector2> points;
+					for (auto&& elem : volume.points)
+						points.push_back(elem);
+
+					Color fill = Palette::Yellow;
+					fill.a = 150.0f / 255.0f;
+
+					renderer.fillAndStroke(points, fill, Palette::Yellow);
+				}
+
+			}
+			else if (selectedTransform == &tf2)
+			{
+				Vector2 diff = selectedTransform->position - oldTransform.position;
+				if (diff.length() > 0.0f)
+				{
+					auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, &ellipse);
+					renderer.shape(oldTransform, &ellipse, Palette::Gray);
+					std::vector<Vector2> points;
+					for (auto&& elem : volume.points)
+						points.push_back(elem);
+
+					Color fill = Palette::Cyan;
+					fill.a = 150.0f / 255.0f;
+
+					renderer.fillAndStroke(points, fill, Palette::Cyan);
+				}
+			}
+		}
+
 		if (m_showGJKSimplex)
-			renderer.simplex(gjkSimplex, Palette::Green);
+			renderer.simplex(gjkSimplex, Palette::DarkRed);
 
 		if(gjkSimplex.isContainOrigin)
 		{
 			{
-				auto info = Narrowphase::findClosestSimplex(gjkSimplex, tf1, &rect, tf2, &ellipse);
+				auto info = Narrowphase::epa(gjkSimplex, tf1, &rect, tf2, &ellipse);
 
 				auto contacts = Narrowphase::generateContacts(info, tf1, &rect, tf2, &ellipse);
 
@@ -196,8 +235,8 @@ namespace STEditor
 		//	//renderer.simplex(info.simplex, Palette::Purple);
 
 		//	//[DEBUG]
-		//	std::list<SimplexVertexWithOriginDistance>& polytope = info.polytope;
-		//	//std::list<SimplexVertexWithOriginDistance> polytope;
+		//	std::list<SimplexVertexDistPair>& polytope = info.polytope;
+		//	//std::list<SimplexVertexDistPair> polytope;
 
 		//	Narrowphase::buildPolytopeFromSimplex(polytope, info.simplex);
 
@@ -305,7 +344,7 @@ namespace STEditor
 
 		//		//then insert new vertex
 
-		//		SimplexVertexWithOriginDistance pair;
+		//		SimplexVertexDistPair pair;
 		//		pair.vertex = vertex;
 		//		const Vector2 t1 = Algorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
 		//		const real dist1 = t1.lengthSquare();

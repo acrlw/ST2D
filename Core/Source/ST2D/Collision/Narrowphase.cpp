@@ -69,21 +69,25 @@ namespace ST
 	CollisionInfo Narrowphase::epa(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 		const Shape* shapeB, const size_t& iteration, const real& epsilon)
 	{
+		ZoneScopedN("[Narrowphase] EPA");
 		//return 1d simplex with edge closest to origin
 		CollisionInfo info;
 		info.simplex = simplex;
 
+		//make sure simplex is always a 1-d line segment
+		info.simplex.removeEnd();
+
 		//initiate polytope
 
 		//[Debug]
-		std::list<SimplexVertexWithOriginDistance>& polytope = info.polytope;
-		//std::list<SimplexVertexWithOriginDistance> polytope;
+		std::list<SimplexVertexDistPair>& polytope = info.polytope;
+		//std::list<SimplexVertexDistPair> polytope;
 
 		buildPolytopeFromSimplex(polytope, simplex);
 
 		auto iterStart = polytope.begin();
-		auto iterEnd = polytope.end();
 		auto iterTemp = polytope.begin();
+
 
 		for (Index iter = 0; iter < iteration; ++iter)
 		{
@@ -110,16 +114,19 @@ namespace ST
 			auto itB = itA;
 			polytopeIterNext(itB, polytope);
 
-			SimplexVertexWithOriginDistance pair;
-			pair.vertex = vertex;
-			const Vector2 t1 = Algorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
+			SimplexVertexDistPair pair;
+			const Vector2 t1 = Algorithm2D::pointToLineSegment(info.simplex.vertices[0].result, vertex.result, { 0, 0 });
 			const real dist1 = t1.lengthSquare();
-			const Vector2 t2 = Algorithm2D::pointToLineSegment(vertex.result, itB->vertex.result, { 0, 0 });
+			const Vector2 t2 = Algorithm2D::pointToLineSegment(vertex.result, info.simplex.vertices[1].result, { 0, 0 });
 			const real dist2 = t2.lengthSquare();
 
 			itA->distance = dist1;
+
+			pair.vertex = vertex;
 			pair.distance = dist2;
-			polytope.insert(itB, pair);
+
+			auto itC = polytope.insert(itB, pair);
+
 
 			//set to begin
 			iterTemp = iterStart;
@@ -139,8 +146,6 @@ namespace ST
 					break;
 			}
 			iterStart = iterTarget;
-			iterEnd = iterTarget;
-			polytopeIterPrev(iterEnd, polytope);
 
 			//set to begin
 			iterTemp = iterStart;
@@ -148,8 +153,6 @@ namespace ST
 			//reset simplex
 			info.simplex.vertices[0] = iterStart->vertex;
 			info.simplex.vertices[1] = iterTemp->vertex;
-
-
 		}
 
 		const Vector2 temp = -Algorithm2D::pointToLineSegment(info.simplex.vertices[0].result,
@@ -163,20 +166,18 @@ namespace ST
 		if (!realEqual(info.penetration, 0))
 			info.normal = temp / info.penetration;
 
-		//make sure simplex is always a 1-d line segment
-		info.simplex.removeEnd();
-
 		return info;
 	}
 
 	CollisionInfo Narrowphase::findClosestSimplex(const Simplex& simplex, const Transform& transformA, const Shape* shapeA,
 		const Transform& transformB, const Shape* shapeB, const size_t& iteration)
 	{
+		ZoneScopedN("[Narrowphase] EPA with Priority Queue");
 		//return 1d simplex with edge closest to origin
 		CollisionInfo info;
 		info.simplex = simplex;
 
-		std::priority_queue<SimplexDistPair> queue;
+		std::priority_queue<SimplexDistPair, std::vector<SimplexDistPair>, std::greater<SimplexDistPair>> queue;
 
 		{
 			//build queue from simplex;
@@ -476,8 +477,8 @@ namespace ST
 		info.originalSimplex = info.simplex;
 
 		//[DEBUG]
-		std::list<SimplexVertexWithOriginDistance>& polytope = info.polytope;
-		//std::list<SimplexVertexWithOriginDistance> polytope;
+		std::list<SimplexVertexDistPair>& polytope = info.polytope;
+		//std::list<SimplexVertexDistPair> polytope;
 
 		buildPolytopeFromSimplex(polytope, info.simplex);
 
@@ -580,7 +581,7 @@ namespace ST
 
 			//then insert new vertex
 
-			SimplexVertexWithOriginDistance pair;
+			SimplexVertexDistPair pair;
 			pair.vertex = vertex;
 			const Vector2 t1 = Algorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
 			const real dist1 = t1.lengthSquare();
@@ -663,6 +664,26 @@ namespace ST
 
 		return info;
 	}
+
+	SweepVolume Narrowphase::linearSweep(const Transform& start, const Transform& end, const Shape* shape)
+	{
+		SweepVolume volume;
+		Vector2 direction = end.position - start.position;
+		if (direction.isOrigin())
+			return volume;
+
+		direction.normalize();
+		Vector2 t1 = direction.perpendicular();
+		Vector2 t2 = -t1;
+
+		volume.points[0] = findFurthestPoint(start, shape, t1).vertex;
+		volume.points[1] = findFurthestPoint(start, shape, t2).vertex;
+		volume.points[2] = findFurthestPoint(end, shape, t2).vertex;
+		volume.points[3] = findFurthestPoint(end, shape, t1).vertex;
+
+		return volume;
+	}
+
 
 	void Narrowphase::reconstructSimplexByVoronoi(Simplex& simplex)
 	{
@@ -1343,23 +1364,23 @@ namespace ST
 		return pair;
 	}
 
-	void Narrowphase::polytopeIterNext(std::list<SimplexVertexWithOriginDistance>::iterator& targetIter,
-		std::list<SimplexVertexWithOriginDistance>& list)
+	void Narrowphase::polytopeIterNext(std::list<SimplexVertexDistPair>::iterator& targetIter,
+		std::list<SimplexVertexDistPair>& list)
 	{
 		++targetIter;
 		if (targetIter == list.end())
 			targetIter = list.begin();
 	}
 
-	void Narrowphase::polytopeIterPrev(std::list<SimplexVertexWithOriginDistance>::iterator& targetIter,
-		std::list<SimplexVertexWithOriginDistance>& list)
+	void Narrowphase::polytopeIterPrev(std::list<SimplexVertexDistPair>::iterator& targetIter,
+		std::list<SimplexVertexDistPair>& list)
 	{
 		if (targetIter == list.begin())
 			targetIter = list.end();
 		--targetIter;
 	}
 
-	void Narrowphase::buildPolytopeFromSimplex(std::list<SimplexVertexWithOriginDistance>& polytope,
+	void Narrowphase::buildPolytopeFromSimplex(std::list<SimplexVertexDistPair>& polytope,
 		const Simplex& simplex)
 	{
 		for (auto iter = simplex.vertices.begin(); iter != simplex.vertices.end(); ++iter)
@@ -1367,7 +1388,7 @@ namespace ST
 			auto next = iter + 1;
 			if (next == simplex.vertices.end())
 				next = simplex.vertices.begin();
-			SimplexVertexWithOriginDistance pair;
+			SimplexVertexDistPair pair;
 			pair.vertex = *iter;
 			pair.distance = Algorithm2D::pointToLineSegment(iter->result, next->result, { 0, 0 })
 				.lengthSquare(); //use lengthSquare() to avoid sqrt
