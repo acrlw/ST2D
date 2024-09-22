@@ -395,6 +395,28 @@ namespace ST
 		return Vector2();
 	}
 
+	Vector2 Algorithm2D::computeCenter(Vector2* vertices, const uint32_t& count)
+	{
+		if (vertices == nullptr || count < 3)
+			return {};
+
+		Vector2 pos;
+		real area = 0;
+		for (int i = 0; i < count - 1; ++i)
+		{
+			const Vector2& a1 = vertices[i];
+			const Vector2& a2 = vertices[i + 1];
+			const Vector2& a3 = vertices[(i + 2) % count];
+			real a = triangleArea(a1, a2, a3);
+			Vector2 p = triangleCentroid(a1, a2, a3);
+			pos += p * a;
+			area += a;
+		}
+
+		pos /= area;
+		return pos;
+	}
+
 	PointsResult Algorithm2D::shortestLengthLineSegmentEllipse(
 		const real& a, const real& b, const Vector2& p1, const Vector2& p2)
 	{

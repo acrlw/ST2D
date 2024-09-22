@@ -38,7 +38,8 @@ namespace STEditor
 		bool m_showSimplex = false;
 		bool m_showPolytope = false;
 		bool m_showGJKSimplex = false;
-		bool m_enableLinearSweep = true;
+		bool m_enableLinearSweep = false;
+		bool m_enableLinearSweepCast = true;
 		std::vector<Vector2> m_ellipseVertices;
 	};
 }

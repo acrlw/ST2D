@@ -129,7 +129,8 @@ namespace ST
 
 		static SweepVolume linearSweep(const Transform& start, const Transform& end, const Shape* shape);
 
-
+		static bool linearSweepCast(const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction,
+			const real& maxDistance, Transform& resultA);
 
 	private:
 		static void reconstructSimplexByVoronoi(Simplex& simplex);

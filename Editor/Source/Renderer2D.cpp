@@ -1312,7 +1312,13 @@ namespace STEditor
 
 	Vector2 Renderer2D::ndcToScreen(const Vector2& pos) const
 	{
-		return {};
+		float x = (pos.x + 1.0f) * 0.5f * static_cast<float>(m_frameBufferWidth);
+		float y = (1.0f - pos.y) * 0.5f * static_cast<float>(m_frameBufferHeight);
+
+		x = std::floor(x);
+		y = std::floor(y);
+
+		return { x, y };
 	}
 
 	Vector2 Renderer2D::worldToScreen(const Vector2& worldPos) const
@@ -1321,13 +1327,7 @@ namespace STEditor
 		float ndcX = pos.x / pos.w;
 		float ndcY = pos.y / pos.w;
 
-		float x = (ndcX + 1.0f) * 0.5f * static_cast<float>(m_frameBufferWidth);
-		float y = (1.0f - ndcY) * 0.5f * static_cast<float>(m_frameBufferHeight);
-
-		x = std::floor(x);
-		y = std::floor(y);
-
-		return { x, y };
+		return ndcToScreen({ ndcX, ndcY });
 	}
 
 	Vector2 Renderer2D::screenToWorld(const Vector2& screenPos) const

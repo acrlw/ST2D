@@ -660,7 +660,11 @@ namespace ST
 			result.pointB.set(B_1);
 		}
 		info.pair = result;
-		info.penetration = (result.pointA - result.pointB).length();
+		Vector2 penetrationVector = result.pointB - result.pointA;
+		real length = penetrationVector.length();
+
+		info.normal = penetrationVector;
+		info.penetration = length;
 
 		return info;
 	}
@@ -682,6 +686,90 @@ namespace ST
 		volume.points[3] = findFurthestPoint(end, shape, t1).vertex;
 
 		return volume;
+	}
+
+	bool Narrowphase::linearSweepCast(const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction,
+		const real& maxDistance, Transform& resultA)
+	{
+		bool existed = true;
+
+		Transform endA = transformA;
+		endA.position += direction * maxDistance;
+
+
+		auto simplex = gjk(transformA, shapeA, transformB, shapeB);
+
+		// linear sweep cast suppose it is not intersected when start
+		if (simplex.isContainOrigin) 
+			return false;
+
+		simplex = gjk(endA, shapeA, transformB, shapeB);
+		if(simplex.isContainOrigin)
+		{
+			//use backtracking to find the closest point
+			real dist = maxDistance;
+
+			resultA.rotation = endA.rotation;
+			resultA.position = endA.position;
+
+			int counter = 0;
+
+			while(dist > Constant::TrignometryEpsilon)
+			{
+				auto info = epa(simplex, resultA, shapeA, transformB, shapeB);
+				Vector2 nd = -direction;
+				real dot = nd.dot(info.normal * info.penetration);
+				Vector2 back = nd * dot;
+
+				resultA.position += back;
+
+				dist = info.penetration;
+
+				simplex = gjk(resultA, shapeA, transformB, shapeB);
+
+				counter++;
+			}
+
+			CORE_INFO("Linear sweep cast backward tracking counter: {0}", counter);
+
+			return true;
+		}
+
+
+		auto sweepA = linearSweep(transformA, endA, shapeA);
+		ST::Polygon sweepVolume;
+		sweepVolume.set(sweepA.points.data(), 4);
+
+		Transform volumeTransform;
+		volumeTransform.position = Algorithm2D::computeCenter(sweepA.points.data(), 4);
+
+		simplex = gjk(volumeTransform, &sweepVolume, transformB, shapeB);
+		if(!simplex.isContainOrigin)
+			return false;
+
+		real dist = maxDistance;
+
+		resultA.rotation = transformA.rotation;
+		resultA.position = transformA.position;
+
+		int counter = 0;
+		while (dist > Constant::TrignometryEpsilon)
+		{
+			auto info = distance(resultA, shapeA, transformB, shapeB);
+
+			real dot = direction.dot(info.normal);
+			Vector2 back = direction * dot;
+
+			resultA.position += back;
+
+			dist = info.penetration;
+
+			counter++;
+		}
+
+		CORE_INFO("Linear sweep cast foreward tracking counter: {0}", counter);
+
+		return true;
 	}
 
 

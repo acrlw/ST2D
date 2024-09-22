@@ -64,23 +64,48 @@ namespace STEditor
 
 		auto gjkSimplex = Narrowphase::gjk(tf1, &capsule, tf2, &ellipse);
 
-		if(selectedTransform != nullptr && m_enableLinearSweep)
+		if(selectedTransform != nullptr)
 		{
 			if (selectedTransform == &tf1)
 			{
 				Vector2 diff = selectedTransform->position - oldTransform.position;
 				if (diff.length() > 0.0f)
 				{
-					auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, &capsule);
-					renderer.shape(oldTransform, &capsule, Palette::Gray);
-					std::vector<Vector2> points;
-					for (auto&& elem : volume.points)
-						points.push_back(elem);
+					if (m_enableLinearSweep)
+					{
+						auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, &capsule);
+						renderer.shape(oldTransform, &capsule, Palette::Gray);
+						std::vector<Vector2> points;
+						for (auto&& elem : volume.points)
+							points.push_back(elem);
 
-					Color fill = Palette::Yellow;
-					fill.a = 100.0f / 255.0f;
+						Color fill = Palette::Yellow;
+						fill.a = 100.0f / 255.0f;
 
-					renderer.fillAndStroke(points, fill, Palette::Yellow);
+						renderer.fillAndStroke(points, fill, Palette::Yellow);
+					}
+					else if(m_enableLinearSweepCast)
+					{
+						Vector2 start = oldTransform.position;
+						Vector2 end = selectedTransform->position;
+						Vector2 direction = end - start;
+						direction.normalize();
+						real maxDistance = 10.0f;
+
+						Transform maxTransform, result;
+						maxTransform.position = start + direction * maxDistance;
+						maxTransform.rotation = oldTransform.rotation;
+
+						bool hit = Narrowphase::linearSweepCast(oldTransform, &capsule, tf2, &ellipse, direction, maxDistance, result);
+
+						renderer.shape(oldTransform, &capsule, Palette::Gray);
+						renderer.shape(maxTransform, &capsule, Palette::LightCyan);
+						if(hit)
+						{
+							renderer.shape(result, &capsule, Palette::LightRed);
+						}
+
+					}
 				}
 
 			}
@@ -89,16 +114,40 @@ namespace STEditor
 				Vector2 diff = selectedTransform->position - oldTransform.position;
 				if (diff.length() > 0.0f)
 				{
-					auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, &ellipse);
-					renderer.shape(oldTransform, &ellipse, Palette::Gray);
-					std::vector<Vector2> points;
-					for (auto&& elem : volume.points)
-						points.push_back(elem);
+					if (m_enableLinearSweep)
+					{
+						auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, &ellipse);
+						renderer.shape(oldTransform, &ellipse, Palette::Gray);
+						std::vector<Vector2> points;
+						for (auto&& elem : volume.points)
+							points.push_back(elem);
 
-					Color fill = Palette::Cyan;
-					fill.a = 150.0f / 255.0f;
+						Color fill = Palette::Cyan;
+						fill.a = 150.0f / 255.0f;
 
-					renderer.fillAndStroke(points, fill, Palette::Cyan);
+						renderer.fillAndStroke(points, fill, Palette::Cyan);
+					}
+					else if (m_enableLinearSweepCast)
+					{
+						Vector2 start = oldTransform.position;
+						Vector2 end = selectedTransform->position;
+						Vector2 direction = end - start;
+						direction.normalize();
+						real maxDistance = 10.0f;
+
+						Transform maxTransform, result;
+						maxTransform.position = start + direction * maxDistance;
+						maxTransform.rotation = oldTransform.rotation;
+
+						bool hit = Narrowphase::linearSweepCast(oldTransform, &ellipse, tf1, &capsule, direction, maxDistance, result);
+
+						renderer.shape(oldTransform, &ellipse, Palette::Gray);
+						renderer.shape(maxTransform, &ellipse, Palette::LightCyan);
+						if (hit)
+						{
+							renderer.shape(result, &ellipse, Palette::LightRed);
+						}
+					}
 				}
 			}
 		}
@@ -216,6 +265,7 @@ namespace STEditor
 		ImGui::Checkbox("Show Polytope", &m_showPolytope);
 		ImGui::Checkbox("Show GJK Simplex", &m_showGJKSimplex);
 		ImGui::Checkbox("Enable Linear Sweep", &m_enableLinearSweep);
+		ImGui::Checkbox("Enable Linear Sweep Cast", &m_enableLinearSweepCast);
 		ImGui::End();
 	}
 

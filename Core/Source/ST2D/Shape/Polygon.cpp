@@ -27,6 +27,15 @@ namespace ST
 		updateVertices();
 	}
 
+	void Polygon::set(Vector2* vertices, const uint32_t& count)
+	{
+		m_vertices.clear();
+		m_vertices.reserve(count);
+		for (uint32_t i = 0; i < count; ++i)
+			m_vertices.emplace_back(vertices[i]);
+		updateVertices();
+	}
+
 	Vector2 Polygon::center()const
 	{
 		return Algorithm2D::computeCenter(this->vertices());
