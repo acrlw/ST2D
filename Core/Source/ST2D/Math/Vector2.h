@@ -66,6 +66,7 @@ namespace ST
 		static Vector2 crossProduct(const real& lhs, const Vector2& rhs);
 		static Vector2 crossProduct(const Vector2& lhs, const real& rhs);
 		static Vector2 lerp(const Vector2& lhs, const Vector2& rhs, const real& t);
+		static real cosTheta(const Vector2& lhs, const Vector2& rhs);
 
 		union
 		{

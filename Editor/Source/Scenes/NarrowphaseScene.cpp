@@ -40,6 +40,9 @@ namespace STEditor
 		tf2.position.set(-1.0f, -1.0f);
 		tf1.rotation = Math::radians(45.0f);
 		tf2.rotation = Math::radians(100.0f);
+
+		shape1 = &rect;
+		shape2 = &discreteEllipse;
 	}
 
 	void NarrowphaseScene::onUnLoad()
@@ -54,15 +57,15 @@ namespace STEditor
 
 	void NarrowphaseScene::onRender(Renderer2D& renderer)
 	{
-		renderer.shape(tf1, &capsule, Palette::Yellow);
-		renderer.shape(tf2, &ellipse, Palette::Cyan);
+		renderer.shape(tf1, shape1, Palette::Yellow);
+		renderer.shape(tf2, shape2, Palette::Cyan);
 
 		Color simplexColor = Palette::Purple;
 
 		Color polytopeColor = Palette::Teal;
 		polytopeColor.a = 150.0f / 255.0f;
 
-		auto gjkSimplex = Narrowphase::gjk(tf1, &capsule, tf2, &ellipse);
+		auto gjkSimplex = Narrowphase::gjk(tf1, shape1, tf2, shape2);
 
 		if(selectedTransform != nullptr)
 		{
@@ -73,16 +76,13 @@ namespace STEditor
 				{
 					if (m_enableLinearSweep)
 					{
-						auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, &capsule);
-						renderer.shape(oldTransform, &capsule, Palette::Gray);
-						std::vector<Vector2> points;
-						for (auto&& elem : volume.points)
-							points.push_back(elem);
+						auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, shape1);
+						renderer.shape(oldTransform, shape1, Palette::Gray);
 
 						Color fill = Palette::Yellow;
 						fill.a = 100.0f / 255.0f;
 
-						renderer.fillAndStroke(points, fill, Palette::Yellow);
+						renderer.fillAndStroke(volume.vertices(), fill, Palette::Yellow);
 					}
 					else if(m_enableLinearSweepCast)
 					{
@@ -96,13 +96,13 @@ namespace STEditor
 						maxTransform.position = start + direction * maxDistance;
 						maxTransform.rotation = oldTransform.rotation;
 
-						bool hit = Narrowphase::linearSweepCast(oldTransform, &capsule, tf2, &ellipse, direction, maxDistance, result);
+						bool hit = Narrowphase::linearSweepCast(oldTransform, shape1, tf2, shape2, direction, maxDistance, result);
 
-						renderer.shape(oldTransform, &capsule, Palette::Gray);
-						renderer.shape(maxTransform, &capsule, Palette::LightCyan);
+						renderer.shape(oldTransform, shape1, Palette::Gray);
+						renderer.shape(maxTransform, shape1, Palette::LightCyan);
 						if(hit)
 						{
-							renderer.shape(result, &capsule, Palette::LightRed);
+							renderer.shape(result, shape1, Palette::LightRed);
 						}
 
 					}
@@ -116,16 +116,13 @@ namespace STEditor
 				{
 					if (m_enableLinearSweep)
 					{
-						auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, &ellipse);
-						renderer.shape(oldTransform, &ellipse, Palette::Gray);
-						std::vector<Vector2> points;
-						for (auto&& elem : volume.points)
-							points.push_back(elem);
+						auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, shape2);
+						renderer.shape(oldTransform, shape2, Palette::Gray);
 
 						Color fill = Palette::Cyan;
 						fill.a = 150.0f / 255.0f;
 
-						renderer.fillAndStroke(points, fill, Palette::Cyan);
+						renderer.fillAndStroke(volume.vertices(), fill, Palette::Cyan);
 					}
 					else if (m_enableLinearSweepCast)
 					{
@@ -139,13 +136,13 @@ namespace STEditor
 						maxTransform.position = start + direction * maxDistance;
 						maxTransform.rotation = oldTransform.rotation;
 
-						bool hit = Narrowphase::linearSweepCast(oldTransform, &ellipse, tf1, &capsule, direction, maxDistance, result);
+						bool hit = Narrowphase::linearSweepCast(oldTransform, shape2, tf1, &capsule, direction, maxDistance, result);
 
-						renderer.shape(oldTransform, &ellipse, Palette::Gray);
-						renderer.shape(maxTransform, &ellipse, Palette::LightCyan);
+						renderer.shape(oldTransform, shape2, Palette::Gray);
+						renderer.shape(maxTransform, shape2, Palette::LightCyan);
 						if (hit)
 						{
-							renderer.shape(result, &ellipse, Palette::LightRed);
+							renderer.shape(result, shape2, Palette::LightRed);
 						}
 					}
 				}
@@ -158,9 +155,9 @@ namespace STEditor
 		if(gjkSimplex.isContainOrigin)
 		{
 			{
-				auto info = Narrowphase::epa(gjkSimplex, tf1, &capsule, tf2, &ellipse);
+				auto info = Narrowphase::epa(gjkSimplex, tf1, shape1, tf2, shape2);
 
-				auto contacts = Narrowphase::generateContacts(info, tf1, &capsule, tf2, &ellipse);
+				auto contacts = Narrowphase::generateContacts(info, tf1, shape1, tf2, shape2);
 
 				renderer.point(contacts.points[0], Palette::Yellow);
 				renderer.point(contacts.points[1], Palette::Cyan);
@@ -233,7 +230,7 @@ namespace STEditor
 		else
 		{
 
-			auto distInfo = Narrowphase::distance(tf1, &capsule, tf2, &ellipse);
+			auto distInfo = Narrowphase::distance(tf1, shape1, tf2, shape2);
 
 			renderer.point(distInfo.pair.pointA, Palette::Yellow);
 			renderer.point(distInfo.pair.pointB, Palette::Cyan);

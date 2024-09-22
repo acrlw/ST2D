@@ -28,6 +28,8 @@ namespace STEditor
 		ST::Capsule capsule;
 		ST::Circle circle;
 		ST::Polygon discreteEllipse;
+		Shape* shape1 = nullptr;
+		Shape* shape2 = nullptr;
 		Transform tf1, tf2;
 		Transform* selectedTransform = nullptr;
 		Transform oldTransform;

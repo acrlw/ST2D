@@ -247,6 +247,14 @@ namespace ST
 		return lhs + (rhs - lhs) * t;
 	}
 
+	real Vector2::cosTheta(const Vector2& lhs, const Vector2& rhs)
+	{
+		const real lengthLhs = lhs.length();
+		const real lengthRhs = rhs.length();
+		assert(lengthLhs > 0 && lengthRhs > 0);
+		return dotProduct(lhs, rhs) / (lengthLhs * lengthRhs);
+	}
+
 	Vector2& Vector2::operator/=(const int& factor)
 	{
 		assert(!realEqual(factor, 0));

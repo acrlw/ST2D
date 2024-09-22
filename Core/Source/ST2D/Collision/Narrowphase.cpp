@@ -680,10 +680,8 @@ namespace ST
 		Vector2 t1 = direction.perpendicular();
 		Vector2 t2 = -t1;
 
-		volume.points[0] = findFurthestPoint(start, shape, t1).vertex;
-		volume.points[1] = findFurthestPoint(start, shape, t2).vertex;
-		volume.points[2] = findFurthestPoint(end, shape, t2).vertex;
-		volume.points[3] = findFurthestPoint(end, shape, t1).vertex;
+		volume = SweepVolume::fromPolygon(findFurthestPoint(start, shape, t1).vertex, findFurthestPoint(start, shape, t2).vertex,
+			findFurthestPoint(end, shape, t2).vertex, findFurthestPoint(end, shape, t1).vertex);
 
 		return volume;
 	}
@@ -691,72 +689,53 @@ namespace ST
 	bool Narrowphase::linearSweepCast(const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction,
 		const real& maxDistance, Transform& resultA)
 	{
-		bool existed = true;
+		return true;
+	}
 
-		Transform endA = transformA;
-		endA.position += direction * maxDistance;
+	bool Narrowphase::linearSweepBackwardCast(const Simplex& startSimplex, const Transform& transformA, const Shape* shapeA,
+		const Transform& transformB, const Shape* shapeB, const Vector2& direction, Transform& resultA)
+	{
+		Simplex simplex = startSimplex;
 
-
-		auto simplex = gjk(transformA, shapeA, transformB, shapeB);
-
-		// linear sweep cast suppose it is not intersected when start
-		if (simplex.isContainOrigin) 
-			return false;
-
-		simplex = gjk(endA, shapeA, transformB, shapeB);
-		if(simplex.isContainOrigin)
-		{
-			//use backtracking to find the closest point
-			real dist = maxDistance;
-
-			resultA.rotation = endA.rotation;
-			resultA.position = endA.position;
-
-			int counter = 0;
-
-			while(dist > Constant::TrignometryEpsilon)
-			{
-				auto info = epa(simplex, resultA, shapeA, transformB, shapeB);
-				Vector2 nd = -direction;
-				real dot = nd.dot(info.normal * info.penetration);
-				Vector2 back = nd * dot;
-
-				resultA.position += back;
-
-				dist = info.penetration;
-
-				simplex = gjk(resultA, shapeA, transformB, shapeB);
-
-				counter++;
-			}
-
-			CORE_INFO("Linear sweep cast backward tracking counter: {0}", counter);
-
-			return true;
-		}
-
-
-		auto sweepA = linearSweep(transformA, endA, shapeA);
-		ST::Polygon sweepVolume;
-		sweepVolume.set(sweepA.points.data(), 4);
-
-		Transform volumeTransform;
-		volumeTransform.position = Algorithm2D::computeCenter(sweepA.points.data(), 4);
-
-		simplex = gjk(volumeTransform, &sweepVolume, transformB, shapeB);
-		if(!simplex.isContainOrigin)
-			return false;
-
-		real dist = maxDistance;
+		real dist = Constant::Max;
 
 		resultA.rotation = transformA.rotation;
 		resultA.position = transformA.position;
 
 		int counter = 0;
+
 		while (dist > Constant::TrignometryEpsilon)
 		{
-			auto info = distance(resultA, shapeA, transformB, shapeB);
+			auto info = epa(simplex, resultA, shapeA, transformB, shapeB);
+			if (direction.dot(info.normal) > 0)
+				return false;
 
+			Vector2 nd = -direction;
+			real dot = nd.dot(info.normal * info.penetration);
+
+
+			Vector2 back = nd * dot;
+
+			resultA.position += back;
+
+			dist = info.penetration;
+
+			simplex = gjk(resultA, shapeA, transformB, shapeB);
+
+			counter++;
+		}
+
+		CORE_INFO("Linear sweep cast backward tracking counter: {0}", counter);
+		return true;
+	}
+
+	bool Narrowphase::linearSweepForwardCast(CollisionInfo& info, const Transform& transformA, const Shape* shapeA,
+		const Transform& transformB, const Shape* shapeB, const Vector2& direction, Transform& resultA)
+	{
+		real dist = Constant::Max;
+		int counter = 0;
+		while (dist > Constant::TrignometryEpsilon)
+		{
 			real dot = direction.dot(info.normal);
 			Vector2 back = direction * dot;
 
@@ -765,10 +744,11 @@ namespace ST
 			dist = info.penetration;
 
 			counter++;
+
+			info = distance(resultA, shapeA, transformB, shapeB);
 		}
 
-		CORE_INFO("Linear sweep cast foreward tracking counter: {0}", counter);
-
+		CORE_INFO("Linear sweep cast forward tracking counter: {0}", counter);
 		return true;
 	}
 

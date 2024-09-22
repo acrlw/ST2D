@@ -9,7 +9,35 @@ namespace ST
 {
 	struct ST_API SweepVolume
 	{
-		std::array<Vector2, 4> points;
+		Vector2 start, direction, end;
+		real halfWidth = 0.0f;
+
+		std::vector<Vector2> vertices() const
+		{
+			std::vector<Vector2> result;
+			Vector2 p0 = start + direction * halfWidth;
+			Vector2 p1 = start - direction * halfWidth;
+			Vector2 p2 = end - direction * halfWidth;
+			Vector2 p3 = end + direction * halfWidth;
+			result.push_back(p1);
+			result.push_back(p0);
+			result.push_back(p3);
+			result.push_back(p2);
+			return result;
+		}
+
+		static SweepVolume fromPolygon(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3)
+		{
+			//p0, p1, p2, p3 is CCW
+			SweepVolume result;
+			result.start = (p0 + p1) * 0.5f;
+			result.end = (p2 + p3) * 0.5f;
+			Vector2 dir = p1 - p0;
+			real length = dir.length();
+			result.halfWidth = length * 0.5f;
+			result.direction = dir / length;
+			return result;
+		}
 	};
 
 	struct ST_API SimplexVertexDistPair
@@ -133,6 +161,13 @@ namespace ST
 			const real& maxDistance, Transform& resultA);
 
 	private:
+
+		static bool linearSweepBackwardCast(const Simplex& startSimplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction, 
+			Transform& resultA);
+
+		static bool linearSweepForwardCast(CollisionInfo& info, const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction,
+			Transform& resultA);
+
 		static void reconstructSimplexByVoronoi(Simplex& simplex);
 
 		static bool perturbSimplex(Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
