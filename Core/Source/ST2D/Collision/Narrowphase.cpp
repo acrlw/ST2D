@@ -689,6 +689,52 @@ namespace ST
 	bool Narrowphase::linearSweepCast(const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction,
 		const real& maxDistance, Transform& resultA)
 	{
+		resultA.rotation = transformA.rotation;
+		resultA.position = transformA.position;
+
+		auto simplex = gjk(transformA, shapeA, transformB, shapeB);
+		if (simplex.isContainOrigin)
+			return false;			// suppose initial state cannot collide
+
+		Transform endTransformA;
+		endTransformA.rotation = transformA.rotation;
+		endTransformA.position = transformA.position + direction * maxDistance;
+
+		simplex = gjk(endTransformA, shapeA, transformB, shapeB);
+		bool endCollision = simplex.isContainOrigin;
+		if(simplex.isContainOrigin)
+		{
+			//check if the normal is same direction with direction
+			if (linearSweepBackwardCast(simplex, endTransformA, shapeA, transformB, shapeB, direction, resultA))
+				return true;
+
+			resultA.position = transformA.position;
+			resultA.rotation = transformA.rotation;
+			CORE_INFO("Backward cast failed.");
+		}
+
+		auto volume = linearSweep(transformA, endTransformA, shapeA);
+		ST::Polygon sweepPolygon;
+		sweepPolygon.set(volume.vertices().data(), volume.vertices().size());
+
+		Transform volumeTransform;
+		volumeTransform.position = Algorithm2D::computeCenter(volume.vertices());
+
+		simplex = gjk(volumeTransform, &sweepPolygon, transformB, shapeB);
+		if(!simplex.isContainOrigin)
+		{
+			if(!endCollision)
+			{
+				return false;
+			}
+			CORE_INFO("Sweep volume don't collide but end collide");
+			__debugbreak();
+		}
+
+		auto info = distance(transformA, shapeA, transformB, shapeB);
+		
+		linearSweepForwardCast(info, transformA, shapeA, transformB, shapeB, direction, resultA);
+
 		return true;
 	}
 
@@ -704,11 +750,15 @@ namespace ST
 
 		int counter = 0;
 
-		while (dist > Constant::TrignometryEpsilon)
+		while (dist > 0.01f)
 		{
 			auto info = epa(simplex, resultA, shapeA, transformB, shapeB);
 			if (direction.dot(info.normal) > 0)
+			{
+				resultA.rotation = transformA.rotation;
+				resultA.position = transformA.position;
 				return false;
+			}
 
 			Vector2 nd = -direction;
 			real dot = nd.dot(info.normal * info.penetration);
@@ -734,7 +784,7 @@ namespace ST
 	{
 		real dist = Constant::Max;
 		int counter = 0;
-		while (dist > Constant::TrignometryEpsilon)
+		while (dist > 0.01f)
 		{
 			real dot = direction.dot(info.normal);
 			Vector2 back = direction * dot;

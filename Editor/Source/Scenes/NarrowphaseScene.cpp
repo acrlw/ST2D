@@ -136,7 +136,7 @@ namespace STEditor
 						maxTransform.position = start + direction * maxDistance;
 						maxTransform.rotation = oldTransform.rotation;
 
-						bool hit = Narrowphase::linearSweepCast(oldTransform, shape2, tf1, &capsule, direction, maxDistance, result);
+						bool hit = Narrowphase::linearSweepCast(oldTransform, shape2, tf1, shape1, direction, maxDistance, result);
 
 						renderer.shape(oldTransform, shape2, Palette::Gray);
 						renderer.shape(maxTransform, shape2, Palette::LightCyan);
@@ -186,46 +186,6 @@ namespace STEditor
 				}
 
 			}
-
-			//{
-			//	CollisionInfo info;
-			//	info.simplex = gjkSimplex;
-			//	info.simplex.removeEnd();
-
-			//	renderer.simplex(info.simplex, simplexColor);
-
-			//	for (Index iter = 0; iter < 1; ++iter)
-			//	{
-			//		//indices of closest edge are set to 0 and 1
-			//		const Vector2 direction = Narrowphase::findDirectionByEdge(info.simplex.vertices[0], info.simplex.vertices[1], false);
-
-			//		const SimplexVertex vertex = Narrowphase::support(tf1, &rect, tf2, &discreteEllipse, direction);
-
-			//		renderer.point(vertex.result, Palette::Orange);
-			//		renderer.arrow({}, direction, Palette::Red);
-
-			//		//cannot find any new vertex
-			//		if (info.simplex.contains(vertex))
-			//			break;
-
-			//		//check if new vertex is located in support direction
-
-			//		bool validSide = Algorithm2D::checkPointsOnSameSide(info.simplex.vertices[0].result,
-			//			info.simplex.vertices[1].result, info.simplex.vertices[0].result + direction,
-			//			vertex.result);
-
-			//		Vector2 ab = info.simplex.vertices[1].result - info.simplex.vertices[0].result;
-			//		Vector2 ac = vertex.result - info.simplex.vertices[0].result;
-			//		Vector2 bc = vertex.result - info.simplex.vertices[1].result;
-
-			//		bool validVoronoi = ab.dot(ac) > 0.0f && -ab.dot(bc) > 0.0f;
-
-			//		if (!validSide || !validVoronoi)
-			//			break;
-
-
-			//	}
-			//}
 		}
 		else
 		{
