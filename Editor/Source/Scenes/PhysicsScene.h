@@ -4,6 +4,34 @@
 
 namespace STEditor
 {
+	struct SingleContact
+	{
+		Vector2 localA;
+		Vector2 localB;
+		Vector2 ra;
+		Vector2 rb;
+		Vector2 va;
+		Vector2 vb;
+		Vector2 normal;
+		Vector2 tangent;
+		Vector2 velocityBias;
+		real bias = 0;
+		real penetration = 0.0f;
+		real restitution = 0.0f;
+		real friction = 0.5f;
+		real effectiveMassNormal = 0;
+		real effectiveMassTangent = 0;
+		real accumulatedNormalImpulse = 0;
+		real accumulatedTangentImpulse = 0;
+	};
+
+	struct Contact
+	{
+		ObjectPair ids;
+
+
+	};
+
 	class PhysicsScene : public AbstractScene
 	{
 	public:
@@ -36,8 +64,8 @@ namespace STEditor
 		std::vector<float> m_inertias;
 		std::vector<float> m_invMasses;
 		std::vector<float> m_invInertias;
-		std::vector<float> m_restitution;
-		std::vector<float> m_friction;
+		std::vector<float> m_restitutions;
+		std::vector<float> m_frictions;
 
 		std::vector<ST::AABB> m_aabbs;
 		std::vector<uint32_t> m_bitmasks;
@@ -77,5 +105,7 @@ namespace STEditor
 		bool m_showContactsMagnitude = false;
 
 		bool m_showGraphColor = false;
+
+		std::unordered_map<ObjectPair, Contact, ObjectPairHash> m_contacts;
 	};
 }

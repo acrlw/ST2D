@@ -22,7 +22,7 @@ namespace ST
 	{
 		Vector2 point;
 		Vector2 normal;
-		real distance;
+		real distance = 0.0f;
 		bool hit = false;
 	};
 
@@ -85,7 +85,7 @@ namespace ST
 		 * \param d
 		 * \return if there is a actual intersected point.
 		 */
-		static std::optional<Vector2> lineSegmentIntersection(const Vector2& a, const Vector2& b, const Vector2& c, const Vector2& d);
+		static bool lineSegmentIntersection(const Vector2& a, const Vector2& b, const Vector2& c, const Vector2& d, Vector2& result);
 		/**
 		 * \brief line intersection
 		 * \param p1

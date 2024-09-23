@@ -30,6 +30,46 @@ namespace STEditor
 	{
 		ZoneScopedN("[BroadphaseScene] On Update");
 
+		// narrow phase generate contacts
+		auto pairs = m_dbvt.queryOverlaps();
+		for(auto&& elem : pairs)
+		{
+			if (!m_aabbs[elem.objectIdA].collide(m_aabbs[elem.objectIdB]))
+				continue;
+
+			auto simplex = Narrowphase::gjk(m_transforms[elem.objectIdA], m_shapes[elem.objectIdA], m_transforms[elem.objectIdB], m_shapes[elem.objectIdB]);
+			if(simplex.isContainOrigin)
+			{
+				auto info = Narrowphase::epa(simplex, m_transforms[elem.objectIdA], m_shapes[elem.objectIdA], m_transforms[elem.objectIdB], m_shapes[elem.objectIdB]);
+				auto contacts = Narrowphase::generateContacts(info, m_transforms[elem.objectIdA], m_shapes[elem.objectIdA], m_transforms[elem.objectIdB], m_shapes[elem.objectIdB]);
+				if (!m_contacts.contains(elem))
+				{
+					m_contacts[elem].ids = elem;
+
+				}
+				else
+				{
+
+				}
+			}
+		}
+
+		// setup solver
+
+		m_objectGraph.clearGraph();
+		m_objectGraph.addEnableColorRepeated(m_landId);
+		m_objectGraph.buildGraph(pairs);
+		
+
+		// integrate velocities
+
+		// solve constraints
+
+		// integrate positions
+
+		// solve position constraints
+
+		// update broad phase
 
 	}
 
@@ -105,6 +145,19 @@ namespace STEditor
 
 		}
 
+		if(m_showContacts)
+		{
+			if(m_showContactNormal)
+			{
+				
+			}
+
+			if(m_showContactsMagnitude)
+			{
+				
+			}
+		}
+
 	}
 
 
@@ -157,13 +210,24 @@ namespace STEditor
 					t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.26f });
 					t.rotation = 0;
 
-					m_transforms.push_back(t);
-					m_shapes.push_back(&rect);
-					m_bitmasks.push_back(1);
-					m_aabbs.push_back(AABB::fromShape(t, &rect));
-
 					auto id = m_objectIdPool.getNewId();
 					m_objectIds.push_back(id);
+
+					m_transforms.push_back(t);
+					m_velocities.emplace_back();
+					m_angularVelocities.emplace_back(0.0f);
+					m_forces.emplace_back(0.0f);
+					m_torques.emplace_back(0.0f);
+					m_masses.emplace_back(1.0f);
+					m_inertias.emplace_back(1.0f);
+					m_invMasses.emplace_back(1.0f);
+					m_invInertias.emplace_back(1.0f);
+					m_restitutions.emplace_back(0.0f);
+					m_frictions.emplace_back(0.5f);
+
+					m_aabbs.push_back(AABB::fromShape(t, &rect));
+					m_bitmasks.push_back(1);
+					m_shapes.push_back(&rect);
 
 					bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
 
@@ -176,13 +240,24 @@ namespace STEditor
 			Transform trans;
 			trans.position.set(40.0f, -0.05);
 
+			m_landId = m_objectIdPool.getNewId();
+			m_objectIds.push_back(m_landId);
+
 			m_transforms.push_back(trans);
+			m_velocities.emplace_back();
+			m_angularVelocities.emplace_back(0.0f);
+			m_forces.emplace_back(0.0f);
+			m_torques.emplace_back(0.0f);
+			m_masses.emplace_back(1.0f);
+			m_inertias.emplace_back(1.0f);
+			m_invMasses.emplace_back(0.0f);
+			m_invInertias.emplace_back(0.0f);
+			m_restitutions.emplace_back(0.0f);
+			m_frictions.emplace_back(1.0f);
+
 			m_shapes.push_back(&land);
 			m_bitmasks.push_back(1);
 			m_aabbs.push_back(AABB::fromShape(trans, &land));
-
-			m_landId = m_objectIdPool.getNewId();
-			m_objectIds.push_back(m_landId);
 
 			bindings.emplace_back(m_landId, 1, m_aabbs.back());
 		}
@@ -216,8 +291,8 @@ namespace STEditor
 		m_inertias.clear();
 		m_invMasses.clear();
 		m_invInertias.clear();
-		m_restitution.clear();
-		m_friction.clear();
+		m_restitutions.clear();
+		m_frictions.clear();
 
 		m_aabbs.clear();
 		m_bitmasks.clear();

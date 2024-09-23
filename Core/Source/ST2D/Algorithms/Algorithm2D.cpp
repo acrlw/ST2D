@@ -75,31 +75,51 @@ namespace ST
 	RaycastHit Algorithm2D::raycastCircle(const Vector2& p, const Vector2& dir,
 		const Vector2& center, const real& radius)
 	{
-		return {};
+		RaycastHit result;
+		if ((p - center).lengthSquare() < radius * radius)
+		{
+			return result;
+		}
+
+
+		
+		return result;
 	}
 
 	RaycastHit Algorithm2D::raycastEllipse(const Vector2& p, const Vector2& dir,
 		const Vector2& center, const real& a, const real& b)
 	{
-		return {};
+		RaycastHit result;
+
+
+		return result;
 	}
 
 	RaycastHit Algorithm2D::raycastCapsule(const Vector2& p, const Vector2& dir,
 		const Vector2& center, const real& halfWidth, const real& halfHeight)
 	{
-		return {};
+		RaycastHit result;
+
+
+		return result;
 	}
 
 	RaycastHit Algorithm2D::raycastSegment(const Vector2& p, const Vector2& dir,
 		const Vector2& a, const Vector2& b)
 	{
-		return {};
+		RaycastHit result;
+
+
+		return result;
 	}
 
 	RaycastHit Algorithm2D::raycastPolygon(const Vector2& p, const Vector2& dir,
 		const std::vector<Vector2>& vertices)
 	{
-		return {};
+		RaycastHit result;
+
+
+		return result;
 	}
 
 	Vector2 Algorithm2D::axialSymmetry(const Vector2& center, const Vector2& dir, const Vector2& point)
@@ -131,8 +151,8 @@ namespace ST
 		return (c.x <= Math::max(a.x, b.x) && c.x >= Math::min(a.x, b.x) &&
 			c.y <= Math::max(a.y, b.y) && c.y >= Math::min(a.y, b.y));
 	}
-	std::optional<Vector2> Algorithm2D::lineSegmentIntersection(const Vector2& a, const Vector2& b,
-		const Vector2& c, const Vector2& d)
+	bool Algorithm2D::lineSegmentIntersection(const Vector2& a, const Vector2& b,
+		const Vector2& c, const Vector2& d, Vector2& result)
 	{
 		const Vector2 ab = b - a;
 		const Vector2 ac = c - a;
@@ -145,8 +165,11 @@ namespace ST
 		if (realEqual(ab_length, 0.0))
 		{
 			if (fuzzyCheckCollinear(c, d, a))
-				return std::optional(a);
-			return std::nullopt;
+			{
+				result = a;
+				return true;
+			}
+			return false;
 		}
 		const real ab_length_inv = 1 / ab_length;
 		const real cc_proj = ab.cross(ac) * ab_length_inv;
@@ -156,22 +179,27 @@ namespace ST
 		const real cproj_dproj = ab_length - ad_proj - bc_proj;
 
 		if (realEqual(cc_proj, 0.0))
-			return std::nullopt;
+			return false;
 
 		const real denominator = (1 + (dd_proj / cc_proj));
 		if (realEqual(denominator, 0.0))
-			return std::nullopt;
+			return false;
 
 		const real cp = cproj_dproj / denominator;
 		const Vector2 bp = ba.normalize() * (bc_proj + cp);
 		if (realEqual(bp.length(), 0))
-			return std::nullopt;
+			return false;
 
 		Vector2 p = bp + b;
 
-		return (fuzzyCheckCollinear(a, b, p) && fuzzyCheckCollinear(d, c, p))
-			? std::optional(p)
-			: std::nullopt;
+		if (fuzzyCheckCollinear(a, b, p) && fuzzyCheckCollinear(c, d, p))
+		{
+			result = p;
+			return true;
+		}
+
+		return false;
+
 	}
 
 	Vector2 Algorithm2D::lineIntersection(const Vector2& p1, const Vector2& p2, const Vector2& q1,
@@ -223,12 +251,13 @@ namespace ST
 	{
 		std::vector<Vector2> points = vertices;
 		std::vector<uint32_t> stack;
-		std::sort(points.begin(), points.end(), [](const Vector2& a, const Vector2& b)
-			{
-				if (atan2l(a.y, a.x) != atan2l(b.y, b.x))
-					return atan2l(a.y, a.x) < atan2l(b.y, b.x);
-				return a.x < b.x;
-			});
+		std::ranges::sort(points, [](const Vector2& a, const Vector2& b)
+		{
+			if (atan2l(a.y, a.x) != atan2l(b.y, b.x))
+				return atan2l(a.y, a.x) < atan2l(b.y, b.x);
+			return a.x < b.x;
+		});
+
 		uint32_t targetIndex = 0;
 		real targetX = points[0].x;
 		for (int i = 1; i < points.size(); ++i)
