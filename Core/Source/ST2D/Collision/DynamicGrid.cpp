@@ -147,7 +147,7 @@ namespace ST
 			}
 		}
 
-		CORE_INFO("[Grid] Overlaps Query Counter: {}", counter);
+		//CORE_INFO("[Grid] Overlaps Query Counter: {}", counter);
 
 		return result;
 	}

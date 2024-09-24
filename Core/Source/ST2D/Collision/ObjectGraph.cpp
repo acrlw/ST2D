@@ -53,9 +53,11 @@ namespace ST
 				m_roots.insert(root);
 
 
-			if (enableRepeatedA && enableRepeatedB) 
+			if (enableRepeatedA && enableRepeatedB)
+			{
 				// this should not happen, such as collision pair of two static bodies 
-				__debugbreak();
+				CORE_ASSERT(false, "Objects that can have duplicate colors cannot be processed together.");
+			}
 		}
 
 		int maxColor = 0;
@@ -143,22 +145,22 @@ namespace ST
 		for (const auto& [key, value] : m_edgeToColor)
 			m_colorToEdges[value].push_back(key);
 
-		CORE_INFO("Island count: {0}", m_roots.size());
-		CORE_INFO("Color count: {0}", m_colorToEdges.size());
+		//CORE_INFO("Island count: {0}", m_roots.size());
+		//CORE_INFO("Color count: {0}", m_colorToEdges.size());
 
-		for(const auto& root: m_roots)
-		{
-			CORE_INFO("Root ID: ({})", root);
-		}
+		//for(const auto& root: m_roots)
+		//{
+		//	CORE_INFO("Root ID: ({})", root);
+		//}
 
-		for (int i = 0; i < m_colorToEdges.size(); i++)
-		{
-			std::string result = std::format("Color ({0}) : \n", i);
-			for (const auto& edge : m_colorToEdges[i])
-				result += std::format("({0}, {1}) ", edge.objectIdA, edge.objectIdB);
+		//for (int i = 0; i < m_colorToEdges.size(); i++)
+		//{
+		//	std::string result = std::format("Color ({0}) : \n", i);
+		//	for (const auto& edge : m_colorToEdges[i])
+		//		result += std::format("({0}, {1}) ", edge.objectIdA, edge.objectIdB);
 
-			CORE_INFO(result);
-		}
+		//	CORE_INFO(result);
+		//}
 	}
 
 	void ObjectGraph::clearGraph()

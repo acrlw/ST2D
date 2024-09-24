@@ -122,7 +122,7 @@ namespace ST
 
 		}
 
-		CORE_INFO("[DBVT] Overlaps Query Counter: {}", counter);
+		//CORE_INFO("[DBVT] Overlaps Query Counter: {}", counter);
 
 		return result;
 	}

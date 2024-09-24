@@ -410,7 +410,7 @@ namespace ST
 			switch (typeB)
 			{
 			case ShapeType::Edge:
-				assert(false && "Not support edge and edge.");
+				CORE_ASSERT(false, "Not support edge vs edge contact.");
 				break;
 			case ShapeType::Capsule:
 				pair = clipEdgeCapsule(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
@@ -728,7 +728,6 @@ namespace ST
 				return false;
 			}
 			CORE_INFO("Sweep volume don't collide but end collide");
-			__debugbreak();
 		}
 
 		auto info = distance(transformA, shapeA, transformB, shapeB);

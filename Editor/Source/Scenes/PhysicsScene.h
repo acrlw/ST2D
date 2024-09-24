@@ -28,8 +28,9 @@ namespace STEditor
 	struct Contact
 	{
 		ObjectPair ids;
-
-
+		ContactPair pair;
+		std::array<SingleContact, 2> contacts;
+		int count = 0;
 	};
 
 	class PhysicsScene : public AbstractScene

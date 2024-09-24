@@ -42,15 +42,23 @@ namespace STEditor
 			{
 				auto info = Narrowphase::epa(simplex, m_transforms[elem.objectIdA], m_shapes[elem.objectIdA], m_transforms[elem.objectIdB], m_shapes[elem.objectIdB]);
 				auto contacts = Narrowphase::generateContacts(info, m_transforms[elem.objectIdA], m_shapes[elem.objectIdA], m_transforms[elem.objectIdB], m_shapes[elem.objectIdB]);
+
 				if (!m_contacts.contains(elem))
 				{
-					m_contacts[elem].ids = elem;
-
+					if (contacts.ids[0] != m_contacts[elem].pair.ids[0] 
+						|| contacts.ids[1] != m_contacts[elem].pair.ids[1])
+					{
+						m_contacts[elem].contacts[0].accumulatedNormalImpulse = 0.0f;
+						m_contacts[elem].contacts[0].accumulatedTangentImpulse = 0.0f;
+						m_contacts[elem].contacts[1].accumulatedNormalImpulse = 0.0f;
+						m_contacts[elem].contacts[1].accumulatedTangentImpulse = 0.0f;
+					}
 				}
-				else
-				{
 
-				}
+				Contact contact;
+				contact.count = contacts.count / 2;
+				contact.pair = contacts;
+				m_contacts[elem] = contact;
 			}
 		}
 
@@ -70,6 +78,11 @@ namespace STEditor
 		// solve position constraints
 
 		// update broad phase
+
+		// disable all contacts
+
+		for(auto& value : m_contacts | std::views::values)
+			value.count = 0;
 
 	}
 
