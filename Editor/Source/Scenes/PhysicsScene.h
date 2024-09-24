@@ -54,6 +54,14 @@ namespace STEditor
 		void createObjects();
 		void clearObjects();
 
+		void generateContacts(float dt);
+		void updateBroadphase(float dt);
+		void integrateVelocities(float dt);
+		void solveVelocities(float dt);
+		void integratePositions(float dt);
+		void solvePositions(float dt);
+		void setUpConstraint(float dt);
+
 		std::vector<int> m_objectIds;
 
 
@@ -93,12 +101,12 @@ namespace STEditor
 
 		IdPool m_objectIdPool;
 
-		int m_count = 5;
+		int m_count = 6;
 
 		ObjectID m_landId;
 
 		bool m_showObject = true;
-		bool m_showObjectID = true;
+		bool m_showObjectID = false;
 		bool m_showDBVT = false;
 		bool m_showAABB = false;
 		bool m_showGrid = false;
@@ -114,6 +122,8 @@ namespace STEditor
 		bool m_enableGravity = true;
 
 		bool m_simulate = false;
+
+		bool m_flagInitial = true;
 
 		real m_linearVelocityDamping = 0.9f;
 		real m_angularVelocityDamping = 0.9f;

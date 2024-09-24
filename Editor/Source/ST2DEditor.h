@@ -50,7 +50,7 @@ namespace STEditor
 
 		bool m_userDrawVisible = true;
 
-		int m_currentSceneIndex = 2;
+		int m_currentSceneIndex = 4;
 
 		std::array<const char*, 8> m_sceneName = { "HelloWorld", "Curve", "Broadphase", "Narrowphase", "Physics", "Empty", "Spline", "Spiral" };
 
