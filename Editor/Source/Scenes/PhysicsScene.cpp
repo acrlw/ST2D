@@ -1,5 +1,7 @@
 #include "PhysicsScene.h"
-
+#include "xmmintrin.h"
+#include "emmintrin.h"
+#include "immintrin.h"
 
 namespace STEditor
 {
@@ -28,52 +30,168 @@ namespace STEditor
 
 	void PhysicsScene::onUpdate(float deltaTime)
 	{
-		ZoneScopedN("[BroadphaseScene] On Update");
+		ZoneScopedN("[PhysicsScene] On Update");
 
-		// narrow phase generate contacts
-		auto pairs = m_dbvt.queryOverlaps();
-		for(auto&& elem : pairs)
+		if (!m_simulate)
+			return;
+
+		float dt = 1.0f / 60.0f;
+
+		std::vector<ObjectPair> pairs;
 		{
-			if (!m_aabbs[elem.objectIdA].collide(m_aabbs[elem.objectIdB]))
-				continue;
-
-			auto simplex = Narrowphase::gjk(m_transforms[elem.objectIdA], m_shapes[elem.objectIdA], m_transforms[elem.objectIdB], m_shapes[elem.objectIdB]);
-			if(simplex.isContainOrigin)
+			ZoneScopedN("Contacts Generation");
+			// narrow phase generate contacts
+			pairs = m_dbvt.queryOverlaps();
+			for (auto&& elem : pairs)
 			{
-				auto info = Narrowphase::epa(simplex, m_transforms[elem.objectIdA], m_shapes[elem.objectIdA], m_transforms[elem.objectIdB], m_shapes[elem.objectIdB]);
-				auto contacts = Narrowphase::generateContacts(info, m_transforms[elem.objectIdA], m_shapes[elem.objectIdA], m_transforms[elem.objectIdB], m_shapes[elem.objectIdB]);
+				if (!m_aabbs[elem.objectIdA].collide(m_aabbs[elem.objectIdB]))
+					continue;
 
-				if (!m_contacts.contains(elem))
+				Transform transformA(m_positions[elem.objectIdA], m_rotations[elem.objectIdA], 1.0f);
+				Transform transformB(m_positions[elem.objectIdB], m_rotations[elem.objectIdB], 1.0f);
+
+				auto simplex = Narrowphase::gjk(transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
+				if (simplex.isContainOrigin)
 				{
-					if (contacts.ids[0].key != m_contacts[elem].pair.ids[0].key 
-						|| contacts.ids[1].key != m_contacts[elem].pair.ids[1].key)
-					{
-						m_contacts[elem].contacts[0].accumulatedNormalImpulse = 0.0f;
-						m_contacts[elem].contacts[0].accumulatedTangentImpulse = 0.0f;
-						m_contacts[elem].contacts[1].accumulatedNormalImpulse = 0.0f;
-						m_contacts[elem].contacts[1].accumulatedTangentImpulse = 0.0f;
-					}
-				}
+					auto info = Narrowphase::epa(simplex, transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
+					auto contacts = Narrowphase::generateContacts(info, transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
 
-				Contact contact;
-				contact.count = contacts.count / 2;
-				contact.pair = contacts;
-				m_contacts[elem] = contact;
+					if (m_contacts.contains(elem))
+					{
+						if (contacts.ids[0].key != m_contacts[elem].pair.ids[0].key
+							|| contacts.ids[1].key != m_contacts[elem].pair.ids[1].key)
+						{
+							m_contacts[elem].contacts[0].accumulatedNormalImpulse = 0.0f;
+							m_contacts[elem].contacts[0].accumulatedTangentImpulse = 0.0f;
+							m_contacts[elem].contacts[1].accumulatedNormalImpulse = 0.0f;
+							m_contacts[elem].contacts[1].accumulatedTangentImpulse = 0.0f;
+						}
+					}
+
+					Contact contact;
+					contact.count = contacts.count / 2;
+					contact.pair = contacts;
+					m_contacts[elem] = contact;
+				}
 			}
 		}
 
-		// setup solver
+		// graph coloring
 
-		m_objectGraph.clearGraph();
-		m_objectGraph.addEnableColorRepeated(m_landId);
-		m_objectGraph.buildGraph(pairs);
-		
+		{
+			ZoneScopedN("Graph Coloring");
+			m_objectGraph.clearGraph();
+			m_objectGraph.addEnableColorRepeated(m_landId);
+			m_objectGraph.buildGraph(pairs);
+		}
 
 		// integrate velocities
+		{
+			ZoneScopedN("Integrate Velocities");
+			Vector2 gravity;
+			if (m_enableGravity)
+				gravity.set(0.0f, -9.8f);
+
+			real lvd = 1.0f;
+			real avd = 1.0f;
+			if(m_enableDamping)
+			{
+				lvd = 1.0f / (1.0f + dt * m_linearVelocityDamping);
+				avd = 1.0f / (1.0f + dt * m_angularVelocityDamping);
+			}
+
+			// use sse
+
+			__m128 dt4 = _mm_set1_ps(dt);
+			__m256 dt8 = _mm256_set1_ps(dt);
+			__m256 lvd4 = _mm256_set1_ps(lvd);
+			__m128 avd4 = _mm_set1_ps(avd);
+			//fill gravity 8 with (0, -9.8, 0, -9.8 ...)
+			__m128 grav = _mm_set_ps(gravity.y, gravity.x, gravity.y, gravity.x);
+			__m256 vGravity = _mm256_set_m128(grav, grav);
+
+			int index = 0;
+			for(;index + 4 <= m_objectIds.size(); index += 4)
+			{
+				__m256 vVel = _mm256_loadu_ps(&m_velocities[index].x);
+				__m256 vForce = _mm256_loadu_ps(&m_forces[index].x);
+
+				__m128 vAngularVel = _mm_loadu_ps(&m_angularVelocities[index]);
+				__m128 vTorque = _mm_loadu_ps(&m_torques[index]);
+
+				__m128 vTmpInvMass = _mm_loadu_ps(&m_invMasses[index]);
+				__m128 vInvMassLo = _mm_unpacklo_ps(vTmpInvMass, vTmpInvMass);
+				__m128 vInvMassHi = _mm_unpackhi_ps(vTmpInvMass, vTmpInvMass);
+
+				__m256 vInvMass = _mm256_set_m128(vInvMassHi, vInvMassLo);
+
+
+				__m128 vTmpMass = _mm_loadu_ps(&m_masses[index]);
+				__m128 vMassLo = _mm_unpacklo_ps(vTmpMass, vTmpMass);
+				__m128 vMassHi = _mm_unpackhi_ps(vTmpMass, vTmpMass);
+				__m256 vMass = _mm256_set_m128(vMassHi, vMassLo);
+
+				__m128 vInvInertia = _mm_loadu_ps(&m_invInertias[index]);
+
+				// vForce += vGravity * vMass
+				// vVel += vForce * vInvMass * dt8
+				// vVel *= lvd4
+
+				vForce = _mm256_add_ps(vForce, _mm256_mul_ps(vGravity, vMass));
+				vVel = _mm256_add_ps(vVel, _mm256_mul_ps(_mm256_mul_ps(vForce, vInvMass), dt8));
+				vVel = _mm256_mul_ps(vVel, lvd4);
+
+				// vAngularVel += vTorque * vInvInertia * dt4
+				// vAngularVel *= avd4
+
+				vAngularVel = _mm_add_ps(vAngularVel, _mm_mul_ps(vTorque, _mm_mul_ps(vInvInertia, dt4)));
+				vAngularVel = _mm_mul_ps(vAngularVel, avd4);
+
+				// store back
+
+				_mm256_storeu_ps(&m_velocities[index].x, vVel);
+				_mm_storeu_ps(&m_angularVelocities[index], vAngularVel);
+
+
+			}
+
+			for (; index < m_objectIds.size(); ++index)
+			{
+				m_velocities[index] += m_forces[index] * m_invMasses[index] * dt;
+				m_angularVelocities[index] += m_torques[index] * m_invInertias[index] * dt;
+			}
+		}
 
 		// solve constraints
 
 		// integrate positions
+		{
+			ZoneScopedN("Integrate Positions");
+
+			int index = 0;
+
+			for (; index + 4 <= m_objectIds.size(); index += 4)
+			{
+				__m256 vVel = _mm256_loadu_ps(&m_velocities[index].x);
+				__m128 vAngularVel = _mm_loadu_ps(&m_angularVelocities[index]);
+
+				__m256 vPos = _mm256_loadu_ps(&m_positions[index].x);
+				__m128 vRot = _mm_loadu_ps(&m_rotations[index]);
+
+				vPos = _mm256_add_ps(vPos, _mm256_mul_ps(vVel, _mm256_set1_ps(dt)));
+				vRot = _mm_add_ps(vRot, _mm_mul_ps(vAngularVel, _mm_set1_ps(dt)));
+
+				_mm256_storeu_ps(&m_positions[index].x, vPos);
+				_mm_storeu_ps(&m_rotations[index], vRot);
+			}
+
+			for (; index < m_objectIds.size(); ++index)
+			{
+				m_positions[index] += m_velocities[index] * dt;
+				m_rotations[index] += m_angularVelocities[index] * dt;
+			}
+			
+		}
 
 		// solve position constraints
 
@@ -92,17 +210,19 @@ namespace STEditor
 
 		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
+			Transform transform(m_positions[i], m_rotations[i], 1.0f);
+
 			if (m_showObjectID)
 			{
 				std::string id = std::to_string(m_objectIds[i]);
-				renderer.text(m_transforms[i].position, Palette::Gray, id);
+				renderer.text(m_positions[i], Palette::Gray, id);
 			}
 
 			if (m_showTransform)
-				renderer.orientation(m_transforms[i]);
+				renderer.orientation(transform);
 
 			if (m_showObject)
-				renderer.shape(m_transforms[i], m_shapes[i], Palette::Green);
+				renderer.shape(transform, m_shapes[i], Palette::Green);
 
 			if (m_showAABB)
 				renderer.aabb(m_aabbs[i], Palette::Green);
@@ -186,6 +306,10 @@ namespace STEditor
 			createObjects();
 		}
 
+		ImGui::Checkbox("Simulate", &m_simulate);
+		ImGui::Checkbox("Enable Gravity", &m_enableGravity);
+		ImGui::Checkbox("Enable Damping", &m_enableDamping);
+
 		ImGui::Checkbox("Show Object", &m_showObject);
 		ImGui::Checkbox("Show Object Id", &m_showObjectID);
 		ImGui::Checkbox("Show Transform", &m_showTransform);
@@ -195,6 +319,10 @@ namespace STEditor
 		ImGui::Checkbox("Show Grid", &m_showGrid);
 		ImGui::Checkbox("Show DBVT", &m_showDBVT);
 		ImGui::Checkbox("Show Graph Coloring", &m_showGraphColor);
+		ImGui::Checkbox("Show Contacts", &m_showContacts);
+		ImGui::Checkbox("Show Contacts Magnitude", &m_showContactsMagnitude);
+		ImGui::Checkbox("Show Contacts Normal", &m_showContactNormal);
+
 
 		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
 
@@ -226,15 +354,16 @@ namespace STEditor
 					auto id = m_objectIdPool.getNewId();
 					m_objectIds.push_back(id);
 
-					m_transforms.push_back(t);
-					m_velocities.emplace_back();
+					m_positions.emplace_back(t.position);
+					m_rotations.emplace_back(t.rotation);
+					m_velocities.emplace_back(0.0f, 0.0f);
 					m_angularVelocities.emplace_back(0.0f);
 					m_forces.emplace_back(0.0f);
 					m_torques.emplace_back(0.0f);
-					m_masses.emplace_back(1.0f);
-					m_inertias.emplace_back(1.0f);
-					m_invMasses.emplace_back(1.0f);
-					m_invInertias.emplace_back(1.0f);
+					m_masses.emplace_back(1.0f + i);
+					m_inertias.emplace_back(1.0f + i);
+					m_invMasses.emplace_back(1.0f / (1.0f + i));
+					m_invInertias.emplace_back(1.0f / (1.0f + i));
 					m_restitutions.emplace_back(0.0f);
 					m_frictions.emplace_back(0.5f);
 
@@ -256,13 +385,14 @@ namespace STEditor
 			m_landId = m_objectIdPool.getNewId();
 			m_objectIds.push_back(m_landId);
 
-			m_transforms.push_back(trans);
+			m_positions.emplace_back(trans.position);
+			m_rotations.emplace_back(trans.rotation);
 			m_velocities.emplace_back();
 			m_angularVelocities.emplace_back(0.0f);
 			m_forces.emplace_back(0.0f);
 			m_torques.emplace_back(0.0f);
-			m_masses.emplace_back(1.0f);
-			m_inertias.emplace_back(1.0f);
+			m_masses.emplace_back(0.0f);
+			m_inertias.emplace_back(0.0f);
 			m_invMasses.emplace_back(0.0f);
 			m_invInertias.emplace_back(0.0f);
 			m_restitutions.emplace_back(0.0f);
@@ -295,7 +425,8 @@ namespace STEditor
 	{
 		m_objectIds.clear();
 
-		m_transforms.clear();
+		m_positions.clear();
+		m_rotations.clear();
 		m_velocities.clear();
 		m_angularVelocities.clear();
 		m_forces.clear();

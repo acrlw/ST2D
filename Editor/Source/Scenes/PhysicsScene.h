@@ -56,7 +56,10 @@ namespace STEditor
 
 		std::vector<int> m_objectIds;
 
-		std::vector<Transform> m_transforms;
+
+		std::vector<Vector2> m_positions;
+		std::vector<real> m_rotations;
+
 		std::vector<Vector2> m_velocities;
 		std::vector<float> m_angularVelocities;
 		std::vector<Vector2> m_forces;
@@ -95,7 +98,7 @@ namespace STEditor
 		ObjectID m_landId;
 
 		bool m_showObject = true;
-		bool m_showObjectID = false;
+		bool m_showObjectID = true;
 		bool m_showDBVT = false;
 		bool m_showAABB = false;
 		bool m_showGrid = false;
@@ -106,6 +109,14 @@ namespace STEditor
 		bool m_showContactsMagnitude = false;
 
 		bool m_showGraphColor = false;
+
+		bool m_enableDamping = true;
+		bool m_enableGravity = true;
+
+		bool m_simulate = false;
+
+		real m_linearVelocityDamping = 0.9f;
+		real m_angularVelocityDamping = 0.9f;
 
 		std::unordered_map<ObjectPair, Contact, ObjectPairHash> m_contacts;
 	};
