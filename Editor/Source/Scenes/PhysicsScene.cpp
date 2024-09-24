@@ -14,7 +14,7 @@ namespace STEditor
 		land.set(80.0f, 0.1f);
 		capsule.set(1.0f, 2.0f);
 		ellipse.set(1.0f, 2.0f);
-		circle.setRadius(1.0f);
+		circle.setRadius(0.25f);
 		edge.set(Vector2(-10.0f, -0.5f), Vector2(10.0f, -0.5f));
 		polygon.set({ Vector2(-1.0f, -1.0f), Vector2(1.0f, -1.0f), Vector2(1.0f, 1.0f) });
 
@@ -45,8 +45,8 @@ namespace STEditor
 
 				if (!m_contacts.contains(elem))
 				{
-					if (contacts.ids[0] != m_contacts[elem].pair.ids[0] 
-						|| contacts.ids[1] != m_contacts[elem].pair.ids[1])
+					if (contacts.ids[0].key != m_contacts[elem].pair.ids[0].key 
+						|| contacts.ids[1].key != m_contacts[elem].pair.ids[1].key)
 					{
 						m_contacts[elem].contacts[0].accumulatedNormalImpulse = 0.0f;
 						m_contacts[elem].contacts[0].accumulatedTangentImpulse = 0.0f;
@@ -220,7 +220,7 @@ namespace STEditor
 				for (real i = 0.0; i < max - j; i += 0.5f)
 				{
 					Transform t;
-					t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.26f });
+					t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.24f });
 					t.rotation = 0;
 
 					auto id = m_objectIdPool.getNewId();

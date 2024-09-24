@@ -381,10 +381,7 @@ namespace ST
 		const Feature featureA = findFeatures(info.simplex, info.normal, transformA, realShapeA, idxA);
 		const Feature featureB = findFeatures(info.simplex, info.normal, transformB, realShapeB, idxB);
 		auto idA = std::pair{ featureA.index[0], featureA.index[1] };
-		pair.ids[0] = reinterpret_cast<uint64_t&>(idA);
-
 		auto idB = std::pair{ featureB.index[0], featureB.index[1] };
-		pair.ids[1] = reinterpret_cast<uint64_t&>(idB);
 
 		if (typeA == ShapeType::Polygon)
 		{
@@ -439,6 +436,11 @@ namespace ST
 			pair = clipRoundRound(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 			return pair;
 		}
+
+		pair.ids[0].idx[0] = featureA.index[0];
+		pair.ids[0].idx[1] = featureA.index[1];
+		pair.ids[1].idx[0] = featureB.index[0];
+		pair.ids[1].idx[1] = featureB.index[1];
 
 		if (isSwap)
 		{

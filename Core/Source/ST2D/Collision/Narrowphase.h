@@ -73,6 +73,15 @@ namespace ST
 		bool isFinalValid = false;
 	};
 
+	union ST_API FeatureIndex
+	{
+		struct
+		{
+			uint32_t idx[2];
+		};
+		uint64_t key = 0;
+	};
+
 	struct ST_API ContactPair
 	{
 		//contact pair1:
@@ -83,7 +92,10 @@ namespace ST
 		//	points[2]: pointA
 		//	points[3]: pointB
 		std::array<Vector2, 4> points;
-		std::array<uint64_t, 2> ids{};
+
+		std::array<FeatureIndex, 2> ids{};
+
+
 		uint32_t count = 0;
 
 		void addContact(const Vector2& pointA, const Vector2& pointB)
