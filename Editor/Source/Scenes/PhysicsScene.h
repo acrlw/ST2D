@@ -13,12 +13,12 @@ namespace STEditor
 		Vector2 vA;
 		Vector2 vB;
 		Vector2 velocityBias;
-		real bias = 0;
+		real bias = 0.0f;
 		real penetration = 0.0f;
-		real effectiveMassNormal = 0;
-		real effectiveMassTangent = 0;
-		real sumNormalImpulse = 0;
-		real sumTangentImpulse = 0;
+		real effectiveMassNormal = 0.0f;
+		real effectiveMassTangent = 0.0f;
+		real sumNormalImpulse = 0.0f;
+		real sumTangentImpulse = 0.0f;
 	};
 
 	struct Contact
@@ -30,7 +30,7 @@ namespace STEditor
 		Vector2 normal;
 		Vector2 tangent;
 		real restitution = 0.0f;
-		real friction = 0.5f;
+		real friction = 1.0f;
 		real penetration = 0.0f;
 		Matrix2x2 normalMass;
 		Matrix2x2 k;
@@ -67,8 +67,10 @@ namespace STEditor
 		void solvePositions(float dt);
 		void setUpConstraint(float dt);
 
-		void processVelocity(const ObjectPair& pair);
-		void processPosition(const ObjectPair& pair);
+		void processContactVelocity(const ObjectPair& pair);
+		void processContactPosition(const ObjectPair& pair);
+
+		real computeInertia(real mass, const Shape* shape);
 
 		std::vector<int> m_objectIds;
 
@@ -109,7 +111,7 @@ namespace STEditor
 
 		IdPool m_objectIdPool;
 
-		int m_count = 6;
+		int m_count = 2;
 
 		ObjectID m_landId;
 
@@ -120,8 +122,8 @@ namespace STEditor
 		bool m_showGrid = false;
 		bool m_showJoint = false;
 		bool m_showTransform = false;
-		bool m_showContacts = false;
-		bool m_showContactsMagnitude = false;
+		bool m_showContacts = true;
+		bool m_showContactsMagnitude = true;
 		bool m_showGraphColoring = false;
 
 		bool m_enableDamping = true;
@@ -142,11 +144,13 @@ namespace STEditor
 		int m_frequency = 60;
 
 
-		int m_solveVelocityCount = 4;
-		int m_solvePositionCount = 4;
+		int m_solveVelocityCount = 1;
+		int m_solvePositionCount = 1;
 
 		std::unordered_map<ObjectPair, Contact, ObjectPairHash> m_contacts;
 
 		ThreadPool m_threadPool;
+
+		std::vector<ST::ObjectPair> m_objectPairs;
 	};
 }

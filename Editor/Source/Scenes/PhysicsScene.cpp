@@ -12,7 +12,7 @@ namespace STEditor
 
 	void PhysicsScene::onLoad()
 	{
-		rect.set(0.5f, 0.5f);
+		rect.set(1.0f, 1.0f);
 		land.set(200.0f, 0.1f);
 		capsule.set(1.0f, 2.0f);
 		ellipse.set(1.0f, 2.0f);
@@ -132,7 +132,22 @@ namespace STEditor
 
 			if(m_showContactsMagnitude)
 			{
-				
+				for (auto& value : m_contacts | std::views::values)
+				{
+					if (value.count == 0)
+						continue;
+
+					Vector2 midPoint = (value.pair.points[0] + value.pair.points[2]) * 0.5f;
+					std::string str = std::format("{:.3f}", value.contacts[0].sumNormalImpulse);
+					renderer.text(midPoint, Palette::LightGray, str);
+
+					if (value.count == 2)
+					{
+						midPoint = (value.pair.points[1] + value.pair.points[3]) * 0.5f;
+						str = std::format("{:.3f}", value.contacts[1].sumNormalImpulse);
+						renderer.text(midPoint, Palette::LightGray, str);
+					}
+				}
 			}
 		}
 
@@ -187,9 +202,9 @@ namespace STEditor
 			step(1.0f / static_cast<float>(m_frequency));
 		}
 
-		ImGui::SliderInt("Frequency", &m_frequency, 1, 240);
-		ImGui::SliderInt("Vel Iteration", &m_solveVelocityCount, 1, 100);
-		ImGui::SliderInt("Pos Iteration", &m_solvePositionCount, 1, 100);
+		ImGui::DragInt("Frequency", &m_frequency, 1, 240);
+		ImGui::DragInt("Vel Iteration", &m_solveVelocityCount, 1, 100);
+		ImGui::DragInt("Pos Iteration", &m_solvePositionCount, 1, 100);
 
 		ImGui::Columns(2);
 		ImGui::Checkbox("Gravity", &m_enableGravity);
@@ -284,20 +299,23 @@ namespace STEditor
 		{
 			ZoneScopedN("[PhysicsScene] Create and add shape to list");
 
-			real offset = 0.6f;
+			real offset = 1.0f;
 			real max = static_cast<real>(m_count);
-			real xSpacing = 0.2f;
-			real ySpacing = 0.01f;
-			for (real j = 0; j < max; j += 0.5f)
+
+			for (real j = 0; j < max; j += 1.0f)
 			{
-				for (real i = 0.0; i < max - j; i += 0.5f)
+				for (real i = 0.0; i < max - j; i += 1.0f)
 				{
 					Transform t;
-					t.position.set({ i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.24f });
+					t.position.set( i * 1.05f + offset, j * 1.05f + 0.55f);
 					t.rotation = 0;
 
 					auto id = m_objectIdPool.getNewId();
 					m_objectIds.push_back(id);
+
+					m_bitmasks.push_back(1);
+					m_shapes.push_back(&rect);
+					m_aabbs.push_back(AABB::fromShape(t, m_shapes.back()));
 
 					m_positions.emplace_back(t.position);
 					m_rotations.emplace_back(t.rotation);
@@ -305,21 +323,20 @@ namespace STEditor
 					m_angularVelocities.emplace_back(0.0f);
 					m_forces.emplace_back(0.0f);
 					m_torques.emplace_back(0.0f);
-					m_masses.emplace_back(1.0f + i);
-					m_inertias.emplace_back(1.0f + i);
-					m_invMasses.emplace_back(1.0f / (1.0f + i));
-					m_invInertias.emplace_back(1.0f / (1.0f + i));
+					m_masses.emplace_back(1.0f);
+					real inertia = computeInertia(1.0f, m_shapes.back());
+					real invInertia = inertia > 0.0f ? 1.0f / inertia : 0.0f;
+					m_inertias.emplace_back(inertia);
+					m_invMasses.emplace_back(1.0f);
+					m_invInertias.emplace_back(invInertia);
 					m_restitutions.emplace_back(0.0f);
-					m_frictions.emplace_back(0.8f);
+					m_frictions.emplace_back(1.0f);
 
-					m_aabbs.push_back(AABB::fromShape(t, &rect));
-					m_bitmasks.push_back(1);
-					m_shapes.push_back(&rect);
 
 					bindings.emplace_back(m_objectIds.back(), 1, m_aabbs.back());
 
 				}
-				offset += 0.3f;
+				offset += 0.5f;
 			}
 		}
 		{
@@ -396,11 +413,11 @@ namespace STEditor
 	{
 		ZoneScopedN("Contacts Generation");
 
-		std::vector<ObjectPair> pairs = m_dbvt.queryOverlaps();
+		m_objectPairs = m_dbvt.queryOverlaps();
 
 		// narrow phase generate contacts
 
-		for (auto&& elem : pairs)
+		for (auto&& elem : m_objectPairs)
 		{
 			if (!m_aabbs[elem.objectIdA].collide(m_aabbs[elem.objectIdB]))
 				continue;
@@ -414,6 +431,14 @@ namespace STEditor
 				auto info = Narrowphase::epa(simplex, transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
 				auto contacts = Narrowphase::generateContacts(info, transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
 
+				Contact contact;
+				contact.count = contacts.count;
+				contact.pair = contacts;
+				contact.normal = info.normal;
+				contact.tangent = info.normal.perpendicular();
+				contact.penetration = info.penetration;
+
+
 				if (m_contacts.contains(elem) && contacts.ids[0].key != m_contacts[elem].pair.ids[0].key
 					|| contacts.ids[1].key != m_contacts[elem].pair.ids[1].key)
 				{
@@ -423,12 +448,12 @@ namespace STEditor
 					m_contacts[elem].contacts[1].sumTangentImpulse = 0.0f;
 				}
 
-				Contact contact;
-				contact.count = contacts.count;
-				contact.pair = contacts;
-				contact.normal = info.normal;
-				contact.tangent = info.normal.perpendicular();
-				contact.penetration = info.penetration;
+
+				contact.contacts[0].sumNormalImpulse = m_contacts[elem].contacts[0].sumNormalImpulse;
+				contact.contacts[0].sumTangentImpulse = m_contacts[elem].contacts[0].sumTangentImpulse;
+				contact.contacts[1].sumNormalImpulse = m_contacts[elem].contacts[1].sumNormalImpulse;
+				contact.contacts[1].sumTangentImpulse = m_contacts[elem].contacts[1].sumTangentImpulse;
+
 				m_contacts[elem] = contact;
 			}
 		}
@@ -439,7 +464,7 @@ namespace STEditor
 			ZoneScopedN("Graph Coloring");
 			m_objectGraph.clearGraph();
 			m_objectGraph.addEnableColorRepeated(m_landId);
-			m_objectGraph.buildGraph(pairs);
+			m_objectGraph.buildGraph(m_objectPairs);
 		}
 	}
 
@@ -470,69 +495,79 @@ namespace STEditor
 			avd = 1.0f / (1.0f + dt * m_angularVelocityDamping);
 		}
 
-		// use sse
+		// parallel
 
-		__m128 dt4 = _mm_set1_ps(dt);
-		__m256 dt8 = _mm256_set1_ps(dt);
-		__m256 lvd4 = _mm256_set1_ps(lvd);
-		__m128 avd4 = _mm_set1_ps(avd);
-		//fill gravity 8 with (0, -9.8, 0, -9.8 ...)
-		__m128 grav = _mm_set_ps(gravity.y, gravity.x, gravity.y, gravity.x);
-		__m256 vGravity = _mm256_set_m128(grav, grav);
+		//__m128 dt4 = _mm_set1_ps(dt);
+		//__m256 dt8 = _mm256_set1_ps(dt);
+		//__m256 lvd4 = _mm256_set1_ps(lvd);
+		//__m128 avd4 = _mm_set1_ps(avd);
+		////fill gravity 8 with (0, -9.8, 0, -9.8 ...)
+		//__m128 grav = _mm_set_ps(gravity.y, gravity.x, gravity.y, gravity.x);
+		//__m256 vGravity = _mm256_set_m128(grav, grav);
 
-		int index = 0;
-		for (; index + 4 <= m_objectIds.size(); index += 4)
+		//int index = 0;
+		//for (; index + 4 <= m_objectIds.size(); index += 4)
+		//{
+		//	__m256 vVel = _mm256_loadu_ps(&m_velocities[index].x);
+		//	__m256 vForce = _mm256_loadu_ps(&m_forces[index].x);
+
+		//	__m128 vAngularVel = _mm_loadu_ps(&m_angularVelocities[index]);
+		//	__m128 vTorque = _mm_loadu_ps(&m_torques[index]);
+
+		//	__m128 vTmpInvMass = _mm_loadu_ps(&m_invMasses[index]);
+		//	__m128 vInvMassLo = _mm_unpacklo_ps(vTmpInvMass, vTmpInvMass);
+		//	__m128 vInvMassHi = _mm_unpackhi_ps(vTmpInvMass, vTmpInvMass);
+
+		//	__m256 vInvMass = _mm256_set_m128(vInvMassHi, vInvMassLo);
+
+
+		//	__m128 vTmpMass = _mm_loadu_ps(&m_masses[index]);
+		//	__m128 vMassLo = _mm_unpacklo_ps(vTmpMass, vTmpMass);
+		//	__m128 vMassHi = _mm_unpackhi_ps(vTmpMass, vTmpMass);
+		//	__m256 vMass = _mm256_set_m128(vMassHi, vMassLo);
+
+		//	__m128 vInvInertia = _mm_loadu_ps(&m_invInertias[index]);
+
+		//	// vForce += vGravity * vMass
+		//	// vVel += vForce * vInvMass * dt8
+		//	// vVel *= lvd4
+
+		//	vForce = _mm256_add_ps(vForce, _mm256_mul_ps(vGravity, vMass));
+		//	vVel = _mm256_add_ps(vVel, _mm256_mul_ps(_mm256_mul_ps(vForce, vInvMass), dt8));
+		//	vVel = _mm256_mul_ps(vVel, lvd4);
+
+		//	// vAngularVel += vTorque * vInvInertia * dt4
+		//	// vAngularVel *= avd4
+
+		//	vAngularVel = _mm_add_ps(vAngularVel, _mm_mul_ps(vTorque, _mm_mul_ps(vInvInertia, dt4)));
+		//	vAngularVel = _mm_mul_ps(vAngularVel, avd4);
+
+		//	// store back
+
+		//	_mm256_storeu_ps(&m_velocities[index].x, vVel);
+		//	_mm_storeu_ps(&m_angularVelocities[index], vAngularVel);
+
+
+		//}
+
+		//for (; index < m_objectIds.size(); ++index)
+		//{
+		//	m_forces[index] += gravity * m_masses[index];
+		//	m_velocities[index] += m_forces[index] * m_invMasses[index] * dt;
+		//	m_angularVelocities[index] += m_torques[index] * m_invInertias[index] * dt;
+
+		//	m_velocities[index] *= lvd;
+		//	m_angularVelocities[index] *= avd;
+		//}
+
+		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
-			__m256 vVel = _mm256_loadu_ps(&m_velocities[index].x);
-			__m256 vForce = _mm256_loadu_ps(&m_forces[index].x);
+			m_forces[i] += gravity * m_masses[i];
+			m_velocities[i] += m_forces[i] * m_invMasses[i] * dt;
+			m_angularVelocities[i] += m_torques[i] * m_invInertias[i] * dt;
 
-			__m128 vAngularVel = _mm_loadu_ps(&m_angularVelocities[index]);
-			__m128 vTorque = _mm_loadu_ps(&m_torques[index]);
-
-			__m128 vTmpInvMass = _mm_loadu_ps(&m_invMasses[index]);
-			__m128 vInvMassLo = _mm_unpacklo_ps(vTmpInvMass, vTmpInvMass);
-			__m128 vInvMassHi = _mm_unpackhi_ps(vTmpInvMass, vTmpInvMass);
-
-			__m256 vInvMass = _mm256_set_m128(vInvMassHi, vInvMassLo);
-
-
-			__m128 vTmpMass = _mm_loadu_ps(&m_masses[index]);
-			__m128 vMassLo = _mm_unpacklo_ps(vTmpMass, vTmpMass);
-			__m128 vMassHi = _mm_unpackhi_ps(vTmpMass, vTmpMass);
-			__m256 vMass = _mm256_set_m128(vMassHi, vMassLo);
-
-			__m128 vInvInertia = _mm_loadu_ps(&m_invInertias[index]);
-
-			// vForce += vGravity * vMass
-			// vVel += vForce * vInvMass * dt8
-			// vVel *= lvd4
-
-			vForce = _mm256_add_ps(vForce, _mm256_mul_ps(vGravity, vMass));
-			vVel = _mm256_add_ps(vVel, _mm256_mul_ps(_mm256_mul_ps(vForce, vInvMass), dt8));
-			vVel = _mm256_mul_ps(vVel, lvd4);
-
-			// vAngularVel += vTorque * vInvInertia * dt4
-			// vAngularVel *= avd4
-
-			vAngularVel = _mm_add_ps(vAngularVel, _mm_mul_ps(vTorque, _mm_mul_ps(vInvInertia, dt4)));
-			vAngularVel = _mm_mul_ps(vAngularVel, avd4);
-
-			// store back
-
-			_mm256_storeu_ps(&m_velocities[index].x, vVel);
-			_mm_storeu_ps(&m_angularVelocities[index], vAngularVel);
-
-
-		}
-
-		for (; index < m_objectIds.size(); ++index)
-		{
-			m_forces[index] += gravity * m_masses[index];
-			m_velocities[index] += m_forces[index] * m_invMasses[index] * dt;
-			m_angularVelocities[index] += m_torques[index] * m_invInertias[index] * dt;
-
-			m_velocities[index] *= lvd;
-			m_angularVelocities[index] *= avd;
+			m_velocities[i] *= lvd;
+			m_angularVelocities[i] *= avd;
 		}
 	}
 
@@ -542,23 +577,31 @@ namespace STEditor
 
 		for(int solveIndex = 0;solveIndex < m_solveVelocityCount; ++solveIndex)
 		{
-			for (auto&& elem : m_objectGraph.m_colorToEdges)
+			//parallel
+
+			//for (auto&& elem : m_objectGraph.m_colorToEdges)
+			//{
+			//	std::vector<std::future<void>> futures;
+
+			//	for (auto&& pair : elem)
+			//	{
+			//		futures.emplace_back(
+			//			m_threadPool.enqueue([this, pair, dt]
+			//				{
+			//					processContactVelocity(pair);
+			//				}));
+
+			//	}
+
+			//	for (auto& future : futures)
+			//		future.get();
+			//}
+
+			for(auto&& elem: m_objectPairs)
 			{
-				std::vector<std::future<void>> futures;
-
-				for (auto&& pair : elem)
-				{
-					futures.emplace_back(
-						m_threadPool.enqueue([this, pair, dt]
-							{
-								processVelocity(pair);
-							}));
-
-				}
-
-				for (auto& future : futures)
-					future.get();
+				processContactVelocity(elem);
 			}
+
 		}
 
 
@@ -568,27 +611,35 @@ namespace STEditor
 	{
 		ZoneScopedN("Integrate Positions");
 
-		int index = 0;
 
-		for (; index + 4 <= m_objectIds.size(); index += 4)
+		//parallel
+		//int index = 0;
+
+		//for (; index + 4 <= m_objectIds.size(); index += 4)
+		//{
+		//	__m256 vVel = _mm256_loadu_ps(&m_velocities[index].x);
+		//	__m128 vAngularVel = _mm_loadu_ps(&m_angularVelocities[index]);
+
+		//	__m256 vPos = _mm256_loadu_ps(&m_positions[index].x);
+		//	__m128 vRot = _mm_loadu_ps(&m_rotations[index]);
+
+		//	vPos = _mm256_add_ps(vPos, _mm256_mul_ps(vVel, _mm256_set1_ps(dt)));
+		//	vRot = _mm_add_ps(vRot, _mm_mul_ps(vAngularVel, _mm_set1_ps(dt)));
+
+		//	_mm256_storeu_ps(&m_positions[index].x, vPos);
+		//	_mm_storeu_ps(&m_rotations[index], vRot);
+		//}
+
+		//for (; index < m_objectIds.size(); ++index)
+		//{
+		//	m_positions[index] += m_velocities[index] * dt;
+		//	m_rotations[index] += m_angularVelocities[index] * dt;
+		//}
+
+		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
-			__m256 vVel = _mm256_loadu_ps(&m_velocities[index].x);
-			__m128 vAngularVel = _mm_loadu_ps(&m_angularVelocities[index]);
-
-			__m256 vPos = _mm256_loadu_ps(&m_positions[index].x);
-			__m128 vRot = _mm_loadu_ps(&m_rotations[index]);
-
-			vPos = _mm256_add_ps(vPos, _mm256_mul_ps(vVel, _mm256_set1_ps(dt)));
-			vRot = _mm_add_ps(vRot, _mm_mul_ps(vAngularVel, _mm_set1_ps(dt)));
-
-			_mm256_storeu_ps(&m_positions[index].x, vPos);
-			_mm_storeu_ps(&m_rotations[index], vRot);
-		}
-
-		for (; index < m_objectIds.size(); ++index)
-		{
-			m_positions[index] += m_velocities[index] * dt;
-			m_rotations[index] += m_angularVelocities[index] * dt;
+			m_positions[i] += m_velocities[i] * dt;
+			m_rotations[i] += m_angularVelocities[i] * dt;
 		}
 	}
 
@@ -597,22 +648,26 @@ namespace STEditor
 		ZoneScopedN("Solve Position");
 		for (int solveIndex = 0; solveIndex < m_solvePositionCount; ++solveIndex)
 		{
-			for (auto&& elem : m_objectGraph.m_colorToEdges)
+			//for (auto&& elem : m_objectGraph.m_colorToEdges)
+			//{
+			//	std::vector<std::future<void>> futures;
+
+			//	for (auto&& pair : elem)
+			//	{
+			//		futures.emplace_back(
+			//			m_threadPool.enqueue([this, pair, dt]
+			//				{
+			//					processContactPosition(pair);
+			//				}));
+
+			//	}
+
+			//	for (auto& future : futures)
+			//		future.get();
+			//}
+			for (auto&& elem : m_objectPairs)
 			{
-				std::vector<std::future<void>> futures;
-
-				for (auto&& pair : elem)
-				{
-					futures.emplace_back(
-						m_threadPool.enqueue([this, pair, dt]
-							{
-								processPosition(pair);
-							}));
-
-				}
-
-				for (auto& future : futures)
-					future.get();
+				processContactPosition(elem);
 			}
 		}
 	}
@@ -705,7 +760,7 @@ namespace STEditor
 
 	}
 
-	void PhysicsScene::processVelocity(const ObjectPair& pair)
+	void PhysicsScene::processContactVelocity(const ObjectPair& pair)
 	{
 		if(m_contacts[pair].count > 0)
 		{
@@ -761,6 +816,7 @@ namespace STEditor
 				Vector2 x(contact.contacts[0].sumNormalImpulse, contact.contacts[1].sumNormalImpulse);
 				Vector2 nx;
 				Vector2 d;
+
 				b = b - A.multiply(x);
 
 				for (;;)
@@ -806,10 +862,10 @@ namespace STEditor
 				Vector2 impulse2 = lambda2 * contact.normal;
 
 				m_velocities[pair.objectIdA] += (impulse1 + impulse2) * m_invMasses[pair.objectIdA];
-				m_angularVelocities[pair.objectIdA] += m_invInertias[pair.objectIdA] * contact.contacts[0].rA.cross(impulse1 + impulse2);
+				m_angularVelocities[pair.objectIdA] += m_invInertias[pair.objectIdA] * (contact.contacts[0].rA.cross(impulse1) + contact.contacts[1].rA.cross(impulse2));
 
 				m_velocities[pair.objectIdB] -= (impulse1 + impulse2) * m_invMasses[pair.objectIdB];
-				m_angularVelocities[pair.objectIdB] -= m_invInertias[pair.objectIdB] * contact.contacts[0].rB.cross(impulse1 + impulse2);
+				m_angularVelocities[pair.objectIdB] -= m_invInertias[pair.objectIdB] * (contact.contacts[0].rB.cross(impulse1) + contact.contacts[1].rB.cross(impulse2));
 
 				contact.contacts[0].sumNormalImpulse = nx.x;
 				contact.contacts[1].sumNormalImpulse = nx.y;
@@ -844,7 +900,7 @@ namespace STEditor
 		}
 	}
 
-	void PhysicsScene::processPosition(const ObjectPair& pair)
+	void PhysicsScene::processContactPosition(const ObjectPair& pair)
 	{
 		auto& contact = m_contacts[pair];
 		if (contact.count <= 0)
@@ -885,30 +941,20 @@ namespace STEditor
 			bias1 = -bias;
 			bias2 = -bias;
 
+			real rnA1 = rA1.cross(contact.normal);
+			real rnB1 = rB1.cross(contact.normal);
+			real rnA2 = rA2.cross(contact.normal);
+			real rnB2 = rB2.cross(contact.normal);
 
-			real rn1A = rA1.cross(contact.normal);
-			real rn1B = rB1.cross(contact.normal);
-			real rn2A = rA2.cross(contact.normal);
-			real rn2B = rB2.cross(contact.normal);
-
-			real k11 = imA + iiA * rn1A * rn1A + imB + iiB * rn1B * rn1B;
-			real k12 = imA + iiA * rn1A * rn2A + imB + iiB * rn1B * rn2B;
-			real k22 = imA + iiA * rn2A * rn2A + imB + iiB * rn2B * rn2B;
-
-			real determinant = (k11 * k22 - k12 * k12);
-			real d1 = k11 * k11;
-			real d2 = 1000.0f * (k11 * k22 - k12 * k12);
-			bool conditioner = k11 * k11 < 1000.0f * (k11 * k22 - k12 * k12);
+			real k11 = imA + iiA * rnA1 * rnA1 + imB + iiB * rnB1 * rnB1;
+			real k12 = imA + iiA * rnA1 * rnA2 + imB + iiB * rnB1 * rnB2;
+			real k22 = imA + iiA * rnA2 * rnA2 + imB + iiB * rnB2 * rnB2;
 
 			//numerical stability check to ensure invertible matrix
 			Matrix2x2 invA;
-			if (conditioner)
-			{
-				invA.set(k11, k12, k12, k22);
-				invA.invert();
-			}
-			else
-				return;
+
+			invA.set(k11, k12, k12, k22);
+			invA.invert();
 
 			Vector2 b(bias1, bias2);
 			Vector2 d;
@@ -972,7 +1018,6 @@ namespace STEditor
 
 				const real bias = Math::max(m_biasFactor * (c.dot(contact.normal) - m_slop), 0.0f);
 
-
 				const real rnA = rA.cross(contact.normal);
 				const real rnB = rB.cross(contact.normal);
 
@@ -994,6 +1039,78 @@ namespace STEditor
 			}
 		}
 	}
+
+	real PhysicsScene::computeInertia(real mass, const Shape* shape)
+	{
+		real inertia = 0.0f;
+
+		switch (shape->type())
+		{
+		case ShapeType::Polygon:
+		{
+			auto polygon = static_cast<const ST::Polygon*>(shape);
+			const Vector2 center = polygon->center();
+			real sum1 = 0.0;
+			real sum2 = 0.0;
+			for(int i = 0;i < polygon->vertices().size(); ++i)
+			{
+				int next = (i + 1) % polygon->vertices().size();
+
+				Vector2 n1 = polygon->vertices()[i] - center;
+				Vector2 n2 = polygon->vertices()[next] - center;
+				real cross = std::fabs(n1.cross(n2));
+				real dot = n2.dot(n2) + n2.dot(n1) + n1.dot(n1);
+				sum1 += cross * dot;
+				sum2 += cross;
+			}
+
+			inertia = mass * (1.0f / 6.0f) * sum1 / sum2;
+
+			break;
+		}
+		case ShapeType::Circle:
+		{
+			auto circle = static_cast<const ST::Circle*>(shape);
+			inertia = mass * circle->radius() * circle->radius() / 2;
+			break;
+		}
+		case ShapeType::Ellipse:
+		{
+			auto ellipse = static_cast<const ST::Ellipse*>(shape);
+			const real a = ellipse->A();
+			const real b = ellipse->B();
+			inertia = mass * (a * a + b * b) * (1.0f / 5.0f);
+			break;
+		}
+		case ShapeType::Capsule:
+		{
+			auto capsule = static_cast<const ST::Capsule*>(shape);
+
+			real r = 0, h = 0, massS = 0, inertiaS = 0, massC = 0, inertiaC = 0, volume = 0;
+
+			if (capsule->width() >= capsule->height())//Horizontal
+			{
+				r = capsule->height() / 2.0f;
+				h = capsule->width() - capsule->height();
+			}
+			else//Vertical
+			{
+				r = capsule->width() / 2.0f;
+				h = capsule->height() - capsule->width();
+			}
+
+			volume = Constant::Pi * r * r + h * 2 * r;
+			real rho = mass / volume;
+			massS = rho * Constant::Pi * r * r;
+			massC = rho * h * 2.0f * r;
+			inertiaC = (1.0f / 12.0f) * massC * (h * h + (2.0f * r) * (2.0f * r));
+			inertiaS = massS * r * r * 0.5f;
+			inertia = inertiaC + inertiaS + massS * (3.0f * r + 2.0f * h) * h / 8.0f;
+
+			break;
+		}
+		}
+
+		return inertia;
+	}
 }
-
-

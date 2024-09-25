@@ -439,8 +439,13 @@ namespace ST
 
 		pair.ids[0].idx[0] = featureA.index[0];
 		pair.ids[0].idx[1] = featureA.index[1];
+		if(pair.ids[0].idx[0] > pair.ids[0].idx[1])
+			std::swap(pair.ids[0].idx[0], pair.ids[0].idx[1]);
+
 		pair.ids[1].idx[0] = featureB.index[0];
 		pair.ids[1].idx[1] = featureB.index[1];
+		if (pair.ids[1].idx[0] > pair.ids[1].idx[1])
+			std::swap(pair.ids[1].idx[0], pair.ids[1].idx[1]);
 
 		if (isSwap)
 		{
