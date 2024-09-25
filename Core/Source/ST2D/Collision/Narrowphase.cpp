@@ -444,8 +444,8 @@ namespace ST
 
 		if (isSwap)
 		{
-			std::swap(pair.points[0], pair.points[1]);
-			std::swap(pair.points[2], pair.points[3]);
+			std::swap(pair.points[0], pair.points[2]);
+			std::swap(pair.points[1], pair.points[3]);
 			std::swap(pair.ids[0], pair.ids[1]);
 			//restore normal
 			info.normal.negate();
@@ -933,10 +933,10 @@ namespace ST
 	}
 
 	ContactPair Narrowphase::clipTwoEdge(const Vector2& va1, const Vector2& va2, const Vector2& vb1, const Vector2& vb2,
-		CollisionInfo& info)
+	                                     const CollisionInfo& info)
 	{
 		std::array<ClipVertex, 2> incEdge;
-		std::array<Vector2, 2> refEdge = { va1, va2 };
+		std::array refEdge = { va1, va2 };
 
 		Vector2 refNormal = info.normal;
 
@@ -996,8 +996,7 @@ namespace ST
 		//check ref2
 		const Vector2 test1 = incEdge[0].vertex - refEdge[1];
 		const Vector2 test2 = incEdge[1].vertex - refEdge[1];
-		const real dot1 = refEdgeDir.dot(test1);
-		const real dot2 = refEdgeDir.dot(test2);
+
 		const bool isRef2Inc1Valid = refEdgeDir.dot(incEdge[0].vertex - refEdge[1]) <= 0;
 		const bool isRef2Inc2Valid = refEdgeDir.dot(incEdge[1].vertex - refEdge[1]) <= 0;
 
@@ -1095,7 +1094,7 @@ namespace ST
 	}
 
 	ContactPair Narrowphase::clipPolygonPolygon(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		auto polygonA = static_cast<const Polygon*>(shapeA);
 		auto polygonB = static_cast<const Polygon*>(shapeB);
@@ -1110,7 +1109,7 @@ namespace ST
 	}
 
 	ContactPair Narrowphase::clipPolygonEdge(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		auto polygonA = static_cast<const Polygon*>(shapeA);
 		auto edgeB = static_cast<const Edge*>(shapeB);
@@ -1124,7 +1123,7 @@ namespace ST
 	}
 
 	ContactPair Narrowphase::clipPolygonCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		ContactPair pair;
 
@@ -1194,7 +1193,7 @@ namespace ST
 	}
 
 	ContactPair Narrowphase::clipPolygonRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		auto polygonA = static_cast<const Polygon*>(shapeA);
 		const Vector2 va1 = transformA.translatePoint(polygonA->vertices()[featureA.index[0]]);
@@ -1206,7 +1205,7 @@ namespace ST
 	}
 
 	ContactPair Narrowphase::clipEdgeCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		ContactPair pair;
 		const Vector2 localB1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
@@ -1380,7 +1379,7 @@ namespace ST
 			info.normal.negate();
 			pair = clipEdgeVertex(featureB.vertex[0], featureB.vertex[1], featureA.vertex[0], info);
 			info.normal.negate();
-			std::swap(pair.points[0], pair.points[1]);
+			std::swap(pair.points[0], pair.points[2]);
 			break;
 		case Oper::EDGE_ROUND:
 			pair = clipEdgeVertex(featureA.vertex[0], featureA.vertex[1], featureB.vertex[0], info);
@@ -1450,13 +1449,13 @@ namespace ST
 		else
 			pair.addContact(info.simplex.vertices[1].point[0], info.simplex.vertices[1].point[1]);
 
-		const Vector2 newNormal = pair.points[1] - pair.points[0];
+		const Vector2 newNormal = pair.points[2] - pair.points[0];
 		info.penetration = newNormal.length();
 		const real res = newNormal.dot(info.normal);
 		info.normal = newNormal.normal();
 		if (res < 0)
 		{
-			std::swap(pair.points[0], pair.points[1]);
+			std::swap(pair.points[0], pair.points[2]);
 			info.normal.negate();
 		}
 
@@ -1464,7 +1463,7 @@ namespace ST
 	}
 
 	ContactPair Narrowphase::clipEdgeVertex(const Vector2& va1, const Vector2& va2, const Vector2& vb,
-		CollisionInfo& info)
+	                                        const CollisionInfo& info)
 	{
 		ContactPair pair;
 

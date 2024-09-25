@@ -42,7 +42,7 @@ namespace STEditor
 		tf2.rotation = Math::radians(100.0f);
 
 		shape1 = &rect;
-		shape2 = &discreteEllipse;
+		shape2 = &ellipse;
 	}
 
 	void NarrowphaseScene::onUnLoad()
@@ -160,15 +160,15 @@ namespace STEditor
 				auto contacts = Narrowphase::generateContacts(info, tf1, shape1, tf2, shape2);
 
 				renderer.point(contacts.points[0], Palette::Yellow);
-				renderer.point(contacts.points[1], Palette::Cyan);
-				renderer.dashedLine(contacts.points[0], contacts.points[1], Palette::LightGray);
+				renderer.point(contacts.points[2], Palette::Cyan);
+				renderer.dashedLine(contacts.points[0], contacts.points[2], Palette::LightGray);
 
 				//renderer.arrow({}, info.normal, Palette::Red);
-				if (contacts.count == 4)
+				if (contacts.count == 2)
 				{
-					renderer.point(contacts.points[2], Palette::Yellow);
+					renderer.point(contacts.points[1], Palette::Yellow);
 					renderer.point(contacts.points[3], Palette::Cyan);
-					renderer.dashedLine(contacts.points[2], contacts.points[3], Palette::LightGray);
+					renderer.dashedLine(contacts.points[1], contacts.points[3], Palette::LightGray);
 				}
 
 				if (m_showPolytope)

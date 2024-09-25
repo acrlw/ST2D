@@ -486,10 +486,10 @@ namespace STEditor
 						auto contacts = Narrowphase::generateContacts(collisionInfo, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
 
 						m_graphColorPoints[color].push_back(contacts.points[0]);
-						m_graphColorPoints[color].push_back(contacts.points[1]);
-						if (contacts.count == 4)
+						m_graphColorPoints[color].push_back(contacts.points[2]);
+						if (contacts.count == 2)
 						{
-							m_graphColorPoints[color].push_back(contacts.points[2]);
+							m_graphColorPoints[color].push_back(contacts.points[1]);
 							m_graphColorPoints[color].push_back(contacts.points[3]);
 						}
 					}

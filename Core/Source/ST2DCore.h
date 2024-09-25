@@ -32,3 +32,4 @@
 #include "ST2D/Shape/Rectangle.h"
 
 #include "ST2D/Utility/Easing.h"
+#include "ST2D/ThreadPool.h"

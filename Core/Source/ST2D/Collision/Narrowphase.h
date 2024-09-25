@@ -86,23 +86,25 @@ namespace ST
 	{
 		//contact pair1:
 		//	points[0]: pointA
-		//	points[1]: pointB
-
-		//if there is second contact pair:
-		//	points[2]: pointA
+		//	points[1]: pointA
+		//	points[2]: pointB
 		//	points[3]: pointB
+
+		// if there is only one contact pair, then use points[0], points[2]
+		// if there is second contact pair, the use points[1], points[3]
+
 		std::array<Vector2, 4> points;
 
 		std::array<FeatureIndex, 2> ids{};
-
 
 		uint32_t count = 0;
 
 		void addContact(const Vector2& pointA, const Vector2& pointB)
 		{
-			assert(count <= 4);
-			points[count++] = pointA;
-			points[count++] = pointB;
+			assert(count <= 2);
+			points[count] = pointA;
+			points[count + 2] = pointB;
+			count++;
 		}
 	};
 
@@ -189,25 +191,25 @@ namespace ST
 			const Index& AorB);
 
 		static ContactPair clipTwoEdge(const Vector2& va1, const Vector2& va2, const Vector2& vb1, const Vector2& vb2,
-			CollisionInfo& info);
+		                               const CollisionInfo& info);
 
 		static ContactPair clipIncidentEdge(std::array<ClipVertex, 2>& incEdge, std::array<Vector2, 2> refEdge,
 			const Vector2& normal, bool swap);
 
 		static ContactPair clipPolygonPolygon(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
+			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
 		static ContactPair clipPolygonEdge(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
+			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
 		static ContactPair clipPolygonCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
+			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
 		static ContactPair clipPolygonRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
+			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
 		static ContactPair clipEdgeCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
+			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
 		static ContactPair clipEdgeRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
@@ -222,7 +224,7 @@ namespace ST
 			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
 
 		static ContactPair clipEdgeVertex(const Vector2& va1, const Vector2& va2, const Vector2& vb,
-			CollisionInfo& info);
+		                                  const CollisionInfo& info);
 
 		static void polytopeIterNext(std::list<SimplexVertexDistPair>::iterator& targetIter,
 			std::list<SimplexVertexDistPair>& list);

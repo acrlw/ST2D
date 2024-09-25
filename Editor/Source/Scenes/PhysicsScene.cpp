@@ -164,18 +164,13 @@ namespace STEditor
 					continue;
 
 				renderer.point(value.pair.points[0], Palette::LightRed);
-				renderer.point(value.pair.points[1], Palette::LightBlue);
+				renderer.point(value.pair.points[2], Palette::LightBlue);
 
 				if(value.count == 2)
 				{
-					renderer.point(value.pair.points[2], Palette::LightRed);
+					renderer.point(value.pair.points[1], Palette::LightRed);
 					renderer.point(value.pair.points[3], Palette::LightBlue);
 				}
-			}
-
-			if(m_showContactNormal)
-			{
-				
 			}
 
 			if(m_showContactsMagnitude)
@@ -202,6 +197,9 @@ namespace STEditor
 		ImGui::Checkbox("Simulate", &m_simulate);
 		ImGui::Checkbox("Enable Gravity", &m_enableGravity);
 		ImGui::Checkbox("Enable Damping", &m_enableDamping);
+		ImGui::Checkbox("Enable Warmstart", &m_enableWarmstart);
+		ImGui::Checkbox("Enable Vel Block Solver", &m_enableVelocityBlockSolver);
+		ImGui::Checkbox("Enable Pos Block Solver", &m_enablePositionBlockSolver);
 
 		ImGui::Checkbox("Show Object", &m_showObject);
 		ImGui::Checkbox("Show Object Id", &m_showObjectID);
@@ -214,8 +212,6 @@ namespace STEditor
 		ImGui::Checkbox("Show Graph Coloring", &m_showGraphColor);
 		ImGui::Checkbox("Show Contacts", &m_showContacts);
 		ImGui::Checkbox("Show Contacts Magnitude", &m_showContactsMagnitude);
-		ImGui::Checkbox("Show Contacts Normal", &m_showContactNormal);
-
 
 		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
 
@@ -362,21 +358,21 @@ namespace STEditor
 				auto info = Narrowphase::epa(simplex, transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
 				auto contacts = Narrowphase::generateContacts(info, transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
 
-				if (m_contacts.contains(elem))
+				if (m_contacts.contains(elem) && contacts.ids[0].key != m_contacts[elem].pair.ids[0].key
+					|| contacts.ids[1].key != m_contacts[elem].pair.ids[1].key)
 				{
-					if (contacts.ids[0].key != m_contacts[elem].pair.ids[0].key
-						|| contacts.ids[1].key != m_contacts[elem].pair.ids[1].key)
-					{
-						m_contacts[elem].contacts[0].accumulatedNormalImpulse = 0.0f;
-						m_contacts[elem].contacts[0].accumulatedTangentImpulse = 0.0f;
-						m_contacts[elem].contacts[1].accumulatedNormalImpulse = 0.0f;
-						m_contacts[elem].contacts[1].accumulatedTangentImpulse = 0.0f;
-					}
+					m_contacts[elem].contacts[0].sumNormalImpulse = 0.0f;
+					m_contacts[elem].contacts[0].sumTangentImpulse = 0.0f;
+					m_contacts[elem].contacts[1].sumNormalImpulse = 0.0f;
+					m_contacts[elem].contacts[1].sumTangentImpulse = 0.0f;
 				}
 
 				Contact contact;
-				contact.count = contacts.count / 2;
+				contact.count = contacts.count;
 				contact.pair = contacts;
+				contact.normal = info.normal;
+				contact.tangent = info.normal.perpendicular();
+				contact.penetration = info.penetration;
 				m_contacts[elem] = contact;
 			}
 		}
@@ -488,6 +484,28 @@ namespace STEditor
 	{
 		ZoneScopedN("Solve Velocity");
 
+		for(int solveIndex = 0;solveIndex < m_solveVelocityCount; ++solveIndex)
+		{
+			for (auto&& elem : m_objectGraph.m_colorToEdges)
+			{
+				std::vector<std::future<void>> futures;
+
+				for (auto&& pair : elem)
+				{
+					futures.emplace_back(
+						m_threadPool.enqueue([this, pair, dt]
+							{
+								processVelocity(pair);
+							}));
+
+				}
+
+				for (auto& future : futures)
+					future.get();
+			}
+		}
+
+
 	}
 
 	void PhysicsScene::integratePositions(float dt)
@@ -521,12 +539,120 @@ namespace STEditor
 	void PhysicsScene::solvePositions(float dt)
 	{
 		ZoneScopedN("Solve Position");
+		for (int solveIndex = 0; solveIndex < m_solvePositionCount; ++solveIndex)
+		{
+			for (auto&& elem : m_objectGraph.m_colorToEdges)
+			{
+				std::vector<std::future<void>> futures;
 
+				for (auto&& pair : elem)
+				{
+					futures.emplace_back(
+						m_threadPool.enqueue([this, pair, dt]
+							{
+								processPosition(pair);
+							}));
+
+				}
+
+				for (auto& future : futures)
+					future.get();
+			}
+		}
 	}
 
 	void PhysicsScene::setUpConstraint(float dt)
 	{
 		ZoneScopedN("Setup Contact Constraint");
+		for(auto&& [key ,value] : m_contacts)
+		{
+			if(value.count > 0)
+			{
+				Transform transformA(m_positions[key.objectIdA], m_rotations[key.objectIdA], 1.0f);
+				Transform transformB(m_positions[key.objectIdB], m_rotations[key.objectIdB], 1.0f);
+
+				value.restitution = Math::min(m_restitutions[key.objectIdA], m_restitutions[key.objectIdB]);
+				value.friction = Math::sqrt(m_frictions[key.objectIdA] * m_frictions[key.objectIdB]);
+
+				for(int i = 0; i < value.count; ++i)
+				{
+					value.contacts[i].localA = transformA.inverseTranslatePoint(value.pair.points[i]);
+					value.contacts[i].localB = transformB.inverseTranslatePoint(value.pair.points[i + 2]);
+					value.contacts[i].rA = transformA.position - value.pair.points[i];
+					value.contacts[i].rB = transformB.position - value.pair.points[i + 2];
+					value.contacts[i].penetration = (value.pair.points[i] - value.pair.points[i + 2]).length();
+					
+					const real im_a = m_invMasses[key.objectIdA];
+					const real im_b = m_invMasses[key.objectIdB];
+					const real ii_a = m_invInertias[key.objectIdA];
+					const real ii_b = m_invInertias[key.objectIdB];
+
+					const real rn_a = value.contacts[i].rA.cross(value.normal);
+					const real rn_b = value.contacts[i].rB.cross(value.normal);
+					const real rt_a = value.contacts[i].rA.cross(value.tangent);
+					const real rt_b = value.contacts[i].rB.cross(value.tangent);
+
+					const real kNormal = im_a + ii_a * rn_a * rn_a +
+						im_b + ii_b * rn_b * rn_b;
+
+					const real kTangent = im_a + ii_a * rt_a * rt_a +
+						im_b + ii_b * rt_b * rt_b;
+
+					value.contacts[i].effectiveMassNormal = realEqual(kNormal, 0.0f) ? 0 : 1.0f / kNormal;
+					value.contacts[i].effectiveMassTangent = realEqual(kTangent, 0.0f) ? 0 : 1.0f / kTangent;
+
+					if(m_enableWarmstart)
+					{
+						Vector2 impulse = value.contacts[i].sumNormalImpulse * value.normal + value.contacts[i].sumTangentImpulse * value.tangent;
+
+						m_velocities[key.objectIdA] += im_a * impulse;
+						m_angularVelocities[key.objectIdA] += ii_a * value.contacts[i].rA.cross(impulse);
+						m_velocities[key.objectIdB] -= im_b * impulse;
+						m_angularVelocities[key.objectIdB] -= ii_b * value.contacts[i].rB.cross(impulse);
+					}
+
+					Vector2 wa = Vector2::crossProduct(m_angularVelocities[key.objectIdA], value.contacts[i].rA);
+					Vector2 wb = Vector2::crossProduct(m_angularVelocities[key.objectIdB], value.contacts[i].rB);
+					value.contacts[i].vA = m_velocities[key.objectIdA] + wa;
+					value.contacts[i].vB = m_velocities[key.objectIdB] + wb;
+					value.contacts[i].relativeVelocity = value.normal.dot(value.contacts[i].vA - value.contacts[i].vB);
+				}
+
+			}
+		}
+
+	}
+
+	void PhysicsScene::processVelocity(const ObjectPair& pair)
+	{
+		if(m_contacts[pair].count == 2 && m_enableVelocityBlockSolver)
+		{
+			// solve block
+		}
+		else if(m_contacts[pair].count > 0)
+		{
+			// solve one by one
+			for(int i = 0;i < m_contacts[pair].count; ++i)
+			{
+				m_contacts[pair].contacts[i].velocityBias = 0.0f;
+			}
+		}
+	}
+
+	void PhysicsScene::processPosition(const ObjectPair& pair)
+	{
+		if (m_contacts[pair].count == 2 && m_enablePositionBlockSolver)
+		{
+			// solve block
+		}
+		else if (m_contacts[pair].count > 0)
+		{
+			// solve one by one
+			for (int i = 0; i < m_contacts[pair].count; ++i)
+			{
+				m_contacts[pair].contacts[i].velocityBias = 0.0f;
+			}
+		}
 	}
 }
 
