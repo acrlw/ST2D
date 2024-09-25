@@ -62,16 +62,16 @@ namespace STEditor
 		// solve position
 		solvePositions(dt);
 
+		// disable all contacts
+
+		for (auto& value : m_contacts | std::views::values)
+			value.count = 0;
+
 		// update broad phase
 		updateBroadphase(dt);
 
 		// update narrow phase and generate contacts
 		generateContacts(dt);
-
-		// disable all contacts
-
-		for(auto& value : m_contacts | std::views::values)
-			value.count = 0;
 
 		// clear all force and torque
 
@@ -158,6 +158,21 @@ namespace STEditor
 
 		if(m_showContacts)
 		{
+			for(auto& value : m_contacts | std::views::values)
+			{
+				if (value.count == 0)
+					continue;
+
+				renderer.point(value.pair.points[0], Palette::LightRed);
+				renderer.point(value.pair.points[1], Palette::LightBlue);
+
+				if(value.count == 2)
+				{
+					renderer.point(value.pair.points[2], Palette::LightRed);
+					renderer.point(value.pair.points[3], Palette::LightBlue);
+				}
+			}
+
 			if(m_showContactNormal)
 			{
 				
@@ -384,6 +399,7 @@ namespace STEditor
 			m_aabbs[i] = AABB::fromShape(Transform(m_positions[i], m_rotations[i], 1.0f), m_shapes[i]);
 			BroadphaseObjectBinding binding(m_objectIds[i], m_bitmasks[i], m_aabbs[i]);
 			m_dbvt.updateObject(binding);
+			m_grid.updateObject(binding);
 		}
 	}
 
