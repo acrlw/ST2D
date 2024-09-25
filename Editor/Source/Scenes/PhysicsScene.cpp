@@ -634,7 +634,23 @@ namespace STEditor
 			// solve one by one
 			for(int i = 0;i < m_contacts[pair].count; ++i)
 			{
-				m_contacts[pair].contacts[i].velocityBias = 0.0f;
+				// solve friction first
+				auto& contact = m_contacts[pair];
+
+				contact.contacts[i].vA = m_velocities[pair.objectIdA] + Vector2::crossProduct(m_angularVelocities[pair.objectIdA], contact.contacts[i].rA);
+				contact.contacts[i].vB = m_velocities[pair.objectIdB] + Vector2::crossProduct(m_angularVelocities[pair.objectIdB], contact.contacts[i].rB);
+				Vector2 dv = contact.contacts[i].vA - contact.contacts[i].vB;
+				real jvt = contact.tangent.dot(dv);
+				real lambdaT = -jvt * contact.contacts[i].effectiveMassTangent;
+
+				real maxFriction = contact.friction * contact.contacts[i].sumTangentImpulse;
+				real newImpulse = Math::clamp(contact.contacts[i].sumTangentImpulse + lambdaT, -maxFriction, maxFriction);
+				lambdaT = newImpulse - contact.contacts[i].sumTangentImpulse;
+				contact.contacts[i].sumTangentImpulse = newImpulse;
+
+				Vector2 impulseT = contact.tangent * lambdaT;
+
+				// then solve normal
 			}
 		}
 	}
