@@ -13,7 +13,6 @@ namespace STEditor
 		Vector2 vA;
 		Vector2 vB;
 		Vector2 velocityBias;
-		Vector2 relativeVelocity;
 		real bias = 0;
 		real penetration = 0.0f;
 		real effectiveMassNormal = 0;
@@ -34,6 +33,7 @@ namespace STEditor
 		real friction = 0.5f;
 		real penetration = 0.0f;
 		Matrix2x2 normalMass;
+		Matrix2x2 k;
 	};
 
 
@@ -54,6 +54,7 @@ namespace STEditor
 
 
 	private:
+		void step(float dt);
 
 		void createObjects();
 		void clearObjects();
@@ -121,8 +122,7 @@ namespace STEditor
 		bool m_showTransform = false;
 		bool m_showContacts = false;
 		bool m_showContactsMagnitude = false;
-
-		bool m_showGraphColor = false;
+		bool m_showGraphColoring = false;
 
 		bool m_enableDamping = true;
 		bool m_enableGravity = true;
@@ -136,6 +136,11 @@ namespace STEditor
 
 		real m_linearVelocityDamping = 0.9f;
 		real m_angularVelocityDamping = 0.9f;
+
+		float m_biasFactor = 0.15f;
+		float m_slop = 0.005f;
+		int m_frequency = 60;
+
 
 		int m_solveVelocityCount = 4;
 		int m_solvePositionCount = 4;

@@ -13,7 +13,7 @@ namespace STEditor
 	void PhysicsScene::onLoad()
 	{
 		rect.set(0.5f, 0.5f);
-		land.set(80.0f, 0.1f);
+		land.set(200.0f, 0.1f);
 		capsule.set(1.0f, 2.0f);
 		ellipse.set(1.0f, 2.0f);
 		circle.setRadius(0.25f);
@@ -25,60 +25,17 @@ namespace STEditor
 
 	void PhysicsScene::onUnLoad()
 	{
-
+		clearObjects();
 	}
-
-
 
 	void PhysicsScene::onUpdate(float deltaTime)
 	{
 		ZoneScopedN("[PhysicsScene] On Update");
 
-		if (!m_simulate)
-			return;
-
-		float dt = 1.0f / 60.0f;
-
-		if(m_flagInitial)
+		if (m_simulate)
 		{
-			m_flagInitial = false;
-
-			generateContacts(dt);
-		}
-		
-
-		// integrate velocities
-		integrateVelocities(dt);
-
-		// set up contact constraint
-		setUpConstraint(dt);
-
-		// solve velocity
-		solveVelocities(dt);
-
-		// integrate positions
-		integratePositions(dt);
-
-		// solve position
-		solvePositions(dt);
-
-		// disable all contacts
-
-		for (auto& value : m_contacts | std::views::values)
-			value.count = 0;
-
-		// update broad phase
-		updateBroadphase(dt);
-
-		// update narrow phase and generate contacts
-		generateContacts(dt);
-
-		// clear all force and torque
-
-		for (int i = 0; i < m_objectIds.size(); ++i)
-		{
-			m_forces[i].clear();
-			m_torques[i] = 0.0f;
+			float dt = 1.0f / static_cast<float>(m_frequency);
+			step(dt);
 		}
 	}
 
@@ -103,7 +60,7 @@ namespace STEditor
 				renderer.shape(transform, m_shapes[i], Palette::Green);
 
 			if (m_showAABB)
-				renderer.aabb(m_aabbs[i], Palette::Green);
+				renderer.aabb(m_aabbs[i], Palette::Teal);
 
 		}
 
@@ -179,12 +136,36 @@ namespace STEditor
 			}
 		}
 
+		if(m_showGraphColoring && !m_objectGraph.m_colorToEdges.empty())
+		{
+			float max = static_cast<float>(m_objectGraph.m_colorToEdges.size());
+			for (int i = 0; i < m_objectGraph.m_colorToEdges.size(); ++i)
+			{
+				float value = static_cast<float>(i) / max;
+				Color color = gistRainbowColormap(value);
+				for (auto&& elem : m_objectGraph.m_colorToEdges[i])
+				{
+					if(m_contacts[elem].count > 0)
+					{
+						renderer.point(m_contacts[elem].pair.points[0], color, 5);
+						renderer.point(m_contacts[elem].pair.points[2], color, 5);
+						if(m_contacts[elem].count == 2)
+						{
+							renderer.point(m_contacts[elem].pair.points[1], color, 5);
+							renderer.point(m_contacts[elem].pair.points[3], color, 5);
+						}
+					}
+				}
+			}
+
+		}
+
 	}
 
 
 	void PhysicsScene::onRenderUI()
 	{
-		ImGui::Begin("Physics");
+		ImGui::Begin("Scene Settings");
 
 		int count = m_count;
 		ImGui::DragInt("Count", &count, 1, 1, 5000);
@@ -194,28 +175,103 @@ namespace STEditor
 			createObjects();
 		}
 
-		ImGui::Checkbox("Simulate", &m_simulate);
-		ImGui::Checkbox("Enable Gravity", &m_enableGravity);
-		ImGui::Checkbox("Enable Damping", &m_enableDamping);
-		ImGui::Checkbox("Enable Warmstart", &m_enableWarmstart);
-		ImGui::Checkbox("Enable Vel Block Solver", &m_enableVelocityBlockSolver);
-		ImGui::Checkbox("Enable Pos Block Solver", &m_enablePositionBlockSolver);
+		ImGui::SeparatorText("Physics");
 
+		ImGui::Checkbox("Simulate", &m_simulate);
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Step"))
+		{
+			m_simulate = false;
+			step(1.0f / static_cast<float>(m_frequency));
+		}
+
+		ImGui::SliderInt("Frequency", &m_frequency, 1, 240);
+		ImGui::SliderInt("Vel Iteration", &m_solveVelocityCount, 1, 100);
+		ImGui::SliderInt("Pos Iteration", &m_solvePositionCount, 1, 100);
+
+		ImGui::Columns(2);
+		ImGui::Checkbox("Gravity", &m_enableGravity);
+		ImGui::Checkbox("Damping", &m_enableDamping);
+		ImGui::Checkbox("Warmstart", &m_enableWarmstart);
+		ImGui::NextColumn();
+		ImGui::Checkbox("Vel Block Solver", &m_enableVelocityBlockSolver);
+		ImGui::Checkbox("Pos Block Solver", &m_enablePositionBlockSolver);
+		ImGui::Columns(1);
+
+		ImGui::DragFloat("Bias Factor", &m_biasFactor, 0.01f, 0.01f, 1.0f);
+		ImGui::DragFloat("Slop", &m_slop, 0.001f, 0.005f, 1.0f);
+
+		ImGui::SeparatorText("Visibility");
+
+		ImGui::Columns(2);
 		ImGui::Checkbox("Show Object", &m_showObject);
 		ImGui::Checkbox("Show Object Id", &m_showObjectID);
 		ImGui::Checkbox("Show Transform", &m_showTransform);
 		ImGui::Checkbox("Show Joint", &m_showJoint);
+		ImGui::NextColumn();
 
 		ImGui::Checkbox("Show AABB", &m_showAABB);
 		ImGui::Checkbox("Show Grid", &m_showGrid);
 		ImGui::Checkbox("Show DBVT", &m_showDBVT);
-		ImGui::Checkbox("Show Graph Coloring", &m_showGraphColor);
+		ImGui::Checkbox("Show Graph Coloring", &m_showGraphColoring);
+
+		ImGui::Columns(1);
+
 		ImGui::Checkbox("Show Contacts", &m_showContacts);
 		ImGui::Checkbox("Show Contacts Magnitude", &m_showContactsMagnitude);
 
 		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
 
+		ImGui::SeparatorText("Debug Text");
+		ImGui::Text("Graph Color Size: %d", m_objectGraph.m_colorToEdges.size());
+
 		ImGui::End();
+	}
+
+	void PhysicsScene::step(float dt)
+	{
+		if (m_flagInitial)
+		{
+			m_flagInitial = false;
+
+			generateContacts(dt);
+		}
+
+		// integrate velocities
+		integrateVelocities(dt);
+
+		// set up contact constraint
+		setUpConstraint(dt);
+
+		// solve velocity
+		solveVelocities(dt);
+
+		// integrate positions
+		integratePositions(dt);
+
+		// solve position
+		solvePositions(dt);
+
+		// disable all contacts
+
+		for (auto& value : m_contacts | std::views::values)
+			value.count = 0;
+
+		// update broad phase
+		updateBroadphase(dt);
+
+		// update narrow phase and generate contacts
+		generateContacts(dt);
+
+		// clear all force and torque
+
+		for (int i = 0; i < m_objectIds.size(); ++i)
+		{
+			m_forces[i].clear();
+			m_torques[i] = 0.0f;
+		}
 	}
 
 	void PhysicsScene::createObjects()
@@ -254,7 +310,7 @@ namespace STEditor
 					m_invMasses.emplace_back(1.0f / (1.0f + i));
 					m_invInertias.emplace_back(1.0f / (1.0f + i));
 					m_restitutions.emplace_back(0.0f);
-					m_frictions.emplace_back(0.5f);
+					m_frictions.emplace_back(0.8f);
 
 					m_aabbs.push_back(AABB::fromShape(t, &rect));
 					m_bitmasks.push_back(1);
@@ -269,7 +325,7 @@ namespace STEditor
 		{
 
 			Transform trans;
-			trans.position.set(40.0f, -0.05);
+			trans.position.set(0.0f, -0.05);
 
 			m_landId = m_objectIdPool.getNewId();
 			m_objectIds.push_back(m_landId);
@@ -574,48 +630,74 @@ namespace STEditor
 				value.restitution = Math::min(m_restitutions[key.objectIdA], m_restitutions[key.objectIdB]);
 				value.friction = Math::sqrt(m_frictions[key.objectIdA] * m_frictions[key.objectIdB]);
 
+				const real imA = m_invMasses[key.objectIdA];
+				const real imB = m_invMasses[key.objectIdB];
+				const real iiA = m_invInertias[key.objectIdA];
+				const real iiB = m_invInertias[key.objectIdB];
+
 				for(int i = 0; i < value.count; ++i)
 				{
-					value.contacts[i].localA = transformA.inverseTranslatePoint(value.pair.points[i]);
-					value.contacts[i].localB = transformB.inverseTranslatePoint(value.pair.points[i + 2]);
-					value.contacts[i].rA = transformA.position - value.pair.points[i];
-					value.contacts[i].rB = transformB.position - value.pair.points[i + 2];
-					value.contacts[i].penetration = (value.pair.points[i] - value.pair.points[i + 2]).length();
-					
-					const real im_a = m_invMasses[key.objectIdA];
-					const real im_b = m_invMasses[key.objectIdB];
-					const real ii_a = m_invInertias[key.objectIdA];
-					const real ii_b = m_invInertias[key.objectIdB];
+					auto& contact = value.contacts[i];
 
-					const real rn_a = value.contacts[i].rA.cross(value.normal);
-					const real rn_b = value.contacts[i].rB.cross(value.normal);
-					const real rt_a = value.contacts[i].rA.cross(value.tangent);
-					const real rt_b = value.contacts[i].rB.cross(value.tangent);
+					contact.localA = transformA.inverseTranslatePoint(value.pair.points[i]);
+					contact.localB = transformB.inverseTranslatePoint(value.pair.points[i + 2]);
+					contact.rA = transformA.position - value.pair.points[i];
+					contact.rB = transformB.position - value.pair.points[i + 2];
+					contact.penetration = (value.pair.points[i] - value.pair.points[i + 2]).length();
 
-					const real kNormal = im_a + ii_a * rn_a * rn_a +
-						im_b + ii_b * rn_b * rn_b;
+					const real rnA = contact.rA.cross(value.normal);
+					const real rnB = contact.rB.cross(value.normal);
+					const real rtA = contact.rA.cross(value.tangent);
+					const real rtB = contact.rB.cross(value.tangent);
 
-					const real kTangent = im_a + ii_a * rt_a * rt_a +
-						im_b + ii_b * rt_b * rt_b;
+					const real kNormal = imA + iiA * rnA * rnA +
+						imB + iiB * rnB * rnB;
 
-					value.contacts[i].effectiveMassNormal = realEqual(kNormal, 0.0f) ? 0 : 1.0f / kNormal;
-					value.contacts[i].effectiveMassTangent = realEqual(kTangent, 0.0f) ? 0 : 1.0f / kTangent;
+					const real kTangent = imA + iiA * rtA * rtA +
+						imB + iiB * rtB * rtB;
+
+					contact.effectiveMassNormal = realEqual(kNormal, 0.0f) ? 0 : 1.0f / kNormal;
+					contact.effectiveMassTangent = realEqual(kTangent, 0.0f) ? 0 : 1.0f / kTangent;
 
 					if(m_enableWarmstart)
 					{
-						Vector2 impulse = value.contacts[i].sumNormalImpulse * value.normal + value.contacts[i].sumTangentImpulse * value.tangent;
+						Vector2 impulse = contact.sumNormalImpulse * value.normal + contact.sumTangentImpulse * value.tangent;
 
-						m_velocities[key.objectIdA] += im_a * impulse;
-						m_angularVelocities[key.objectIdA] += ii_a * value.contacts[i].rA.cross(impulse);
-						m_velocities[key.objectIdB] -= im_b * impulse;
-						m_angularVelocities[key.objectIdB] -= ii_b * value.contacts[i].rB.cross(impulse);
+						m_velocities[key.objectIdA] += imA * impulse;
+						m_angularVelocities[key.objectIdA] += iiA * contact.rA.cross(impulse);
+						m_velocities[key.objectIdB] -= imB * impulse;
+						m_angularVelocities[key.objectIdB] -= iiB * contact.rB.cross(impulse);
 					}
 
-					Vector2 wa = Vector2::crossProduct(m_angularVelocities[key.objectIdA], value.contacts[i].rA);
-					Vector2 wb = Vector2::crossProduct(m_angularVelocities[key.objectIdB], value.contacts[i].rB);
-					value.contacts[i].vA = m_velocities[key.objectIdA] + wa;
-					value.contacts[i].vB = m_velocities[key.objectIdB] + wb;
-					value.contacts[i].relativeVelocity = value.normal.dot(value.contacts[i].vA - value.contacts[i].vB);
+					Vector2 wa = Vector2::crossProduct(m_angularVelocities[key.objectIdA], contact.rA);
+					Vector2 wb = Vector2::crossProduct(m_angularVelocities[key.objectIdB], contact.rB);
+					contact.vA = m_velocities[key.objectIdA] + wa;
+					contact.vB = m_velocities[key.objectIdB] + wb;
+
+				}
+
+				if(value.count == 2 && m_enableVelocityBlockSolver)
+				{
+
+					real rn1A = value.contacts[0].rA.cross(value.normal);
+					real rn1B = value.contacts[0].rB.cross(value.normal);
+					real rn2A = value.contacts[1].rA.cross(value.normal);
+					real rn2B = value.contacts[1].rB.cross(value.normal);
+
+					real k11 = imA + iiA * rn1A * rn1A + imB + iiB * rn1B * rn1B;
+					real k12 = imA + iiA * rn1A * rn2A + imB + iiB * rn1B * rn2B;
+					real k22 = imA + iiA * rn2A * rn2A + imB + iiB * rn2B * rn2B;
+
+					bool conditioner = k11 * k11 < 1000.0f * (k11 * k22 - k12 * k12);
+
+					//numerical stability check to ensure invertible matrix
+					if (conditioner)
+					{
+						value.k.set(k11, k12, k12, k22);
+						value.normalMass.set(k11, k12, k12, k22);
+						value.normalMass.invert();
+					}
+
 				}
 
 			}
@@ -625,48 +707,290 @@ namespace STEditor
 
 	void PhysicsScene::processVelocity(const ObjectPair& pair)
 	{
-		if(m_contacts[pair].count == 2 && m_enableVelocityBlockSolver)
-		{
-			// solve block
-		}
-		else if(m_contacts[pair].count > 0)
+		if(m_contacts[pair].count > 0)
 		{
 			// solve one by one
+			auto& contact = m_contacts[pair];
+
 			for(int i = 0;i < m_contacts[pair].count; ++i)
 			{
 				// solve friction first
-				auto& contact = m_contacts[pair];
-
-				contact.contacts[i].vA = m_velocities[pair.objectIdA] + Vector2::crossProduct(m_angularVelocities[pair.objectIdA], contact.contacts[i].rA);
-				contact.contacts[i].vB = m_velocities[pair.objectIdB] + Vector2::crossProduct(m_angularVelocities[pair.objectIdB], contact.contacts[i].rB);
-				Vector2 dv = contact.contacts[i].vA - contact.contacts[i].vB;
+				auto& singleContact = contact.contacts[i];
+				singleContact.vA = m_velocities[pair.objectIdA] + Vector2::crossProduct(m_angularVelocities[pair.objectIdA], singleContact.rA);
+				singleContact.vB = m_velocities[pair.objectIdB] + Vector2::crossProduct(m_angularVelocities[pair.objectIdB], singleContact.rB);
+				Vector2 dv = singleContact.vA - singleContact.vB;
 				real jvt = contact.tangent.dot(dv);
-				real lambdaT = -jvt * contact.contacts[i].effectiveMassTangent;
+				real lambdaT = -jvt * singleContact.effectiveMassTangent;
 
-				real maxFriction = contact.friction * contact.contacts[i].sumTangentImpulse;
-				real newImpulse = Math::clamp(contact.contacts[i].sumTangentImpulse + lambdaT, -maxFriction, maxFriction);
-				lambdaT = newImpulse - contact.contacts[i].sumTangentImpulse;
-				contact.contacts[i].sumTangentImpulse = newImpulse;
+				real maxFriction = contact.friction * singleContact.sumTangentImpulse;
+				real newImpulse = Math::clamp(singleContact.sumTangentImpulse + lambdaT, -maxFriction, maxFriction);
+				lambdaT = newImpulse - singleContact.sumTangentImpulse;
+				singleContact.sumTangentImpulse = newImpulse;
 
 				Vector2 impulseT = contact.tangent * lambdaT;
 
-				// then solve normal
+				m_velocities[pair.objectIdA] += impulseT * m_invMasses[pair.objectIdA];
+				m_angularVelocities[pair.objectIdA] += m_invInertias[pair.objectIdA] * singleContact.rA.cross(impulseT);
+
+				m_velocities[pair.objectIdB] -= impulseT * m_invMasses[pair.objectIdB];
+				m_angularVelocities[pair.objectIdB] -= m_invInertias[pair.objectIdB] * singleContact.rB.cross(impulseT);
+
+				// then solve contact
 			}
+
+			if (m_contacts[pair].count == 2 && m_enableVelocityBlockSolver)
+			{
+				// solve by block
+				Vector2 wA1 = Vector2::crossProduct(m_angularVelocities[pair.objectIdA], contact.contacts[0].rA);
+				Vector2 wB1 = Vector2::crossProduct(m_angularVelocities[pair.objectIdB], contact.contacts[0].rB);
+				Vector2 wA2 = Vector2::crossProduct(m_angularVelocities[pair.objectIdA], contact.contacts[1].rA);
+				Vector2 wB2 = Vector2::crossProduct(m_angularVelocities[pair.objectIdB], contact.contacts[1].rB);
+					    
+				Vector2 vA1 = m_velocities[pair.objectIdA] + wA1;
+				Vector2 vB1 = m_velocities[pair.objectIdB] + wB1;
+				Vector2 vA2 = m_velocities[pair.objectIdA] + wA2;
+				Vector2 vB2 = m_velocities[pair.objectIdB] + wB2;
+
+				Vector2 dv1 = vA1 - vB1;
+				Vector2 dv2 = vA2 - vB2;
+				real jv1 = contact.normal.dot(dv1 - contact.contacts[0].velocityBias);
+				real jv2 = contact.normal.dot(dv2 - contact.contacts[1].velocityBias);
+
+				Matrix2x2& A = contact.k;
+				Vector2 b(jv1, jv2);
+				Vector2 x(contact.contacts[0].sumNormalImpulse, contact.contacts[1].sumNormalImpulse);
+				Vector2 nx;
+				Vector2 d;
+				b = b - A.multiply(x);
+
+				for (;;)
+				{
+					//1. b_1 < 0 && b_2 < 0
+					nx = contact.normalMass.multiply(-b);
+					if (nx.x >= 0.0f && nx.y >= 0.0f)
+						break;
+
+					//2. b_1 < 0 && b_2 > 0
+					nx.x = contact.contacts[0].effectiveMassNormal * -b.x;
+					nx.y = 0.0f;
+					jv1 = 0.0f;
+					jv2 = A.m12 * nx.x + b.y;
+					if (nx.x >= 0.0f && jv2 >= 0.0f)
+						break;
+
+					//3. b_1 > 0 && b_2 < 0
+					nx.x = 0.0f;
+					nx.y = -contact.contacts[1].effectiveMassNormal * b.y;
+					jv1 = A.m21 * nx.y + b.x;
+					jv2 = 0.0f;
+					if (nx.y >= 0.0f && jv1 >= 0.0f)
+						break;
+
+					//4. b_1 > 0 && b_2 > 0
+					nx.clear();
+					jv1 = b.x;
+					jv2 = b.y;
+					if (jv1 >= 0.0f && jv2 >= 0.0f)
+						break;
+
+					//hit the unknown cases
+					break;
+				}
+
+				d = nx - x;
+
+				real& lambda1 = d.x;
+				real& lambda2 = d.y;
+
+				Vector2 impulse1 = lambda1 * contact.normal;
+				Vector2 impulse2 = lambda2 * contact.normal;
+
+				m_velocities[pair.objectIdA] += (impulse1 + impulse2) * m_invMasses[pair.objectIdA];
+				m_angularVelocities[pair.objectIdA] += m_invInertias[pair.objectIdA] * contact.contacts[0].rA.cross(impulse1 + impulse2);
+
+				m_velocities[pair.objectIdB] -= (impulse1 + impulse2) * m_invMasses[pair.objectIdB];
+				m_angularVelocities[pair.objectIdB] -= m_invInertias[pair.objectIdB] * contact.contacts[0].rB.cross(impulse1 + impulse2);
+
+				contact.contacts[0].sumNormalImpulse = nx.x;
+				contact.contacts[1].sumNormalImpulse = nx.y;
+			}
+			else
+			{
+				for (int i = 0; i < m_contacts[pair].count; ++i)
+				{
+					// solve friction first
+					auto& singleContact = contact.contacts[i];
+					singleContact.vA = m_velocities[pair.objectIdA] + Vector2::crossProduct(m_angularVelocities[pair.objectIdA], singleContact.rA);
+					singleContact.vB = m_velocities[pair.objectIdB] + Vector2::crossProduct(m_angularVelocities[pair.objectIdB], singleContact.rB);
+					Vector2 dv = singleContact.vA - singleContact.vB;
+					real jvn = contact.normal.dot(dv + singleContact.velocityBias);
+					real lamndaN = -jvn * singleContact.effectiveMassNormal;
+
+					real oldImpulse = singleContact.sumNormalImpulse;
+					singleContact.sumNormalImpulse = Math::max(oldImpulse + lamndaN, 0);
+					lamndaN = singleContact.sumNormalImpulse - oldImpulse;
+
+					Vector2 impulseN = lamndaN * contact.normal;
+
+					m_velocities[pair.objectIdA] += impulseN * m_invMasses[pair.objectIdA];
+					m_angularVelocities[pair.objectIdA] += m_invInertias[pair.objectIdA] * singleContact.rA.cross(impulseN);
+
+					m_velocities[pair.objectIdB] -= impulseN * m_invMasses[pair.objectIdB];
+					m_angularVelocities[pair.objectIdB] -= m_invInertias[pair.objectIdB] * singleContact.rB.cross(impulseN);
+
+				}
+			}
+
 		}
 	}
 
 	void PhysicsScene::processPosition(const ObjectPair& pair)
 	{
-		if (m_contacts[pair].count == 2 && m_enablePositionBlockSolver)
+		auto& contact = m_contacts[pair];
+		if (contact.count <= 0)
+			return;
+
+		Transform transformA(m_positions[pair.objectIdA], m_rotations[pair.objectIdA], 1.0f);
+		Transform transformB(m_positions[pair.objectIdB], m_rotations[pair.objectIdB], 1.0f);
+
+		const real imA = m_invMasses[pair.objectIdA];
+		const real imB = m_invMasses[pair.objectIdB];
+		const real iiA = m_invInertias[pair.objectIdA];
+		const real iiB = m_invInertias[pair.objectIdB];
+
+		if (contact.count == 2 && m_enablePositionBlockSolver)
 		{
 			// solve block
+
+			Vector2 pA1 = transformA.translatePoint(contact.contacts[0].localA);
+			Vector2 pB1 = transformB.translatePoint(contact.contacts[0].localB);
+
+			Vector2 pA2 = transformA.translatePoint(contact.contacts[1].localA);
+			Vector2 pB2 = transformB.translatePoint(contact.contacts[1].localB);
+
+			Vector2 rA1 = pA1 - transformA.position;
+			Vector2 rB1 = pB1 - transformB.position;
+
+			Vector2 rA2 = pA2 - transformA.position;
+			Vector2 rB2 = pB2 - transformB.position;
+
+			Vector2 c1 = pA1 - pB1;
+			Vector2 c2 = pB2 - pA2;
+
+			real bias1 = Math::max(m_biasFactor * (c1.dot(contact.normal) - m_slop), 0.0f);
+			real bias2 = Math::max(m_biasFactor * (c2.dot(contact.normal) - m_slop), 0.0f);
+
+			const real bias = Math::min(bias1, bias2);
+
+			bias1 = -bias;
+			bias2 = -bias;
+
+
+			real rn1A = rA1.cross(contact.normal);
+			real rn1B = rB1.cross(contact.normal);
+			real rn2A = rA2.cross(contact.normal);
+			real rn2B = rB2.cross(contact.normal);
+
+			real k11 = imA + iiA * rn1A * rn1A + imB + iiB * rn1B * rn1B;
+			real k12 = imA + iiA * rn1A * rn2A + imB + iiB * rn1B * rn2B;
+			real k22 = imA + iiA * rn2A * rn2A + imB + iiB * rn2B * rn2B;
+
+			real determinant = (k11 * k22 - k12 * k12);
+			real d1 = k11 * k11;
+			real d2 = 1000.0f * (k11 * k22 - k12 * k12);
+			bool conditioner = k11 * k11 < 1000.0f * (k11 * k22 - k12 * k12);
+
+			//numerical stability check to ensure invertible matrix
+			Matrix2x2 invA;
+			if (conditioner)
+			{
+				invA.set(k11, k12, k12, k22);
+				invA.invert();
+			}
+			else
+				return;
+
+			Vector2 b(bias1, bias2);
+			Vector2 d;
+
+			for (;;)
+			{
+				//1. b_1 < 0 && b_2 < 0
+				Vector2 x = invA.multiply(-b);
+				if (x.x >= 0.0f && x.y >= 0.0f)
+				{
+					d = x;
+					break;
+				}
+				//2. b_1 < 0 && b_2 > 0
+				x.x = -b.x / k11;
+				x.y = 0.0f;
+				bias2 = k12 * x.x + b.y;
+				if (x.x >= 0.0f && bias2 >= 0.0f)
+				{
+					d = x;
+					break;
+				}
+
+				//3. b_1 > 0 && b_2 < 0
+				x.x = 0.0f;
+				x.y = -b.y / k22;
+				bias1 = k12 * x.y + b.x;
+				if (x.y >= 0.0f && bias1 >= 0.0f)
+				{
+					d = x;
+					break;
+				}
+
+				//4. b_1 > 0 && b_2 > 0
+				//d = zero
+
+				break;
+			}
+
+			Vector2 impulse1 = contact.normal * d.x;
+			Vector2 impulse2 = contact.normal * d.y;
+
+			m_positions[pair.objectIdA] += (impulse1 + impulse2) * imA;
+			m_rotations[pair.objectIdA] += iiA * (rA1.cross(impulse1) + rA2.cross(impulse2));
+
+			m_positions[pair.objectIdB] -= (impulse1 + impulse2) * imB;
+			m_rotations[pair.objectIdB] -= iiB * (rB1.cross(impulse1) + rB2.cross(impulse2));
+
+
 		}
-		else if (m_contacts[pair].count > 0)
+		else
 		{
 			// solve one by one
-			for (int i = 0; i < m_contacts[pair].count; ++i)
+			for (int i = 0; i < contact.count; ++i)
 			{
-				m_contacts[pair].contacts[i].velocityBias = 0.0f;
+				Vector2 pA = transformA.translatePoint(contact.contacts[i].localA);
+				Vector2 pB = transformB.translatePoint(contact.contacts[i].localB);
+				Vector2 rA = pA - transformA.position;
+				Vector2 rB = pB - transformB.position;
+				Vector2 c = pB - pA;
+
+				const real bias = Math::max(m_biasFactor * (c.dot(contact.normal) - m_slop), 0.0f);
+
+
+				const real rnA = rA.cross(contact.normal);
+				const real rnB = rB.cross(contact.normal);
+
+				const real kNormal = imA + iiA * rnA * rnA +
+					imB + iiB * rnB * rnB;
+
+				contact.contacts[i].effectiveMassNormal = realEqual(kNormal, 0.0f) ? 0 : 1.0f / kNormal;
+
+				real lambda = contact.contacts[i].effectiveMassNormal * bias;
+				lambda = Math::max(lambda, 0);
+
+				Vector2 impulse = lambda * contact.normal;
+
+				m_positions[pair.objectIdA] += impulse * imA;
+				m_rotations[pair.objectIdA] += iiA * rA.cross(impulse);
+
+				m_positions[pair.objectIdB] -= impulse * imB;
+				m_rotations[pair.objectIdB] -= iiB * rB.cross(impulse);
 			}
 		}
 	}
