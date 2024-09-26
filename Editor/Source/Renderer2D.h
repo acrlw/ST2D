@@ -215,7 +215,7 @@ namespace STEditor
 
 		size_t m_textDataSize = 0;
 		size_t m_textDataCapacity = 4 * 6;
-		int m_fontHeight = 18;
+		int m_fontHeight = 14;
 
 		ShaderProgram m_graphicsProgram;
 		ShaderProgram m_fontProgram;

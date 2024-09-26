@@ -60,7 +60,7 @@ namespace STEditor
 		void createObjects();
 		void clearObjects();
 
-		void generateContacts(float dt);
+		void generateAndColorContacts(float dt);
 		void updateBroadphase(float dt);
 		void integrateVelocities(float dt);
 		void solveVelocities(float dt);
@@ -68,8 +68,8 @@ namespace STEditor
 		void solvePositions(float dt);
 		void setUpConstraint(float dt);
 
-		void solveContactVelocity(ObjectPair pair);
-		void solveContactPosition(ObjectPair pair);
+		void solveContactVelocity(const ObjectPair& pair);
+		void solveContactPosition(const ObjectPair& pair);
 
 		real computeInertia(real mass, const Shape* shape);
 
@@ -117,20 +117,21 @@ namespace STEditor
 		ObjectID m_landId;
 
 		bool m_showObject = true;
-		bool m_showObjectID = true;
+		bool m_showObjectID = false;
 		bool m_showDBVT = false;
 		bool m_showAABB = false;
 		bool m_showGrid = false;
 		bool m_showJoint = false;
 		bool m_showTransform = false;
-		bool m_showContacts = true;
+		bool m_showContacts = false;
 		bool m_showContactNormal = false;
-		bool m_showContactsMagnitude = true;
+		bool m_showContactsMagnitude = false;
 		bool m_showFrictionMagnitude = false;
 		bool m_showFrictionNormal = false;
 		bool m_showGraphColoring = false;
 
 		bool m_showVelocity = false;
+		bool m_showVelocityMagnitude = false;
 		bool m_showAngularVelocity = false;
 
 		bool m_enableDamping = true;
@@ -142,13 +143,14 @@ namespace STEditor
 		bool m_enableVelocityBlockSolver = false;
 		bool m_enablePositionBlockSolver = false;
 		bool m_parallelProcessing = false;
+		bool m_useSIMD = false;
 		bool m_flagInitial = true;
 
-		real m_linearVelocityDamping = 0.0f;
-		real m_angularVelocityDamping = 0.0f;
+		float m_linearVelocityDamping = 0.9f;
+		float m_angularVelocityDamping = 0.9f;
 
-		float m_biasFactor = 0.15f;
-		float m_slop = 0.005f;
+		float m_biasFactor = 0.3f;
+		float m_slop = 0.001f;
 		int m_frequency = 60;
 
 		size_t m_stepCount = 0;

@@ -69,7 +69,7 @@ namespace ST
 	CollisionInfo Narrowphase::epa(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 		const Shape* shapeB, const size_t& iteration, const real& epsilon)
 	{
-		ZoneScopedN("[Narrowphase] EPA");
+		//ZoneScopedN("[Narrowphase] EPA");
 		//return 1d simplex with edge closest to origin
 		CollisionInfo info;
 		info.simplex = simplex;
@@ -160,11 +160,15 @@ namespace ST
 			, { 0, 0 });
 
 		info.penetration = temp.length();
-		//assert(!realEqual(info.penetration, 0));
-		info.normal.clear();
-		//penetration is close to zero, just return
-		if (!realEqual(info.penetration, 0))
-			info.normal = temp / info.penetration;
+		info.normal = temp;
+
+		if (info.penetration < Constant::GeometryEpsilon)
+		{
+			info.normal.x *= 1e6f;
+			info.normal.y *= 1e6f;
+		}
+			
+		info.normal.normalize();
 
 		return info;
 	}
@@ -172,7 +176,7 @@ namespace ST
 	CollisionInfo Narrowphase::findClosestSimplex(const Simplex& simplex, const Transform& transformA, const Shape* shapeA,
 		const Transform& transformB, const Shape* shapeB, const size_t& iteration)
 	{
-		ZoneScopedN("[Narrowphase] EPA with Priority Queue");
+		//ZoneScopedN("[Narrowphase] EPA with Priority Queue");
 		//return 1d simplex with edge closest to origin
 		CollisionInfo info;
 		info.simplex = simplex;
@@ -357,6 +361,8 @@ namespace ST
 	ContactPair Narrowphase::generateContacts(CollisionInfo& info, const Transform& transformA, const Shape* shapeA,
 	                                          const Transform& transformB, const Shape* shapeB)
 	{
+		CORE_ASSERT(!info.normal.isOrigin(), "Normal is zero vector.");
+
 		ContactPair pair;
 		ShapeType typeA = shapeA->type();
 		ShapeType typeB = shapeB->type();

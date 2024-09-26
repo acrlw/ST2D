@@ -64,10 +64,15 @@ namespace STEditor
 			if(m_showVelocity)
 			{
 				Vector2 end = m_positions[i] + m_velocities[i];
-				real mag = m_velocities[i].length();
-				std::string str = std::format("Vel: {:.3f}", mag);
+
+				if(m_showVelocityMagnitude)
+				{
+					real mag = m_velocities[i].length();
+					std::string str = std::format("Vel: {:.3f}", mag);
+					renderer.text(end + Vector2(0.1f, 0.1f), Palette::LightCyan, str);
+				}
+
 				renderer.arrow(m_positions[i], end, Palette::LightCyan);
-				renderer.text(end + Vector2(0.1f, 0.1f), Palette::LightCyan, str);
 			}
 
 			if(m_showAngularVelocity)
@@ -280,11 +285,14 @@ namespace STEditor
 		ImGui::Checkbox("Vel Block Solver", &m_enableVelocityBlockSolver);
 		ImGui::Checkbox("Pos Block Solver", &m_enablePositionBlockSolver);
 		ImGui::Checkbox("Parallel Process", &m_parallelProcessing);
+		ImGui::Checkbox("Use SIMD", &m_useSIMD);
 		ImGui::Columns(1);
 
 		ImGui::DragFloat("Bias Factor", &m_biasFactor, 0.01f, 0.01f, 1.0f);
 		ImGui::DragFloat("Slop", &m_slop, 0.001f, 0.005f, 1.0f);
 
+		ImGui::DragFloat("Linear Damp", &m_linearVelocityDamping, 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("Angular Damp", &m_angularVelocityDamping, 0.01f, 0.0f, 1.0f);
 
 		ImGui::SeparatorText("Visibility");
 
@@ -298,6 +306,7 @@ namespace STEditor
 		ImGui::Checkbox("Graph Coloring", &m_showGraphColoring);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Velocity", &m_showVelocity);
+		ImGui::Checkbox("Velocity Mag", &m_showVelocityMagnitude);
 		ImGui::Checkbox("Angular Vel", &m_showAngularVelocity);
 		ImGui::Checkbox("Joint", &m_showJoint);
 		ImGui::Checkbox("Contact", &m_showContacts);
@@ -322,7 +331,7 @@ namespace STEditor
 		{
 			m_flagInitial = false;
 
-			generateContacts(dt);
+			generateAndColorContacts(dt);
 		}
 
 		// integrate velocities
@@ -349,7 +358,7 @@ namespace STEditor
 		updateBroadphase(dt);
 
 		// update narrow phase and generate contacts
-		generateContacts(dt);
+		generateAndColorContacts(dt);
 
 		for (auto& value : m_contactManifolds | std::views::values)
 		{
@@ -492,60 +501,64 @@ namespace STEditor
 		m_shapes.clear();
 	}
 
-	void PhysicsScene::generateContacts(float dt)
+	void PhysicsScene::generateAndColorContacts(float dt)
 	{
-		ZoneScopedN("Contacts Generation");
+		ZoneScopedN("Generate and Color Contacts");
 
 		m_objectPairs = m_dbvt.queryOverlaps();
 
-		// narrow phase generate contacts
-
-		for (auto&& objPair : m_objectPairs)
 		{
-			if (!m_aabbs[objPair.idA].collide(m_aabbs[objPair.idB]))
-				continue;
+			ZoneScopedN("Contacts Generation");
 
-			Transform transformA(m_positions[objPair.idA], m_rotations[objPair.idA], 1.0f);
-			Transform transformB(m_positions[objPair.idB], m_rotations[objPair.idB], 1.0f);
+			// narrow phase generate contacts
 
-			const bool isRoundA = m_shapes[objPair.idA]->type() == ShapeType::Circle || m_shapes[objPair.idA]->type() == ShapeType::Ellipse;
-			const bool isRoundB = m_shapes[objPair.idB]->type() == ShapeType::Circle || m_shapes[objPair.idB]->type() == ShapeType::Ellipse;
-
-			auto simplex = Narrowphase::gjk(transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
-			if (simplex.isContainOrigin)
+			for (auto&& objPair : m_objectPairs)
 			{
-				auto info = Narrowphase::epa(simplex, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
-				auto newContacts = Narrowphase::generateContacts(info, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
+				if (!m_aabbs[objPair.idA].collide(m_aabbs[objPair.idB]))
+					continue;
 
-				ContactManifold manifold;
-				manifold.count = newContacts.count;
-				manifold.pair = newContacts;
-				manifold.normal = info.normal;
-				manifold.tangent = info.normal.perpendicular();
-				manifold.penetration = info.penetration;
+				Transform transformA(m_positions[objPair.idA], m_rotations[objPair.idA], 1.0f);
+				Transform transformB(m_positions[objPair.idB], m_rotations[objPair.idB], 1.0f);
 
-				if (m_contactManifolds.contains(objPair))
+				const bool isRoundA = m_shapes[objPair.idA]->type() == ShapeType::Circle || m_shapes[objPair.idA]->type() == ShapeType::Ellipse;
+				const bool isRoundB = m_shapes[objPair.idB]->type() == ShapeType::Circle || m_shapes[objPair.idB]->type() == ShapeType::Ellipse;
+
+				auto simplex = Narrowphase::gjk(transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
+				if (simplex.isContainOrigin)
 				{
-					for(int j = 0;j < manifold.pair.count; ++j)
+					auto info = Narrowphase::epa(simplex, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
+					auto newContacts = Narrowphase::generateContacts(info, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
+
+					ContactManifold manifold;
+					manifold.count = newContacts.count;
+					manifold.pair = newContacts;
+					manifold.normal = info.normal;
+					manifold.tangent = info.normal.perpendicular();
+					manifold.penetration = info.penetration;
+
+					if (m_contactManifolds.contains(objPair))
 					{
-						Vector2 newLocalA = transformA.inverseTranslatePoint(manifold.pair.points[j]);
-						Vector2 newLocalB = transformB.inverseTranslatePoint(manifold.pair.points[j + 2]);
-						for (int i = 0; i < m_contactManifolds[objPair].count; ++i)
+						for (int j = 0; j < manifold.pair.count; ++j)
 						{
-							Vector2 oldLocalA = m_contactManifolds[objPair].contacts[i].localA;
-							Vector2 oldLocalB = m_contactManifolds[objPair].contacts[i].localB;
-							const bool isPointA = oldLocalA.fuzzyEqual(newLocalA, Constant::TrignometryEpsilon);
-							const bool isPointB = oldLocalB.fuzzyEqual(newLocalB, Constant::TrignometryEpsilon);
-							if (isPointA || isPointB || isRoundA || isRoundB)
+							Vector2 newLocalA = transformA.inverseTranslatePoint(manifold.pair.points[j]);
+							Vector2 newLocalB = transformB.inverseTranslatePoint(manifold.pair.points[j + 2]);
+							for (int i = 0; i < m_contactManifolds[objPair].count; ++i)
 							{
-								//satisfy the condition, give the old accumulated value to new value
-								manifold.contacts[j] = m_contactManifolds[objPair].contacts[i];
+								Vector2 oldLocalA = m_contactManifolds[objPair].contacts[i].localA;
+								Vector2 oldLocalB = m_contactManifolds[objPair].contacts[i].localB;
+								const bool isPointA = oldLocalA.fuzzyEqual(newLocalA, Constant::TrignometryEpsilon);
+								const bool isPointB = oldLocalB.fuzzyEqual(newLocalB, Constant::TrignometryEpsilon);
+								if (isPointA || isPointB || isRoundA || isRoundB)
+								{
+									//satisfy the condition, give the old accumulated value to new value
+									manifold.contacts[j] = m_contactManifolds[objPair].contacts[i];
+								}
 							}
 						}
 					}
-				}
 
-				m_contactManifolds[objPair] = manifold;
+					m_contactManifolds[objPair] = manifold;
+				}
 			}
 		}
 
@@ -588,7 +601,7 @@ namespace STEditor
 
 		// parallel
 
-		if(m_parallelProcessing)
+		if(m_useSIMD)
 		{
 			__m128 dt4 = _mm_set1_ps(dt);
 			__m256 dt8 = _mm256_set1_ps(dt);
@@ -722,7 +735,7 @@ namespace STEditor
 		ZoneScopedN("Integrate Positions");
 
 
-		if (m_parallelProcessing)
+		if (m_useSIMD)
 		{
 			int index = 0;
 
@@ -884,7 +897,7 @@ namespace STEditor
 
 	}
 
-	void PhysicsScene::solveContactVelocity(ObjectPair pair)
+	void PhysicsScene::solveContactVelocity(const ObjectPair& pair)
 	{
 		if(m_contactManifolds[pair].count > 0)
 		{
@@ -1027,7 +1040,7 @@ namespace STEditor
 		}
 	}
 
-	void PhysicsScene::solveContactPosition(ObjectPair pair)
+	void PhysicsScene::solveContactPosition(const ObjectPair& pair)
 	{
 		auto& contact = m_contactManifolds[pair];
 		if (contact.count <= 0)
@@ -1057,13 +1070,13 @@ namespace STEditor
 			Vector2 rA2 = pA2 - transformA.position;
 			Vector2 rB2 = pB2 - transformB.position;
 
-			Vector2 c1 = pA1 - pB1;
+			Vector2 c1 = pB1 - pA1;
 			Vector2 c2 = pB2 - pA2;
 
 			real bias1 = Math::max(m_biasFactor * (c1.dot(contact.normal) - m_slop), 0.0f);
 			real bias2 = Math::max(m_biasFactor * (c2.dot(contact.normal) - m_slop), 0.0f);
 
-			const real bias = Math::min(bias1, bias2);
+			const real bias = Math::max(bias1, bias2);
 
 			bias1 = -bias;
 			bias2 = -bias;
@@ -1129,8 +1142,6 @@ namespace STEditor
 
 			m_positions[pair.idB] += -(impulse1 + impulse2) * imB;
 			m_rotations[pair.idB] += iiB * (rB1.cross(-impulse1) + rB2.cross(-impulse2));
-
-
 		}
 		else
 		{
