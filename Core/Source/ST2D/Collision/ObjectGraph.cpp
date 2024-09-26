@@ -18,36 +18,36 @@ namespace ST
 		for (const auto& edge : edges)
 		{
 			//find union
-			bool enableRepeatedA = m_enableColorRepeated.contains(edge.objectIdA);
-			bool enableRepeatedB = m_enableColorRepeated.contains(edge.objectIdB);
+			bool enableRepeatedA = m_enableColorRepeated.contains(edge.idA);
+			bool enableRepeatedB = m_enableColorRepeated.contains(edge.idB);
 
 			if(!enableRepeatedA)
-				addToUF(edge.objectIdA);
+				addToUF(edge.idA);
 
 			if(!enableRepeatedB)
-				addToUF(edge.objectIdB);
+				addToUF(edge.idB);
 
 			if (!enableRepeatedA && !enableRepeatedB)
-				unionUF(edge.objectIdA, edge.objectIdB);
+				unionUF(edge.idA, edge.idB);
 
 			//prepare for edge coloring
-			m_nodes[edge.objectIdA].edges.insert(edge);
-			m_nodes[edge.objectIdB].edges.insert(edge);
+			m_nodes[edge.idA].edges.insert(edge);
+			m_nodes[edge.idB].edges.insert(edge);
 
 			m_edgeToColor[edge] = -1;
 		}
 
 		for (const auto& edge : edges)
 		{
-			bool enableRepeatedA = m_enableColorRepeated.contains(edge.objectIdA);
-			bool enableRepeatedB = m_enableColorRepeated.contains(edge.objectIdB);
+			bool enableRepeatedA = m_enableColorRepeated.contains(edge.idA);
+			bool enableRepeatedB = m_enableColorRepeated.contains(edge.idB);
 
 			ObjectID root = -1;
 
 			if (!enableRepeatedA)
-				root = findUF(edge.objectIdA);
+				root = findUF(edge.idA);
 			else if (!enableRepeatedB)
-				root = findUF(edge.objectIdB);
+				root = findUF(edge.idB);
 
 			if (root != -1 && !m_roots.contains(root))
 				m_roots.insert(root);
@@ -89,12 +89,12 @@ namespace ST
 				{
 					if (m_edgeToColor[edge] == -1)
 					{
-						bool enableRepeatedA = m_enableColorRepeated.contains(edge.objectIdA);
-						bool enableRepeatedB = m_enableColorRepeated.contains(edge.objectIdB);
+						bool enableRepeatedA = m_enableColorRepeated.contains(edge.idA);
+						bool enableRepeatedB = m_enableColorRepeated.contains(edge.idB);
 
 						if (!enableRepeatedA)
 						{
-							for (const auto& edgeA : m_nodes[edge.objectIdA].edges)
+							for (const auto& edgeA : m_nodes[edge.idA].edges)
 							{
 								if (edgeA.key == edge.key)
 									continue;
@@ -106,7 +106,7 @@ namespace ST
 
 						if (!enableRepeatedB)
 						{
-							for (const auto& edgeB : m_nodes[edge.objectIdB].edges)
+							for (const auto& edgeB : m_nodes[edge.idB].edges)
 							{
 								if (edgeB.key == edge.key)
 									continue;
@@ -131,10 +131,10 @@ namespace ST
 
 				for (const auto& nextEdge : m_nodes[currentNode].edges)
 				{
-					if (nextEdge.objectIdA == currentNode)
-						nodeStack.push_back(nextEdge.objectIdB);
+					if (nextEdge.idA == currentNode)
+						nodeStack.push_back(nextEdge.idB);
 					else
-						nodeStack.push_back(nextEdge.objectIdA);
+						nodeStack.push_back(nextEdge.idA);
 				}
 			}
 
@@ -157,7 +157,7 @@ namespace ST
 		//{
 		//	std::string result = std::format("Color ({0}) : \n", i);
 		//	for (const auto& edge : m_colorToEdges[i])
-		//		result += std::format("({0}, {1}) ", edge.objectIdA, edge.objectIdB);
+		//		result += std::format("({0}, {1}) ", edge.idA, edge.idB);
 
 		//	CORE_INFO(result);
 		//}

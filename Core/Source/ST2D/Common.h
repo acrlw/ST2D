@@ -16,16 +16,16 @@ namespace ST
 	{
 		struct
 		{
-			ObjectID objectIdA;
-			ObjectID objectIdB;
+			ObjectID idA;
+			ObjectID idB;
 		};
 		ObjectPairID key = 0;
 
 		ObjectPair() : key(0) {}
 		ObjectPair(ObjectID a, ObjectID b)
 		{
-			objectIdA = std::min(a, b);
-			objectIdB = std::max(a, b);
+			idA = std::min(a, b);
+			idB = std::max(a, b);
 		}
 
 		bool operator==(const ObjectPair& other) const

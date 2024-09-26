@@ -114,7 +114,7 @@ namespace STEditor
 
 		if(m_showContacts)
 		{
-			for(auto& value : m_contacts | std::views::values)
+			for(auto& value : m_contactManifolds | std::views::values)
 			{
 				if (value.count == 0)
 					continue;
@@ -131,7 +131,7 @@ namespace STEditor
 
 			if(m_showContactsMagnitude)
 			{
-				for (auto& value : m_contacts | std::views::values)
+				for (auto& value : m_contactManifolds | std::views::values)
 				{
 					if (value.count == 0)
 						continue;
@@ -139,13 +139,13 @@ namespace STEditor
 					real t = 0.01f;
 					Vector2 point = value.pair.points[0] - Vector2(0.0f, t);
 					
-					std::string str = std::format("{:.3f}", value.contacts[0].sumNormalImpulse);
+					std::string str = std::format("{:.5f}", value.contacts[0].sumNormalImpulse);
 					renderer.text(point, Palette::LightGray, str);
 
 					if (value.count == 2)
 					{
 						point = value.pair.points[1] - Vector2(0.0f, t);
-						str = std::format("{:.3f}", value.contacts[1].sumNormalImpulse);
+						str = std::format("{:.5f}", value.contacts[1].sumNormalImpulse);
 						renderer.text(point, Palette::LightGray, str);
 					}
 				}
@@ -161,14 +161,14 @@ namespace STEditor
 				Color color = gistRainbowColormap(value);
 				for (auto&& elem : m_objectGraph.m_colorToEdges[i])
 				{
-					if(m_contacts[elem].count > 0)
+					if(m_contactManifolds[elem].count > 0)
 					{
-						renderer.point(m_contacts[elem].pair.points[0], color, 5);
-						renderer.point(m_contacts[elem].pair.points[2], color, 5);
-						if(m_contacts[elem].count == 2)
+						renderer.point(m_contactManifolds[elem].pair.points[0], color, 5);
+						renderer.point(m_contactManifolds[elem].pair.points[2], color, 5);
+						if(m_contactManifolds[elem].count == 2)
 						{
-							renderer.point(m_contacts[elem].pair.points[1], color, 5);
-							renderer.point(m_contacts[elem].pair.points[3], color, 5);
+							renderer.point(m_contactManifolds[elem].pair.points[1], color, 5);
+							renderer.point(m_contactManifolds[elem].pair.points[3], color, 5);
 						}
 					}
 				}
@@ -201,6 +201,14 @@ namespace STEditor
 		{
 			m_simulate = false;
 			step(1.0f / static_cast<float>(m_frequency));
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Reset"))
+		{
+			clearObjects();
+			createObjects();
 		}
 
 		ImGui::DragInt("Frequency", &m_frequency, 1, 240);
@@ -274,14 +282,18 @@ namespace STEditor
 
 		// disable all contacts
 
-		for (auto& value : m_contacts | std::views::values)
-			value.count = 0;
+		for (auto& value : m_contactManifolds | std::views::values)
+			value.enable = false;
 
 		// update broad phase
 		updateBroadphase(dt);
 
 		// update narrow phase and generate contacts
 		generateContacts(dt);
+
+		for (auto& value : m_contactManifolds | std::views::values)
+			if(!value.enable)
+				value.count = 0;
 
 		// clear all force and torque
 
@@ -390,6 +402,8 @@ namespace STEditor
 	{
 		m_dbvt.clearAllObjects();
 		m_grid.clearAllObjects();
+		m_contactManifolds.clear();
+		m_objectPairs.clear();
 
 		m_objectIdPool.reset();
 		m_objectIds.clear();
@@ -420,44 +434,53 @@ namespace STEditor
 
 		// narrow phase generate contacts
 
-		for (auto&& elem : m_objectPairs)
+		for (auto&& objPair : m_objectPairs)
 		{
-			if (!m_aabbs[elem.objectIdA].collide(m_aabbs[elem.objectIdB]))
+			if (!m_aabbs[objPair.idA].collide(m_aabbs[objPair.idB]))
 				continue;
 
-			Transform transformA(m_positions[elem.objectIdA], m_rotations[elem.objectIdA], 1.0f);
-			Transform transformB(m_positions[elem.objectIdB], m_rotations[elem.objectIdB], 1.0f);
+			Transform transformA(m_positions[objPair.idA], m_rotations[objPair.idA], 1.0f);
+			Transform transformB(m_positions[objPair.idB], m_rotations[objPair.idB], 1.0f);
 
-			auto simplex = Narrowphase::gjk(transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
+			const bool isRoundA = m_shapes[objPair.idA]->type() == ShapeType::Circle || m_shapes[objPair.idA]->type() == ShapeType::Ellipse;
+			const bool isRoundB = m_shapes[objPair.idB]->type() == ShapeType::Circle || m_shapes[objPair.idB]->type() == ShapeType::Ellipse;
+
+			auto simplex = Narrowphase::gjk(transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
 			if (simplex.isContainOrigin)
 			{
-				auto info = Narrowphase::epa(simplex, transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
-				auto contacts = Narrowphase::generateContacts(info, transformA, m_shapes[elem.objectIdA], transformB, m_shapes[elem.objectIdB]);
+				auto info = Narrowphase::epa(simplex, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
+				auto newContacts = Narrowphase::generateContacts(info, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
 
-				Contact contact;
-				contact.count = contacts.count;
-				contact.pair = contacts;
-				contact.normal = info.normal;
-				contact.tangent = info.normal.perpendicular();
-				contact.penetration = info.penetration;
+				ContactManifold manifold;
+				manifold.count = newContacts.count;
+				manifold.pair = newContacts;
+				manifold.normal = info.normal;
+				manifold.tangent = info.normal.perpendicular();
+				manifold.penetration = info.penetration;
 
-
-				if (m_contacts.contains(elem) && contacts.ids[0].key != m_contacts[elem].pair.ids[0].key
-					|| contacts.ids[1].key != m_contacts[elem].pair.ids[1].key)
+				if (m_contactManifolds.contains(objPair))
 				{
-					m_contacts[elem].contacts[0].sumNormalImpulse = 0.0f;
-					m_contacts[elem].contacts[0].sumTangentImpulse = 0.0f;
-					m_contacts[elem].contacts[1].sumNormalImpulse = 0.0f;
-					m_contacts[elem].contacts[1].sumTangentImpulse = 0.0f;
+					for(int j = 0;j < manifold.pair.count; ++j)
+					{
+						Vector2 newLocalA = transformA.inverseTranslatePoint(manifold.pair.points[j]);
+						Vector2 newLocalB = transformB.inverseTranslatePoint(manifold.pair.points[j + 2]);
+						for (int i = 0; i < m_contactManifolds[objPair].count; ++i)
+						{
+							Vector2 oldLocalA = m_contactManifolds[objPair].contacts[i].localA;
+							Vector2 oldLocalB = m_contactManifolds[objPair].contacts[i].localB;
+							const bool isPointA = oldLocalA.fuzzyEqual(newLocalA, Constant::TrignometryEpsilon);
+							const bool isPointB = oldLocalB.fuzzyEqual(newLocalB, Constant::TrignometryEpsilon);
+							if (isPointA || isPointB || isRoundA || isRoundB)
+							{
+								//satisfy the condition, give the old accumulated value to new value
+								manifold.contacts[j].sumNormalImpulse = m_contactManifolds[objPair].contacts[i].sumNormalImpulse;
+								manifold.contacts[j].sumTangentImpulse = m_contactManifolds[objPair].contacts[i].sumTangentImpulse;
+							}
+						}
+					}
 				}
 
-
-				contact.contacts[0].sumNormalImpulse = m_contacts[elem].contacts[0].sumNormalImpulse;
-				contact.contacts[0].sumTangentImpulse = m_contacts[elem].contacts[0].sumTangentImpulse;
-				contact.contacts[1].sumNormalImpulse = m_contacts[elem].contacts[1].sumNormalImpulse;
-				contact.contacts[1].sumTangentImpulse = m_contacts[elem].contacts[1].sumTangentImpulse;
-
-				m_contacts[elem] = contact;
+				m_contactManifolds[objPair] = manifold;
 			}
 		}
 
@@ -701,20 +724,20 @@ namespace STEditor
 	void PhysicsScene::setUpConstraint(float dt)
 	{
 		ZoneScopedN("Setup Contact Constraint");
-		for(auto&& [key ,value] : m_contacts)
+		for(auto&& [key ,value] : m_contactManifolds)
 		{
 			if(value.count > 0)
 			{
-				Transform transformA(m_positions[key.objectIdA], m_rotations[key.objectIdA], 1.0f);
-				Transform transformB(m_positions[key.objectIdB], m_rotations[key.objectIdB], 1.0f);
+				Transform transformA(m_positions[key.idA], m_rotations[key.idA], 1.0f);
+				Transform transformB(m_positions[key.idB], m_rotations[key.idB], 1.0f);
 
-				value.restitution = Math::min(m_restitutions[key.objectIdA], m_restitutions[key.objectIdB]);
-				value.friction = Math::sqrt(m_frictions[key.objectIdA] * m_frictions[key.objectIdB]);
+				value.restitution = Math::min(m_restitutions[key.idA], m_restitutions[key.idB]);
+				value.friction = Math::sqrt(m_frictions[key.idA] * m_frictions[key.idB]);
 
-				const real imA = m_invMasses[key.objectIdA];
-				const real imB = m_invMasses[key.objectIdB];
-				const real iiA = m_invInertias[key.objectIdA];
-				const real iiB = m_invInertias[key.objectIdB];
+				const real imA = m_invMasses[key.idA];
+				const real imB = m_invMasses[key.idB];
+				const real iiA = m_invInertias[key.idA];
+				const real iiB = m_invInertias[key.idB];
 
 				for(int i = 0; i < value.count; ++i)
 				{
@@ -744,16 +767,16 @@ namespace STEditor
 					{
 						Vector2 impulse = contact.sumNormalImpulse * value.normal + contact.sumTangentImpulse * value.tangent;
 
-						m_velocities[key.objectIdA] += imA * impulse;
-						m_angularVelocities[key.objectIdA] += iiA * contact.rA.cross(impulse);
-						m_velocities[key.objectIdB] -= imB * impulse;
-						m_angularVelocities[key.objectIdB] -= iiB * contact.rB.cross(impulse);
+						m_velocities[key.idA] += imA * impulse;
+						m_angularVelocities[key.idA] += iiA * contact.rA.cross(impulse);
+						m_velocities[key.idB] -= imB * impulse;
+						m_angularVelocities[key.idB] -= iiB * contact.rB.cross(impulse);
 					}
 
-					Vector2 wa = Vector2::crossProduct(m_angularVelocities[key.objectIdA], contact.rA);
-					Vector2 wb = Vector2::crossProduct(m_angularVelocities[key.objectIdB], contact.rB);
-					contact.vA = m_velocities[key.objectIdA] + wa;
-					contact.vB = m_velocities[key.objectIdB] + wb;
+					Vector2 wa = Vector2::crossProduct(m_angularVelocities[key.idA], contact.rA);
+					Vector2 wb = Vector2::crossProduct(m_angularVelocities[key.idB], contact.rB);
+					contact.vA = m_velocities[key.idA] + wa;
+					contact.vB = m_velocities[key.idB] + wb;
 
 				}
 
@@ -788,58 +811,60 @@ namespace STEditor
 
 	void PhysicsScene::solveContactVelocity(const ObjectPair& pair)
 	{
-		if(m_contacts[pair].count > 0)
+		if(m_contactManifolds[pair].count > 0)
 		{
 			// solve one by one
-			auto& contact = m_contacts[pair];
+			auto& manifold = m_contactManifolds[pair];
 
-			for(int i = 0;i < m_contacts[pair].count; ++i)
+			for(int i = 0;i < m_contactManifolds[pair].count; ++i)
 			{
 				// solve friction first
-				auto& singleContact = contact.contacts[i];
-				singleContact.vA = m_velocities[pair.objectIdA] + Vector2::crossProduct(m_angularVelocities[pair.objectIdA], singleContact.rA);
-				singleContact.vB = m_velocities[pair.objectIdB] + Vector2::crossProduct(m_angularVelocities[pair.objectIdB], singleContact.rB);
-				Vector2 dv = singleContact.vA - singleContact.vB;
-				real jvt = contact.tangent.dot(dv);
-				real lambdaT = -jvt * singleContact.effectiveMassTangent;
 
-				real maxFriction = contact.friction * singleContact.sumTangentImpulse;
+				auto& singleContact = manifold.contacts[i];
+				singleContact.vA = m_velocities[pair.idA] + Vector2::crossProduct(m_angularVelocities[pair.idA], singleContact.rA);
+				singleContact.vB = m_velocities[pair.idB] + Vector2::crossProduct(m_angularVelocities[pair.idB], singleContact.rB);
+				Vector2 dv = singleContact.vA - singleContact.vB;
+
+				real jvt = manifold.tangent.dot(dv);
+				real lambdaT = singleContact.effectiveMassTangent * -jvt;
+
+				real maxFriction = manifold.friction * singleContact.sumTangentImpulse;
 				real newImpulse = Math::clamp(singleContact.sumTangentImpulse + lambdaT, -maxFriction, maxFriction);
 				lambdaT = newImpulse - singleContact.sumTangentImpulse;
 				singleContact.sumTangentImpulse = newImpulse;
 
-				Vector2 impulseT = contact.tangent * lambdaT;
+				Vector2 impulseT =  lambdaT * manifold.tangent;
 
-				m_velocities[pair.objectIdA] += impulseT * m_invMasses[pair.objectIdA];
-				m_angularVelocities[pair.objectIdA] += m_invInertias[pair.objectIdA] * singleContact.rA.cross(impulseT);
+				m_velocities[pair.idA] += impulseT * m_invMasses[pair.idA];
+				m_angularVelocities[pair.idA] += m_invInertias[pair.idA] * singleContact.rA.cross(impulseT);
 
-				m_velocities[pair.objectIdB] -= impulseT * m_invMasses[pair.objectIdB];
-				m_angularVelocities[pair.objectIdB] -= m_invInertias[pair.objectIdB] * singleContact.rB.cross(impulseT);
+				m_velocities[pair.idB] += (-impulseT) * m_invMasses[pair.idB];
+				m_angularVelocities[pair.idB] += m_invInertias[pair.idB] * singleContact.rB.cross(-impulseT);
 
 				// then solve contact
 			}
 
-			if (m_contacts[pair].count == 2 && m_enableVelocityBlockSolver)
+			if (m_contactManifolds[pair].count == 2 && m_enableVelocityBlockSolver)
 			{
 				// solve by block
-				Vector2 wA1 = Vector2::crossProduct(m_angularVelocities[pair.objectIdA], contact.contacts[0].rA);
-				Vector2 wB1 = Vector2::crossProduct(m_angularVelocities[pair.objectIdB], contact.contacts[0].rB);
-				Vector2 wA2 = Vector2::crossProduct(m_angularVelocities[pair.objectIdA], contact.contacts[1].rA);
-				Vector2 wB2 = Vector2::crossProduct(m_angularVelocities[pair.objectIdB], contact.contacts[1].rB);
+				Vector2 wA1 = Vector2::crossProduct(m_angularVelocities[pair.idA], manifold.contacts[0].rA);
+				Vector2 wB1 = Vector2::crossProduct(m_angularVelocities[pair.idB], manifold.contacts[0].rB);
+				Vector2 wA2 = Vector2::crossProduct(m_angularVelocities[pair.idA], manifold.contacts[1].rA);
+				Vector2 wB2 = Vector2::crossProduct(m_angularVelocities[pair.idB], manifold.contacts[1].rB);
 					    
-				Vector2 vA1 = m_velocities[pair.objectIdA] + wA1;
-				Vector2 vB1 = m_velocities[pair.objectIdB] + wB1;
-				Vector2 vA2 = m_velocities[pair.objectIdA] + wA2;
-				Vector2 vB2 = m_velocities[pair.objectIdB] + wB2;
+				Vector2 vA1 = m_velocities[pair.idA] + wA1;
+				Vector2 vB1 = m_velocities[pair.idB] + wB1;
+				Vector2 vA2 = m_velocities[pair.idA] + wA2;
+				Vector2 vB2 = m_velocities[pair.idB] + wB2;
 
 				Vector2 dv1 = vA1 - vB1;
 				Vector2 dv2 = vA2 - vB2;
-				real jv1 = contact.normal.dot(dv1 - contact.contacts[0].velocityBias);
-				real jv2 = contact.normal.dot(dv2 - contact.contacts[1].velocityBias);
+				real jv1 = manifold.normal.dot(dv1 - manifold.contacts[0].velocityBias);
+				real jv2 = manifold.normal.dot(dv2 - manifold.contacts[1].velocityBias);
 
-				Matrix2x2& A = contact.k;
+				Matrix2x2& A = manifold.k;
 				Vector2 b(jv1, jv2);
-				Vector2 x(contact.contacts[0].sumNormalImpulse, contact.contacts[1].sumNormalImpulse);
+				Vector2 x(manifold.contacts[0].sumNormalImpulse, manifold.contacts[1].sumNormalImpulse);
 				Vector2 nx;
 				Vector2 d;
 
@@ -848,12 +873,12 @@ namespace STEditor
 				for (;;)
 				{
 					//1. b_1 < 0 && b_2 < 0
-					nx = contact.normalMass.multiply(-b);
+					nx = manifold.normalMass.multiply(-b);
 					if (nx.x >= 0.0f && nx.y >= 0.0f)
 						break;
 
 					//2. b_1 < 0 && b_2 > 0
-					nx.x = contact.contacts[0].effectiveMassNormal * -b.x;
+					nx.x = manifold.contacts[0].effectiveMassNormal * -b.x;
 					nx.y = 0.0f;
 					jv1 = 0.0f;
 					jv2 = A.m12 * nx.x + b.y;
@@ -862,7 +887,7 @@ namespace STEditor
 
 					//3. b_1 > 0 && b_2 < 0
 					nx.x = 0.0f;
-					nx.y = -contact.contacts[1].effectiveMassNormal * b.y;
+					nx.y = -manifold.contacts[1].effectiveMassNormal * b.y;
 					jv1 = A.m21 * nx.y + b.x;
 					jv2 = 0.0f;
 					if (nx.y >= 0.0f && jv1 >= 0.0f)
@@ -884,41 +909,42 @@ namespace STEditor
 				real& lambda1 = d.x;
 				real& lambda2 = d.y;
 
-				Vector2 impulse1 = lambda1 * contact.normal;
-				Vector2 impulse2 = lambda2 * contact.normal;
+				Vector2 impulse1 = lambda1 * manifold.normal;
+				Vector2 impulse2 = lambda2 * manifold.normal;
 
-				m_velocities[pair.objectIdA] += (impulse1 + impulse2) * m_invMasses[pair.objectIdA];
-				m_angularVelocities[pair.objectIdA] += m_invInertias[pair.objectIdA] * (contact.contacts[0].rA.cross(impulse1) + contact.contacts[1].rA.cross(impulse2));
+				m_velocities[pair.idA] += (impulse1 + impulse2) * m_invMasses[pair.idA];
+				m_angularVelocities[pair.idA] += m_invInertias[pair.idA] * (manifold.contacts[0].rA.cross(impulse1) + manifold.contacts[1].rA.cross(impulse2));
 
-				m_velocities[pair.objectIdB] -= (impulse1 + impulse2) * m_invMasses[pair.objectIdB];
-				m_angularVelocities[pair.objectIdB] -= m_invInertias[pair.objectIdB] * (contact.contacts[0].rB.cross(impulse1) + contact.contacts[1].rB.cross(impulse2));
+				m_velocities[pair.idB] += -(impulse1 + impulse2) * m_invMasses[pair.idB];
+				m_angularVelocities[pair.idB] += m_invInertias[pair.idB] * (manifold.contacts[0].rB.cross(-impulse1) + manifold.contacts[1].rB.cross(-impulse2));
 
-				contact.contacts[0].sumNormalImpulse = nx.x;
-				contact.contacts[1].sumNormalImpulse = nx.y;
+				manifold.contacts[0].sumNormalImpulse = nx.x;
+				manifold.contacts[1].sumNormalImpulse = nx.y;
 			}
 			else
 			{
-				for (int i = 0; i < m_contacts[pair].count; ++i)
+				for (int i = 0; i < m_contactManifolds[pair].count; ++i)
 				{
 					// solve normal
-					auto& singleContact = contact.contacts[i];
-					singleContact.vA = m_velocities[pair.objectIdA] + Vector2::crossProduct(m_angularVelocities[pair.objectIdA], singleContact.rA);
-					singleContact.vB = m_velocities[pair.objectIdB] + Vector2::crossProduct(m_angularVelocities[pair.objectIdB], singleContact.rB);
+					auto& singleContact = manifold.contacts[i];
+					singleContact.vA = m_velocities[pair.idA] + Vector2::crossProduct(m_angularVelocities[pair.idA], singleContact.rA);
+					singleContact.vB = m_velocities[pair.idB] + Vector2::crossProduct(m_angularVelocities[pair.idB], singleContact.rB);
 					Vector2 dv = singleContact.vA - singleContact.vB;
-					real jvn = contact.normal.dot(dv + singleContact.velocityBias);
+
+					real jvn = manifold.normal.dot(dv + singleContact.velocityBias);
 					real lamndaN = -jvn * singleContact.effectiveMassNormal;
 
 					real oldImpulse = singleContact.sumNormalImpulse;
 					singleContact.sumNormalImpulse = Math::max(oldImpulse + lamndaN, 0);
 					lamndaN = singleContact.sumNormalImpulse - oldImpulse;
 
-					Vector2 impulseN = lamndaN * contact.normal;
+					Vector2 impulseN = lamndaN * manifold.normal;
 
-					m_velocities[pair.objectIdA] += impulseN * m_invMasses[pair.objectIdA];
-					m_angularVelocities[pair.objectIdA] += m_invInertias[pair.objectIdA] * singleContact.rA.cross(impulseN);
+					m_velocities[pair.idA] += impulseN * m_invMasses[pair.idA];
+					m_angularVelocities[pair.idA] += m_invInertias[pair.idA] * singleContact.rA.cross(impulseN);
 
-					m_velocities[pair.objectIdB] -= impulseN * m_invMasses[pair.objectIdB];
-					m_angularVelocities[pair.objectIdB] -= m_invInertias[pair.objectIdB] * singleContact.rB.cross(impulseN);
+					m_velocities[pair.idB] += -impulseN * m_invMasses[pair.idB];
+					m_angularVelocities[pair.idB] += m_invInertias[pair.idB] * singleContact.rB.cross(-impulseN);
 
 				}
 			}
@@ -928,17 +954,17 @@ namespace STEditor
 
 	void PhysicsScene::solveContactPosition(const ObjectPair& pair)
 	{
-		auto& contact = m_contacts[pair];
+		auto& contact = m_contactManifolds[pair];
 		if (contact.count <= 0)
 			return;
 
-		Transform transformA(m_positions[pair.objectIdA], m_rotations[pair.objectIdA], 1.0f);
-		Transform transformB(m_positions[pair.objectIdB], m_rotations[pair.objectIdB], 1.0f);
+		Transform transformA(m_positions[pair.idA], m_rotations[pair.idA], 1.0f);
+		Transform transformB(m_positions[pair.idB], m_rotations[pair.idB], 1.0f);
 
-		const real imA = m_invMasses[pair.objectIdA];
-		const real imB = m_invMasses[pair.objectIdB];
-		const real iiA = m_invInertias[pair.objectIdA];
-		const real iiB = m_invInertias[pair.objectIdB];
+		const real imA = m_invMasses[pair.idA];
+		const real imB = m_invMasses[pair.idB];
+		const real iiA = m_invInertias[pair.idA];
+		const real iiB = m_invInertias[pair.idB];
 
 		if (contact.count == 2 && m_enablePositionBlockSolver)
 		{
@@ -1023,11 +1049,11 @@ namespace STEditor
 			Vector2 impulse1 = contact.normal * d.x;
 			Vector2 impulse2 = contact.normal * d.y;
 
-			m_positions[pair.objectIdA] += (impulse1 + impulse2) * imA;
-			m_rotations[pair.objectIdA] += iiA * (rA1.cross(impulse1) + rA2.cross(impulse2));
+			m_positions[pair.idA] += (impulse1 + impulse2) * imA;
+			m_rotations[pair.idA] += iiA * (rA1.cross(impulse1) + rA2.cross(impulse2));
 
-			m_positions[pair.objectIdB] -= (impulse1 + impulse2) * imB;
-			m_rotations[pair.objectIdB] -= iiB * (rB1.cross(impulse1) + rB2.cross(impulse2));
+			m_positions[pair.idB] += -(impulse1 + impulse2) * imB;
+			m_rotations[pair.idB] += iiB * (rB1.cross(-impulse1) + rB2.cross(-impulse2));
 
 
 		}
@@ -1057,11 +1083,11 @@ namespace STEditor
 
 				Vector2 impulse = lambda * contact.normal;
 
-				m_positions[pair.objectIdA] += impulse * imA;
-				m_rotations[pair.objectIdA] += iiA * rA.cross(impulse);
+				m_positions[pair.idA] += impulse * imA;
+				m_rotations[pair.idA] += iiA * rA.cross(impulse);
 
-				m_positions[pair.objectIdB] -= impulse * imB;
-				m_rotations[pair.objectIdB] -= iiB * rB.cross(impulse);
+				m_positions[pair.idB] += -impulse * imB;
+				m_rotations[pair.idB] += iiB * rB.cross(-impulse);
 			}
 		}
 	}

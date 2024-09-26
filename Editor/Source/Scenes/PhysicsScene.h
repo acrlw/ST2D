@@ -21,7 +21,7 @@ namespace STEditor
 		real sumTangentImpulse = 0.0f;
 	};
 
-	struct Contact
+	struct ContactManifold
 	{
 		ObjectPair ids;
 		ContactPair pair;
@@ -34,6 +34,7 @@ namespace STEditor
 		real penetration = 0.0f;
 		Matrix2x2 normalMass;
 		Matrix2x2 k;
+		bool enable = true;
 	};
 
 
@@ -116,7 +117,7 @@ namespace STEditor
 		ObjectID m_landId;
 
 		bool m_showObject = true;
-		bool m_showObjectID = false;
+		bool m_showObjectID = true;
 		bool m_showDBVT = false;
 		bool m_showAABB = false;
 		bool m_showGrid = false;
@@ -131,8 +132,8 @@ namespace STEditor
 
 		bool m_simulate = false;
 		bool m_enableWarmstart = true;
-		bool m_enableVelocityBlockSolver = true;
-		bool m_enablePositionBlockSolver = true;
+		bool m_enableVelocityBlockSolver = false;
+		bool m_enablePositionBlockSolver = false;
 		bool m_parallelProcessing = false;
 		bool m_flagInitial = true;
 
@@ -147,7 +148,7 @@ namespace STEditor
 		int m_solveVelocityCount = 1;
 		int m_solvePositionCount = 1;
 
-		std::unordered_map<ObjectPair, Contact, ObjectPairHash> m_contacts;
+		std::unordered_map<ObjectPair, ContactManifold, ObjectPairHash> m_contactManifolds;
 
 		ThreadPool m_threadPool;
 

@@ -359,17 +359,17 @@ namespace STEditor
 
 			std::ranges::sort(pairs, [](const auto& a, const auto& b)
 				{
-					if (a.objectIdA < b.objectIdA)
+					if (a.idA < b.idA)
 						return true;
-					if (a.objectIdA == b.objectIdA)
-						return a.objectIdB < b.objectIdB;
+					if (a.idA == b.idA)
+						return a.idB < b.idB;
 
 					return false;
 				});
 			std::string str;
 			for (auto iter = pairs.begin(); iter != pairs.end(); ++iter)
 			{
-				str += std::format("({0}, {1})", iter->objectIdA, iter->objectIdB);
+				str += std::format("({0}, {1})", iter->idA, iter->idB);
 				if (iter != pairs.end() - 1)
 					str += ", ";
 			}
@@ -404,10 +404,10 @@ namespace STEditor
 
 			std::ranges::sort(pairs, [](const auto& a, const auto& b)
 				{
-					if (a.objectIdA < b.objectIdA)
+					if (a.idA < b.idA)
 						return true;
-					if (a.objectIdA == b.objectIdA)
-						return a.objectIdB < b.objectIdB;
+					if (a.idA == b.idA)
+						return a.idB < b.idB;
 
 					return false;
 				});
@@ -415,7 +415,7 @@ namespace STEditor
 			std::string str;
 			for (auto iter = pairs.begin(); iter != pairs.end(); ++iter)
 			{
-				str += std::format("({0}, {1})", iter->objectIdA, iter->objectIdB);
+				str += std::format("({0}, {1})", iter->idA, iter->idB);
 				if (iter != pairs.end() - 1)
 					str += ", ";
 			}
@@ -427,16 +427,16 @@ namespace STEditor
 
 			//for (auto&& elem : pairs)
 			//{
-			//	if (!uniqueObjects.contains(elem.objectIdA))
+			//	if (!uniqueObjects.contains(elem.idA))
 			//	{
-			//		uniqueObjects.insert(elem.objectIdA);
-			//		m_idsObject.push_back(elem.objectIdA);
+			//		uniqueObjects.insert(elem.idA);
+			//		m_idsObject.push_back(elem.idA);
 			//	}
 
-			//	if (!uniqueObjects.contains(elem.objectIdB))
+			//	if (!uniqueObjects.contains(elem.idB))
 			//	{
-			//		uniqueObjects.insert(elem.objectIdB);
-			//		m_idsObject.push_back(elem.objectIdB);
+			//		uniqueObjects.insert(elem.idB);
+			//		m_idsObject.push_back(elem.idB);
 			//	}
 
 			//}
@@ -479,11 +479,11 @@ namespace STEditor
 			{
 				for (auto&& edge : m_objectGraph.m_colorToEdges[color])
 				{
-					auto simplex = Narrowphase::gjk(m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
+					auto simplex = Narrowphase::gjk(m_transforms[edge.idA], m_shapes[edge.idA], m_transforms[edge.idB], m_shapes[edge.idB]);
 					if (simplex.isContainOrigin)
 					{
-						auto collisionInfo = Narrowphase::epa(simplex, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
-						auto contacts = Narrowphase::generateContacts(collisionInfo, m_transforms[edge.objectIdA], m_shapes[edge.objectIdA], m_transforms[edge.objectIdB], m_shapes[edge.objectIdB]);
+						auto collisionInfo = Narrowphase::epa(simplex, m_transforms[edge.idA], m_shapes[edge.idA], m_transforms[edge.idB], m_shapes[edge.idB]);
+						auto contacts = Narrowphase::generateContacts(collisionInfo, m_transforms[edge.idA], m_shapes[edge.idA], m_transforms[edge.idB], m_shapes[edge.idB]);
 
 						m_graphColorPoints[color].push_back(contacts.points[0]);
 						m_graphColorPoints[color].push_back(contacts.points[2]);
