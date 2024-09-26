@@ -692,6 +692,8 @@ namespace ST
 		{
 			int leftIndex = m_nodes[currentIndex].left;
 			int rightIndex = m_nodes[currentIndex].right;
+			CORE_ASSERT(leftIndex != -1 && rightIndex != -1,
+				"Invalid node");
 			m_nodes[currentIndex].height = 1 + std::max(m_nodes[leftIndex].height, m_nodes[rightIndex].height);
 			currentIndex = m_nodes[currentIndex].parent;
 		}

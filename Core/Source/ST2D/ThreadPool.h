@@ -22,6 +22,10 @@ namespace ST
         auto enqueue(F&& f, Args&&... args)
             -> std::future<typename std::invoke_result<F, Args...>::type>;
 
+        void stopAll();
+        void waitToStopAll();
+        void readyToWork();
+
     private:
 
         std::vector<std::thread> workers;
@@ -76,16 +80,43 @@ namespace ST
         {
             std::unique_lock<std::mutex> lock(queueMutex);
 
-
-            if (stop)
-            {
-                CORE_ASSERT(false, "Enqueue on Stopped ThreadPool");
-            }
-
-            tasks.emplace([task]() { (*task)(); });
+            if (!stop)
+            	tasks.emplace([task]() { (*task)(); });
         }
         condition.notify_one();
         return res;
+    }
+
+    inline void ThreadPool::stopAll()
+    {
+	    {
+			std::unique_lock<std::mutex> lock(queueMutex);
+			stop = true;
+		}
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+			// clear all tasks
+			tasks = std::queue<std::function<void()>>();
+        }
+    }
+
+    inline void ThreadPool::waitToStopAll()
+	{
+		{
+			std::unique_lock<std::mutex> lock(queueMutex);
+			stop = true;
+		}
+		condition.notify_all();
+		for (std::thread& worker : workers)
+			worker.join();
+    }
+
+    inline void ThreadPool::readyToWork()
+	{
+		{
+			std::unique_lock<std::mutex> lock(queueMutex);
+			stop = false;
+		}
     }
 
 

@@ -61,6 +61,21 @@ namespace STEditor
 			if (m_showAABB)
 				renderer.aabb(m_aabbs[i], Palette::Teal);
 
+			if(m_showVelocity)
+			{
+				Vector2 end = m_positions[i] + m_velocities[i];
+				real mag = m_velocities[i].length();
+				std::string str = std::format("Vel: {:.3f}", mag);
+				renderer.arrow(m_positions[i], end, Palette::LightCyan);
+				renderer.text(end + Vector2(0.1f, 0.1f), Palette::LightCyan, str);
+			}
+
+			if(m_showAngularVelocity)
+			{
+				Vector2 end = m_positions[i] - Vector2(0.1f, 0.1f);
+				std::string str = std::format("Ang Vel: {:.3f}", m_angularVelocities[i]);
+				renderer.text(end, Palette::Teal, str);
+			}
 		}
 
 		if (m_showGrid)
@@ -122,34 +137,68 @@ namespace STEditor
 				renderer.point(value.pair.points[0], Palette::LightRed);
 				renderer.point(value.pair.points[2], Palette::LightBlue);
 
-				if(value.count == 2)
+				real t = 0.05f;
+				std::string str;
+
+				if (m_showContactsMagnitude)
+				{
+					str = std::format("{:.5f}", value.contacts[0].sumNormalImpulse);
+					renderer.text(value.pair.points[0] - Vector2(0.0f, t), Palette::LightCyan, str);
+				}
+
+				if (m_showContactNormal)
+				{
+					Vector2 end = value.pair.points[0] + value.normal * value.contacts[0].sumNormalImpulse;
+					renderer.arrow(value.pair.points[0], end, Palette::LightCyan);
+				}
+
+				if (m_showFrictionMagnitude)
+				{
+					str = std::format("{:.5f}", value.contacts[0].sumTangentImpulse);
+					renderer.text(value.pair.points[0] - Vector2(t, 0.0f), Palette::Yellow, str);
+				}
+
+
+				if (m_showFrictionNormal)
+				{
+					Vector2 end = value.pair.points[0] + value.tangent * value.contacts[0].sumTangentImpulse;
+					renderer.arrow(value.pair.points[0], end, Palette::Yellow);
+				}
+
+				if (value.count == 2)
 				{
 					renderer.point(value.pair.points[1], Palette::LightRed);
 					renderer.point(value.pair.points[3], Palette::LightBlue);
-				}
-			}
 
-			if(m_showContactsMagnitude)
-			{
-				for (auto& value : m_contactManifolds | std::views::values)
-				{
-					if (value.count == 0)
-						continue;
-
-					real t = 0.01f;
-					Vector2 point = value.pair.points[0] - Vector2(0.0f, t);
-					
-					std::string str = std::format("{:.5f}", value.contacts[0].sumNormalImpulse);
-					renderer.text(point, Palette::LightGray, str);
-
-					if (value.count == 2)
+					if (m_showContactsMagnitude)
 					{
-						point = value.pair.points[1] - Vector2(0.0f, t);
 						str = std::format("{:.5f}", value.contacts[1].sumNormalImpulse);
-						renderer.text(point, Palette::LightGray, str);
+						renderer.text(value.pair.points[1] - Vector2(0.0f, t), Palette::LightCyan, str);
+					}
+
+					if (m_showContactNormal)
+					{
+						Vector2 end = value.pair.points[1] + value.normal * value.contacts[1].sumNormalImpulse;
+						renderer.arrow(value.pair.points[1], end, Palette::LightCyan);
+					}
+
+					if (m_showFrictionMagnitude)
+					{
+						str = std::format("{:.5f}", value.contacts[1].sumTangentImpulse);
+						renderer.text(value.pair.points[1] - Vector2(t, 0.0f), Palette::Yellow, str);
+					}
+
+					if(m_showFrictionNormal)
+					{
+						Vector2 end = value.pair.points[1] + value.tangent * value.contacts[1].sumTangentImpulse;
+						renderer.arrow(value.pair.points[1], end, Palette::Yellow);
 					}
 				}
+
 			}
+
+
+
 		}
 
 		if(m_showGraphColoring && !m_objectGraph.m_colorToEdges.empty())
@@ -207,9 +256,16 @@ namespace STEditor
 
 		if (ImGui::Button("Reset"))
 		{
+			m_stepCount = 0;
+			m_threadPool.stopAll();
 			clearObjects();
 			createObjects();
+			m_threadPool.readyToWork();
 		}
+
+		ImGui::SameLine();
+
+		ImGui::Text("Step Count: %d", m_stepCount);
 
 		ImGui::DragInt("Frequency", &m_frequency, 1, 240);
 		ImGui::DragInt("Vel Iteration", &m_solveVelocityCount, 1, 100);
@@ -219,6 +275,7 @@ namespace STEditor
 		ImGui::Checkbox("Gravity", &m_enableGravity);
 		ImGui::Checkbox("Damping", &m_enableDamping);
 		ImGui::Checkbox("Warmstart", &m_enableWarmstart);
+		ImGui::Checkbox("Use Graph Coloring", &m_solveByGraphColoring);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Vel Block Solver", &m_enableVelocityBlockSolver);
 		ImGui::Checkbox("Pos Block Solver", &m_enablePositionBlockSolver);
@@ -232,21 +289,23 @@ namespace STEditor
 		ImGui::SeparatorText("Visibility");
 
 		ImGui::Columns(2);
-		ImGui::Checkbox("Show Object", &m_showObject);
-		ImGui::Checkbox("Show Object Id", &m_showObjectID);
-		ImGui::Checkbox("Show Transform", &m_showTransform);
-		ImGui::Checkbox("Show Joint", &m_showJoint);
+		ImGui::Checkbox("Object", &m_showObject);
+		ImGui::Checkbox("Object Id", &m_showObjectID);
+		ImGui::Checkbox("Transform", &m_showTransform);
+		ImGui::Checkbox("AABB", &m_showAABB);
+		ImGui::Checkbox("Grid", &m_showGrid);
+		ImGui::Checkbox("DBVT", &m_showDBVT);
+		ImGui::Checkbox("Graph Coloring", &m_showGraphColoring);
 		ImGui::NextColumn();
-
-		ImGui::Checkbox("Show AABB", &m_showAABB);
-		ImGui::Checkbox("Show Grid", &m_showGrid);
-		ImGui::Checkbox("Show DBVT", &m_showDBVT);
-		ImGui::Checkbox("Show Graph Coloring", &m_showGraphColoring);
-
+		ImGui::Checkbox("Velocity", &m_showVelocity);
+		ImGui::Checkbox("Angular Vel", &m_showAngularVelocity);
+		ImGui::Checkbox("Joint", &m_showJoint);
+		ImGui::Checkbox("Contact", &m_showContacts);
+		ImGui::Checkbox("Contact Mag", &m_showContactsMagnitude);
+		ImGui::Checkbox("Contact Normal", &m_showContactNormal);
+		ImGui::Checkbox("Friction Mag", &m_showFrictionMagnitude);
+		ImGui::Checkbox("Friction Normal", &m_showFrictionNormal);
 		ImGui::Columns(1);
-
-		ImGui::Checkbox("Show Contacts", &m_showContacts);
-		ImGui::Checkbox("Show Contacts Magnitude", &m_showContactsMagnitude);
 
 		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
 
@@ -258,6 +317,7 @@ namespace STEditor
 
 	void PhysicsScene::step(float dt)
 	{
+
 		if (m_flagInitial)
 		{
 			m_flagInitial = false;
@@ -292,8 +352,12 @@ namespace STEditor
 		generateContacts(dt);
 
 		for (auto& value : m_contactManifolds | std::views::values)
-			if(!value.enable)
+		{
+			if (!value.enable)
+			{
 				value.count = 0;
+			}
+		}
 
 		// clear all force and torque
 
@@ -302,6 +366,8 @@ namespace STEditor
 			m_forces[i].clear();
 			m_torques[i] = 0.0f;
 		}
+
+		m_stepCount++;
 	}
 
 	void PhysicsScene::createObjects()
@@ -334,7 +400,7 @@ namespace STEditor
 
 					m_positions.emplace_back(t.position);
 					m_rotations.emplace_back(t.rotation);
-					m_velocities.emplace_back(0.0f, 0.0f);
+					m_velocities.emplace_back();
 					m_angularVelocities.emplace_back(0.0f);
 					m_forces.emplace_back(0.0f);
 					m_torques.emplace_back(0.0f);
@@ -357,7 +423,7 @@ namespace STEditor
 		{
 
 			Transform trans;
-			trans.position.set(0.0f, -0.05);
+			trans.position.set(0.0f, -0.05f);
 
 			m_landId = m_objectIdPool.getNewId();
 			m_objectIds.push_back(m_landId);
@@ -400,10 +466,10 @@ namespace STEditor
 
 	void PhysicsScene::clearObjects()
 	{
+		m_objectPairs.clear();
 		m_dbvt.clearAllObjects();
 		m_grid.clearAllObjects();
 		m_contactManifolds.clear();
-		m_objectPairs.clear();
 
 		m_objectIdPool.reset();
 		m_objectIds.clear();
@@ -511,7 +577,7 @@ namespace STEditor
 		ZoneScopedN("Integrate Velocities");
 		Vector2 gravity;
 		if (m_enableGravity)
-			gravity.set(0.0f, -9.8f);
+			gravity.set(0.0f, -10.0f);
 
 		real lvd = 1.0f;
 		real avd = 1.0f;
@@ -581,8 +647,8 @@ namespace STEditor
 			for (; index < m_objectIds.size(); ++index)
 			{
 				m_forces[index] += gravity * m_masses[index];
-				m_velocities[index] += m_forces[index] * m_invMasses[index] * dt;
-				m_angularVelocities[index] += m_torques[index] * m_invInertias[index] * dt;
+				m_velocities[index] += m_invMasses[index] * m_forces[index] * dt;
+				m_angularVelocities[index] +=  m_invInertias[index] * m_torques[index] * dt;
 
 				m_velocities[index] *= lvd;
 				m_angularVelocities[index] *= avd;
@@ -632,10 +698,16 @@ namespace STEditor
 			}
 			else
 			{
-
-				for (auto&& elem : m_objectPairs)
+				if(m_solveByGraphColoring)
 				{
-					solveContactVelocity(elem);
+					for (auto&& elem : m_objectGraph.m_colorToEdges)
+						for (auto&& pair : elem)
+							solveContactVelocity(pair);
+				}
+				else
+				{
+					for (auto&& elem : m_objectPairs)
+						solveContactVelocity(elem);
 				}
 			}
 
@@ -713,9 +785,16 @@ namespace STEditor
 			}
 			else
 			{
-				for (auto&& elem : m_objectPairs)
+				if (m_solveByGraphColoring)
 				{
-					solveContactPosition(elem);
+					for (auto&& elem : m_objectGraph.m_colorToEdges)
+						for (auto&& pair : elem)
+							solveContactPosition(pair);
+				}
+				else
+				{
+					for (auto&& elem : m_objectPairs)
+						solveContactPosition(elem);
 				}
 			}
 		}
@@ -769,8 +848,9 @@ namespace STEditor
 
 						m_velocities[key.idA] += imA * impulse;
 						m_angularVelocities[key.idA] += iiA * contact.rA.cross(impulse);
-						m_velocities[key.idB] -= imB * impulse;
-						m_angularVelocities[key.idB] -= iiB * contact.rB.cross(impulse);
+
+						m_velocities[key.idB] += imB * -impulse;
+						m_angularVelocities[key.idB] += iiB * contact.rB.cross(-impulse);
 					}
 
 					Vector2 wa = Vector2::crossProduct(m_angularVelocities[key.idA], contact.rA);
@@ -782,7 +862,6 @@ namespace STEditor
 
 				if(value.count == 2 && m_enableVelocityBlockSolver)
 				{
-
 					real rn1A = value.contacts[0].rA.cross(value.normal);
 					real rn1B = value.contacts[0].rB.cross(value.normal);
 					real rn2A = value.contacts[1].rA.cross(value.normal);
@@ -792,15 +871,12 @@ namespace STEditor
 					real k12 = imA + iiA * rn1A * rn2A + imB + iiB * rn1B * rn2B;
 					real k22 = imA + iiA * rn2A * rn2A + imB + iiB * rn2B * rn2B;
 
+					//numerical stability check to ensure invertible matrix
 					bool conditioner = k11 * k11 < 1000.0f * (k11 * k22 - k12 * k12);
 
-					//numerical stability check to ensure invertible matrix
-					if (conditioner)
-					{
-						value.k.set(k11, k12, k12, k22);
-						value.normalMass.set(k11, k12, k12, k22);
-						value.normalMass.invert();
-					}
+					value.k.set(k11, k12, k12, k22);
+					value.normalMass.set(k11, k12, k12, k22);
+					value.normalMass.invert();
 
 				}
 
@@ -809,7 +885,7 @@ namespace STEditor
 
 	}
 
-	void PhysicsScene::solveContactVelocity(const ObjectPair& pair)
+	void PhysicsScene::solveContactVelocity(ObjectPair pair)
 	{
 		if(m_contactManifolds[pair].count > 0)
 		{
@@ -828,7 +904,7 @@ namespace STEditor
 				real jvt = manifold.tangent.dot(dv);
 				real lambdaT = singleContact.effectiveMassTangent * -jvt;
 
-				real maxFriction = manifold.friction * singleContact.sumTangentImpulse;
+				real maxFriction = manifold.friction * singleContact.sumNormalImpulse;
 				real newImpulse = Math::clamp(singleContact.sumTangentImpulse + lambdaT, -maxFriction, maxFriction);
 				lambdaT = newImpulse - singleContact.sumTangentImpulse;
 				singleContact.sumTangentImpulse = newImpulse;
@@ -943,7 +1019,7 @@ namespace STEditor
 					m_velocities[pair.idA] += impulseN * m_invMasses[pair.idA];
 					m_angularVelocities[pair.idA] += m_invInertias[pair.idA] * singleContact.rA.cross(impulseN);
 
-					m_velocities[pair.idB] += -impulseN * m_invMasses[pair.idB];
+					m_velocities[pair.idB] -= impulseN * m_invMasses[pair.idB];
 					m_angularVelocities[pair.idB] += m_invInertias[pair.idB] * singleContact.rB.cross(-impulseN);
 
 				}
@@ -952,14 +1028,11 @@ namespace STEditor
 		}
 	}
 
-	void PhysicsScene::solveContactPosition(const ObjectPair& pair)
+	void PhysicsScene::solveContactPosition(ObjectPair pair)
 	{
 		auto& contact = m_contactManifolds[pair];
 		if (contact.count <= 0)
 			return;
-
-		Transform transformA(m_positions[pair.idA], m_rotations[pair.idA], 1.0f);
-		Transform transformB(m_positions[pair.idB], m_rotations[pair.idB], 1.0f);
 
 		const real imA = m_invMasses[pair.idA];
 		const real imB = m_invMasses[pair.idB];
@@ -968,6 +1041,9 @@ namespace STEditor
 
 		if (contact.count == 2 && m_enablePositionBlockSolver)
 		{
+			Transform transformA(m_positions[pair.idA], m_rotations[pair.idA], 1.0f);
+			Transform transformB(m_positions[pair.idB], m_rotations[pair.idB], 1.0f);
+
 			// solve block
 
 			Vector2 pA1 = transformA.translatePoint(contact.contacts[0].localA);
@@ -1062,6 +1138,9 @@ namespace STEditor
 			// solve one by one
 			for (int i = 0; i < contact.count; ++i)
 			{
+				Transform transformA(m_positions[pair.idA], m_rotations[pair.idA], 1.0f);
+				Transform transformB(m_positions[pair.idB], m_rotations[pair.idB], 1.0f);
+
 				Vector2 pA = transformA.translatePoint(contact.contacts[i].localA);
 				Vector2 pB = transformB.translatePoint(contact.contacts[i].localB);
 				Vector2 rA = pA - transformA.position;
@@ -1104,7 +1183,7 @@ namespace STEditor
 			const Vector2 center = polygon->center();
 			real sum1 = 0.0;
 			real sum2 = 0.0;
-			for(int i = 0;i < polygon->vertices().size(); ++i)
+			for (int i = 0; i < polygon->vertices().size(); ++i)
 			{
 				int next = (i + 1) % polygon->vertices().size();
 

@@ -68,8 +68,8 @@ namespace STEditor
 		void solvePositions(float dt);
 		void setUpConstraint(float dt);
 
-		void solveContactVelocity(const ObjectPair& pair);
-		void solveContactPosition(const ObjectPair& pair);
+		void solveContactVelocity(ObjectPair pair);
+		void solveContactPosition(ObjectPair pair);
 
 		real computeInertia(real mass, const Shape* shape);
 
@@ -124,11 +124,18 @@ namespace STEditor
 		bool m_showJoint = false;
 		bool m_showTransform = false;
 		bool m_showContacts = true;
+		bool m_showContactNormal = false;
 		bool m_showContactsMagnitude = true;
+		bool m_showFrictionMagnitude = false;
+		bool m_showFrictionNormal = false;
 		bool m_showGraphColoring = false;
+
+		bool m_showVelocity = false;
+		bool m_showAngularVelocity = false;
 
 		bool m_enableDamping = true;
 		bool m_enableGravity = true;
+		bool m_solveByGraphColoring = false;
 
 		bool m_simulate = false;
 		bool m_enableWarmstart = true;
@@ -137,13 +144,14 @@ namespace STEditor
 		bool m_parallelProcessing = false;
 		bool m_flagInitial = true;
 
-		real m_linearVelocityDamping = 0.9f;
-		real m_angularVelocityDamping = 0.9f;
+		real m_linearVelocityDamping = 0.0f;
+		real m_angularVelocityDamping = 0.0f;
 
 		float m_biasFactor = 0.15f;
 		float m_slop = 0.005f;
 		int m_frequency = 60;
 
+		size_t m_stepCount = 0;
 
 		int m_solveVelocityCount = 1;
 		int m_solvePositionCount = 1;
