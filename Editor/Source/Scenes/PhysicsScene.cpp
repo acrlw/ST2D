@@ -729,6 +729,7 @@ namespace STEditor
 				}
 			}
 
+			solveJointVelocity(dt);
 
 
 		}
@@ -814,6 +815,8 @@ namespace STEditor
 						solveContactPosition(elem);
 				}
 			}
+
+			solveJointPosition(dt);
 		}
 	}
 
@@ -1184,6 +1187,16 @@ namespace STEditor
 				m_rotations[pair.idB] += iiB * rB.cross(-impulse);
 			}
 		}
+	}
+
+	void PhysicsScene::solveJointVelocity(real dt)
+	{
+
+	}
+
+	void PhysicsScene::solveJointPosition(real dt)
+	{
+
 	}
 
 	real PhysicsScene::computeInertia(real mass, const Shape* shape)

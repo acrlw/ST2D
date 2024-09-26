@@ -21,6 +21,12 @@ namespace STEditor
 		real sumTangentImpulse = 0.0f;
 	};
 
+	struct PointJoint
+	{
+		Vector2 anchorA;
+		Vector2 anchorB;
+	};
+
 	struct ContactManifold
 	{
 		ObjectPair ids;
@@ -70,6 +76,9 @@ namespace STEditor
 
 		void solveContactVelocity(const ObjectPair& pair);
 		void solveContactPosition(const ObjectPair& pair);
+
+		void solveJointVelocity(real dt);
+		void solveJointPosition(real dt);
 
 		real computeInertia(real mass, const Shape* shape);
 
@@ -161,6 +170,8 @@ namespace STEditor
 		int m_solvePositionCount = 1;
 
 		std::unordered_map<ObjectPair, ContactManifold, ObjectPairHash> m_contactManifolds;
+
+		std::unordered_map<ObjectPair, PointJoint, ObjectPairHash> m_pointJoints;
 
 		ThreadPool m_threadPool;
 
