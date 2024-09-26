@@ -539,8 +539,7 @@ namespace STEditor
 							if (isPointA || isPointB || isRoundA || isRoundB)
 							{
 								//satisfy the condition, give the old accumulated value to new value
-								manifold.contacts[j].sumNormalImpulse = m_contactManifolds[objPair].contacts[i].sumNormalImpulse;
-								manifold.contacts[j].sumTangentImpulse = m_contactManifolds[objPair].contacts[i].sumTangentImpulse;
+								manifold.contacts[j] = m_contactManifolds[objPair].contacts[i];
 							}
 						}
 					}
@@ -824,8 +823,8 @@ namespace STEditor
 
 					contact.localA = transformA.inverseTranslatePoint(value.pair.points[i]);
 					contact.localB = transformB.inverseTranslatePoint(value.pair.points[i + 2]);
-					contact.rA = transformA.position - value.pair.points[i];
-					contact.rB = transformB.position - value.pair.points[i + 2];
+					contact.rA = value.pair.points[i] - transformA.position;
+					contact.rB = value.pair.points[i + 2] - transformB.position;
 					contact.penetration = (value.pair.points[i] - value.pair.points[i + 2]).length();
 
 					const real rnA = contact.rA.cross(value.normal);
@@ -1155,9 +1154,9 @@ namespace STEditor
 				const real kNormal = imA + iiA * rnA * rnA +
 					imB + iiB * rnB * rnB;
 
-				contact.contacts[i].effectiveMassNormal = realEqual(kNormal, 0.0f) ? 0 : 1.0f / kNormal;
+				real effectiveMassNormal = realEqual(kNormal, 0.0f) ? 0 : 1.0f / kNormal;
 
-				real lambda = contact.contacts[i].effectiveMassNormal * bias;
+				real lambda = effectiveMassNormal * bias;
 				lambda = Math::max(lambda, 0);
 
 				Vector2 impulse = lambda * contact.normal;

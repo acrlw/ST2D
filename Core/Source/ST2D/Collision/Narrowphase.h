@@ -95,6 +95,7 @@ namespace ST
 
 		std::array<Vector2, 4> points;
 
+		// ids[0] for objectA, ids[1] for objectB
 		std::array<FeatureIndex, 2> ids{};
 
 		uint32_t count = 0;

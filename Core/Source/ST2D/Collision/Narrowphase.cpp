@@ -380,8 +380,6 @@ namespace ST
 		//find feature
 		const Feature featureA = findFeatures(info.simplex, info.normal, transformA, realShapeA, idxA);
 		const Feature featureB = findFeatures(info.simplex, info.normal, transformB, realShapeB, idxB);
-		auto idA = std::pair{ featureA.index[0], featureA.index[1] };
-		auto idB = std::pair{ featureB.index[0], featureB.index[1] };
 
 		if (typeA == ShapeType::Polygon)
 		{
