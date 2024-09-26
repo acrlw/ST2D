@@ -29,8 +29,6 @@ namespace STEditor
 
 	void PhysicsScene::onUpdate(float deltaTime)
 	{
-		ZoneScopedN("[PhysicsScene] On Update");
-
 		if (m_simulate)
 		{
 			float dt = 1.0f / static_cast<float>(m_frequency);
@@ -40,7 +38,7 @@ namespace STEditor
 
 	void PhysicsScene::onRender(Renderer2D& renderer)
 	{
-		ZoneScopedN("[BroadphaseScene] On Render");
+		ZoneScopedN("[Scene] On Render");
 
 		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
@@ -281,11 +279,13 @@ namespace STEditor
 		ImGui::Checkbox("Damping", &m_enableDamping);
 		ImGui::Checkbox("Warmstart", &m_enableWarmstart);
 		ImGui::Checkbox("Use Graph Coloring", &m_solveByGraphColoring);
+		ImGui::Checkbox("Enable Coloring", &m_enableGraphColoring);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Vel Block Solver", &m_enableVelocityBlockSolver);
 		ImGui::Checkbox("Pos Block Solver", &m_enablePositionBlockSolver);
 		ImGui::Checkbox("Parallel Process", &m_parallelProcessing);
 		ImGui::Checkbox("Use SIMD", &m_useSIMD);
+		ImGui::Checkbox("Enable Grid", &m_enableGrid);
 		ImGui::Columns(1);
 
 		ImGui::DragFloat("Bias Factor", &m_biasFactor, 0.01f, 0.01f, 1.0f);
@@ -304,10 +304,10 @@ namespace STEditor
 		ImGui::Checkbox("Grid", &m_showGrid);
 		ImGui::Checkbox("DBVT", &m_showDBVT);
 		ImGui::Checkbox("Graph Coloring", &m_showGraphColoring);
+		ImGui::Checkbox("Angular Vel", &m_showAngularVelocity);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Velocity", &m_showVelocity);
 		ImGui::Checkbox("Velocity Mag", &m_showVelocityMagnitude);
-		ImGui::Checkbox("Angular Vel", &m_showAngularVelocity);
 		ImGui::Checkbox("Joint", &m_showJoint);
 		ImGui::Checkbox("Contact", &m_showContacts);
 		ImGui::Checkbox("Contact Mag", &m_showContactsMagnitude);
@@ -326,6 +326,7 @@ namespace STEditor
 
 	void PhysicsScene::step(float dt)
 	{
+		ZoneScopedN("[Scene] Step");
 
 		if (m_flagInitial)
 		{
@@ -387,7 +388,7 @@ namespace STEditor
 		bindings.reserve(m_count);
 
 		{
-			ZoneScopedN("[PhysicsScene] Create and add shape to list");
+			ZoneScopedN("[Scene] Create and add shape to list");
 
 			real offset = 1.0f;
 			real max = static_cast<real>(m_count);
@@ -457,17 +458,17 @@ namespace STEditor
 			bindings.emplace_back(m_landId, 1, m_aabbs.back());
 		}
 
+		if(m_enableGrid)
 		{
-			ZoneScopedN("[PhysicsScene] Add to Grid");
+			ZoneScopedN("[Scene] Add to Grid");
 			for (auto&& binding : bindings)
 				m_grid.addObject(binding);
 		}
 
 		{
-			ZoneScopedN("[PhysicsScene] Add to DBVT");
+			ZoneScopedN("[Scene] Add to DBVT");
 			for (auto&& binding : bindings)
 				m_dbvt.addObject(binding);
-
 		}
 
 
@@ -563,7 +564,7 @@ namespace STEditor
 		}
 
 		// graph coloring
-
+		if(m_enableGraphColoring)
 		{
 			ZoneScopedN("Graph Coloring");
 			m_objectGraph.clearGraph();
@@ -575,13 +576,18 @@ namespace STEditor
 	void PhysicsScene::updateBroadphase(float dt)
 	{
 		ZoneScopedN("Update Broadphase");
+
+		m_dbvt.clearAllObjects();
+		m_dbvt.setOnlyInsert(true);
 		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
 			m_aabbs[i] = AABB::fromShape(Transform(m_positions[i], m_rotations[i], 1.0f), m_shapes[i]);
 			BroadphaseObjectBinding binding(m_objectIds[i], m_bitmasks[i], m_aabbs[i]);
-			m_dbvt.updateObject(binding);
-			m_grid.updateObject(binding);
+			m_dbvt.addObject(binding);
+			if (m_enableGrid)
+				m_grid.updateObject(binding);
 		}
+		m_dbvt.rebuildTree();
 	}
 
 	void PhysicsScene::integrateVelocities(float dt)
@@ -733,7 +739,6 @@ namespace STEditor
 	void PhysicsScene::integratePositions(float dt)
 	{
 		ZoneScopedN("Integrate Positions");
-
 
 		if (m_useSIMD)
 		{

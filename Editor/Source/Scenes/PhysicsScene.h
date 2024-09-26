@@ -137,6 +137,8 @@ namespace STEditor
 		bool m_enableDamping = true;
 		bool m_enableGravity = true;
 		bool m_solveByGraphColoring = false;
+		bool m_enableGraphColoring = false;
+		bool m_enableGrid = false;
 
 		bool m_simulate = false;
 		bool m_enableWarmstart = true;

@@ -659,8 +659,6 @@ namespace ST
 
 	void DynamicBVT::updateHeightAndAABB(int nodeIndex)
 	{
-		ZoneScopedN("[DBVT] Update Height And AABB");
-
 		CORE_ASSERT(nodeIndex >= 0, "Invalid node index");
 
 		int currentIndex = m_nodes[nodeIndex].parent;
@@ -669,22 +667,18 @@ namespace ST
 			int leftIndex = m_nodes[currentIndex].left;
 			int rightIndex = m_nodes[currentIndex].right;
 
-			if (leftIndex == -1)
-				__debugbreak();
+			if (leftIndex != -1 && rightIndex != -1)
+			{
+				m_nodes[currentIndex].height = 1 + std::max(m_nodes[leftIndex].height, m_nodes[rightIndex].height);
+				m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
+			}
 
-			if (rightIndex == -1)
-				__debugbreak();
-
-			m_nodes[currentIndex].height = 1 + std::max(m_nodes[leftIndex].height, m_nodes[rightIndex].height);
-			m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
 			currentIndex = m_nodes[currentIndex].parent;
 		}
 	}
 
 	void DynamicBVT::updateHeight(int nodeIndex)
 	{
-		ZoneScopedN("[DBVT] Update Height");
-
 		CORE_ASSERT(nodeIndex >= 0, "Invalid node index");
 
 		int currentIndex = m_nodes[nodeIndex].parent;
@@ -692,9 +686,8 @@ namespace ST
 		{
 			int leftIndex = m_nodes[currentIndex].left;
 			int rightIndex = m_nodes[currentIndex].right;
-			CORE_ASSERT(leftIndex != -1 && rightIndex != -1,
-				"Invalid node");
-			m_nodes[currentIndex].height = 1 + std::max(m_nodes[leftIndex].height, m_nodes[rightIndex].height);
+			if(leftIndex != -1 && rightIndex != -1)
+				m_nodes[currentIndex].height = 1 + std::max(m_nodes[leftIndex].height, m_nodes[rightIndex].height);
 			currentIndex = m_nodes[currentIndex].parent;
 		}
 	}
@@ -1058,8 +1051,6 @@ namespace ST
 
 	int DynamicBVT::mergeTwoNodes(int nodeIndexA, int nodeIndexB)
 	{
-		ZoneScopedN("[DBVT] Merge Two Nodes");
-
 		int newIndex = getNewNode();
 		m_nodes[nodeIndexA].parent = newIndex;
 		m_nodes[nodeIndexB].parent = newIndex;
@@ -1095,8 +1086,6 @@ namespace ST
 
 	void DynamicBVT::rotateNode(int nodeIndex)
 	{
-		ZoneScopedN("[DBVT] Rotate Node");
-
 		int F = nodeIndex;
 		int D = m_nodes[nodeIndex].parent;
 

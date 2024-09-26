@@ -84,8 +84,8 @@ namespace ST
 
 		void incrementalUpdate(const BroadphaseObjectBinding& binding);
 
-		real m_cellWidth = 0.5f;
-		real m_cellHeight = 0.5f;
+		real m_cellWidth = 1.0f;
+		real m_cellHeight = 1.0f;
 
 		Vector2 m_gridShift;
 
