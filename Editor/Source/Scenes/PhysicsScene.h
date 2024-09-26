@@ -67,8 +67,8 @@ namespace STEditor
 		void solvePositions(float dt);
 		void setUpConstraint(float dt);
 
-		void processContactVelocity(const ObjectPair& pair);
-		void processContactPosition(const ObjectPair& pair);
+		void solveContactVelocity(const ObjectPair& pair);
+		void solveContactPosition(const ObjectPair& pair);
 
 		real computeInertia(real mass, const Shape* shape);
 
@@ -133,7 +133,7 @@ namespace STEditor
 		bool m_enableWarmstart = true;
 		bool m_enableVelocityBlockSolver = true;
 		bool m_enablePositionBlockSolver = true;
-
+		bool m_parallelProcessing = false;
 		bool m_flagInitial = true;
 
 		real m_linearVelocityDamping = 0.9f;
