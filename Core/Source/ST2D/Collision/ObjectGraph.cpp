@@ -4,6 +4,44 @@
 
 namespace ST
 {
+	void ObjectGraph::addEdge(const ObjectPair& edge)
+	{
+		//check if the edge is already added
+		if (m_nodes[edge.idA].edges.contains(edge) || m_nodes[edge.idB].edges.contains(edge))
+		{
+			return;
+		}
+
+		bool enableRepeatedA = m_enableColorRepeated.contains(edge.idA);
+		bool enableRepeatedB = m_enableColorRepeated.contains(edge.idB);
+
+		if (!enableRepeatedA)
+			addToUF(edge.idA);
+
+		if (!enableRepeatedB)
+			addToUF(edge.idB);
+
+		if (!enableRepeatedA && !enableRepeatedB)
+			unionUF(edge.idA, edge.idB);
+
+		//prepare for edge coloring
+		m_nodes[edge.idA].edges.insert(edge);
+		m_nodes[edge.idB].edges.insert(edge);
+
+		m_edgeToColor[edge] = -1;
+
+		ObjectID root = -1;
+
+		if (!enableRepeatedA)
+			root = findUF(edge.idA);
+		else if (!enableRepeatedB)
+			root = findUF(edge.idB);
+
+		if (root != -1 && !m_roots.contains(root))
+			m_roots.insert(root);
+
+
+	}
 	void ObjectGraph::addEnableColorRepeated(ObjectID id)
 	{
 		if (m_enableColorRepeated.contains(id))

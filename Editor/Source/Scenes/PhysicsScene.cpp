@@ -346,9 +346,10 @@ namespace STEditor
 		ImGui::Checkbox("Parallel Process", &m_parallelProcessing);
 		ImGui::Checkbox("Use SIMD", &m_useSIMD);
 		ImGui::Checkbox("Enable Grid", &m_enableGrid);
-		ImGui::Combo("Broadphase", &m_currentBroadphaseIndex, "DBVT\0Grid");
-
+		ImGui::Checkbox("Enable DBVT", &m_enableDBVT);
 		ImGui::Columns(1);
+
+		ImGui::Combo("Broadphase", &m_currentBroadphaseIndex, "DBVT\0Grid");
 
 		ImGui::Checkbox("Show DBVT Leaf", &m_showDBVTLeaf);
 		ImGui::SameLine();
@@ -646,28 +647,34 @@ namespace STEditor
 	{
 		ZoneScopedN("Update Broadphase");
 
-		if(m_enableDBVTRebuild)
+		if(m_enableDBVT)
 		{
-			m_dbvt.clearAllObjects();
-			m_dbvt.setOnlyInsert(true);
+			if(m_enableDBVTRebuild)
+			{
+				m_dbvt.clearAllObjects();
+				m_dbvt.setOnlyInsert(true);
+			}
+			else
+				m_dbvt.setOnlyInsert(false);
 		}
-		else
-			m_dbvt.setOnlyInsert(false);
 
 		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
 			m_aabbs[i] = AABB::fromShape(Transform(m_positions[i], m_rotations[i], 1.0f), m_shapes[i]);
 			BroadphaseObjectBinding binding(m_objectIds[i], m_bitmasks[i], m_aabbs[i]);
 
-			if (m_enableDBVTRebuild)
-				m_dbvt.addObject(binding);
-			else
-				m_dbvt.updateObject(binding);
+			if(m_enableDBVT)
+			{
+				if (m_enableDBVTRebuild)
+					m_dbvt.addObject(binding);
+				else
+					m_dbvt.updateObject(binding);
+			}
 
 			if (m_enableGrid)
 				m_grid.updateObject(binding);
 		}
-		if(m_enableDBVTRebuild)
+		if(m_enableDBVT && m_enableDBVTRebuild)
 			m_dbvt.rebuildTree();
 	}
 

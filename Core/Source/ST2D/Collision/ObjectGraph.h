@@ -17,6 +17,7 @@ namespace ST
 	{
 	public:
 
+		void addEdge(const ObjectPair& edge);
 
 		void addEnableColorRepeated(ObjectID id);
 

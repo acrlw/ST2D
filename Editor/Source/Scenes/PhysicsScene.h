@@ -151,9 +151,10 @@ namespace STEditor
 		bool m_solveByGraphColoring = false;
 		bool m_enableGraphColoring = false;
 		bool m_enableGrid = true;
+		bool m_enableDBVT = false;
 		bool m_enableDBVTRebuild = false;
 
-		int m_currentBroadphaseIndex = 0;
+		int m_currentBroadphaseIndex = 1;
 
 		bool m_simulate = false;
 		bool m_enableWarmstart = true;
