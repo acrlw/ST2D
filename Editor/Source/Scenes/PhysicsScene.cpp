@@ -226,6 +226,7 @@ namespace STEditor
 
 		if(m_showGraphColoring && !m_objectGraph.m_colorToEdges.empty())
 		{
+			ZoneScopedN("Graph Coloring");
 			float max = static_cast<float>(m_objectGraph.m_colorToEdges.size());
 			for (int i = 0; i < m_objectGraph.m_colorToEdges.size(); ++i)
 			{
@@ -235,12 +236,12 @@ namespace STEditor
 				{
 					if(m_contactManifolds[elem].count > 0)
 					{
-						renderer.point(m_contactManifolds[elem].pair.points[0], color, 5);
-						renderer.point(m_contactManifolds[elem].pair.points[2], color, 5);
+						renderer.point(m_contactManifolds[elem].pair.points[0], color, 3);
+						renderer.point(m_contactManifolds[elem].pair.points[2], color, 3);
 						if(m_contactManifolds[elem].count == 2)
 						{
-							renderer.point(m_contactManifolds[elem].pair.points[1], color, 5);
-							renderer.point(m_contactManifolds[elem].pair.points[3], color, 5);
+							renderer.point(m_contactManifolds[elem].pair.points[1], color, 3);
+							renderer.point(m_contactManifolds[elem].pair.points[3], color, 3);
 						}
 					}
 				}
@@ -465,7 +466,7 @@ namespace STEditor
 				for (real i = 0.0; i < max - j; i += 1.0f)
 				{
 					Transform t;
-					t.position.set( i * 1.05f + offset, j * 1.05f + 0.55f);
+					t.position.set( i * 1.1f + offset, j * 1.05f + 0.6f);
 					t.rotation = 0;
 
 					auto id = m_objectIdPool.getNewId();
@@ -523,6 +524,7 @@ namespace STEditor
 			m_aabbs.push_back(AABB::fromShape(trans, &land));
 
 			bindings.emplace_back(m_landId, 1, m_aabbs.back());
+			m_objectGraph.addEnableColorRepeated(m_landId);
 		}
 
 		if(m_enableGrid)
@@ -547,6 +549,7 @@ namespace STEditor
 		m_dbvt.clearAllObjects();
 		m_grid.clearAllObjects();
 		m_contactManifolds.clear();
+		m_objectGraph.clearGraph();
 
 		m_objectIdPool.reset();
 		m_objectIds.clear();
@@ -637,9 +640,14 @@ namespace STEditor
 		if(m_enableGraphColoring)
 		{
 			ZoneScopedN("Graph Coloring");
-			m_objectGraph.clearGraph();
-			m_objectGraph.addEnableColorRepeated(m_landId);
-			m_objectGraph.buildGraph(m_objectPairs);
+
+			m_objectGraph.incrementalUpdateEdges(m_objectPairs);
+			m_objectGraph.outputColorResult();
+
+			//m_objectGraph.clearGraph();
+			//m_objectGraph.addEnableColorRepeated(m_landId);
+			//m_objectGraph.buildGraph(m_objectPairs);
+			//m_objectGraph.outputColorResult();
 		}
 	}
 
@@ -1333,7 +1341,7 @@ namespace STEditor
 		{
 			auto capsule = static_cast<const ST::Capsule*>(shape);
 
-			real r = 0, h = 0, massS = 0, inertiaS = 0, massC = 0, inertiaC = 0, volume = 0;
+			real r, h;
 
 			if (capsule->width() >= capsule->height())//Horizontal
 			{
@@ -1346,12 +1354,12 @@ namespace STEditor
 				h = capsule->height() - capsule->width();
 			}
 
-			volume = Constant::Pi * r * r + h * 2 * r;
+			real volume = Constant::Pi * r * r + h * 2 * r;
 			real rho = mass / volume;
-			massS = rho * Constant::Pi * r * r;
-			massC = rho * h * 2.0f * r;
-			inertiaC = (1.0f / 12.0f) * massC * (h * h + (2.0f * r) * (2.0f * r));
-			inertiaS = massS * r * r * 0.5f;
+			real massS = rho * Constant::Pi * r * r;
+			real massC = rho * h * 2.0f * r;
+			real inertiaC = (1.0f / 12.0f) * massC * (h * h + (2.0f * r) * (2.0f * r));
+			real inertiaS = massS * r * r * 0.5f;
 			inertia = inertiaC + inertiaS + massS * (3.0f * r + 2.0f * h) * h / 8.0f;
 
 			break;

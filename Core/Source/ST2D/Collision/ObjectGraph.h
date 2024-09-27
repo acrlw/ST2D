@@ -17,7 +17,11 @@ namespace ST
 	{
 	public:
 
+		void incrementalUpdateEdges(const std::vector<ObjectPair>& edges);
+
 		void addEdge(const ObjectPair& edge);
+
+		void removeEdge(const ObjectPair& edge);
 
 		void addEnableColorRepeated(ObjectID id);
 
@@ -25,9 +29,15 @@ namespace ST
 		void buildGraph(const std::vector<ObjectPair>& edges);
 
 		void clearGraph();
-		
+
+		void outputColorResult();
+
+		void printGraph();
+
 
 	//private:
+
+		int m_maxColor = 0;
 
 		void addToUF(ObjectID id);
 		ObjectID findUF(ObjectID id);
@@ -40,6 +50,7 @@ namespace ST
 		std::vector<std::vector<ObjectPair>> m_colorToEdges;
 
 		std::unordered_set<ObjectID> m_enableColorRepeated;
+		std::set<ObjectPair> m_edges;
 
 	};
 }

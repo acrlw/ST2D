@@ -276,7 +276,7 @@ namespace STEditor
 				float value = static_cast<float>(color) / static_cast<float>(m_graphColorPoints.size());
 				for (auto&& point : points)
 				{
-					renderer.point(point, gistRainbowColormap(value), 5.0f);
+					renderer.point(point, gistRainbowColormap(value), 3.0f);
 				}
 			}
 		}
@@ -468,12 +468,15 @@ namespace STEditor
 
 			CORE_INFO("Overlaps Count: {}", pairs.size());
 
-			m_objectGraph.clearGraph();
 			m_graphColorPoints.clear();
 
-			m_objectGraph.addEnableColorRepeated(m_landID);
 
-			m_objectGraph.buildGraph(pairs);
+			m_objectGraph.incrementalUpdateEdges(pairs);
+
+			//m_objectGraph.buildGraph(pairs);
+			m_objectGraph.outputColorResult();
+
+			m_objectGraph.printGraph();
 
 			for (int color = 0; color < m_objectGraph.m_colorToEdges.size(); ++color)
 			{
@@ -655,6 +658,7 @@ namespace STEditor
 
 			m_landID = m_objectIdPool.getNewId();
 			m_objectIds.push_back(m_landID);
+			m_objectGraph.addEnableColorRepeated(m_landID);
 
 			bindings.emplace_back(m_landID, 1, m_aabbs.back());
 		}
