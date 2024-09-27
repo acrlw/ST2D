@@ -420,7 +420,7 @@ namespace ST
 
 		// double pointer to compute symmetric difference
 
-		std::vector<CellPosition> cellsToRemove, cellsToAdd;
+		std::vector<CellPosition> cellsToRemove, cellsToAdd, cellsToUpdate;
 
 		auto it1 = m_objects[index].cells.begin();
 		auto it2 = newCells.begin();
@@ -439,6 +439,7 @@ namespace ST
 			}
 			else
 			{
+				cellsToUpdate.emplace_back(*it1);
 				++it1;
 				++it2;
 			}
@@ -474,7 +475,18 @@ namespace ST
 			m_usedCells[elem].push_back(m_objects[index]);
 		}
 
-		m_objects[index].cells = std::move(newCells);
+		for(auto&& elem: cellsToUpdate)
+		{
+			for (auto&& usedBinding : m_usedCells[elem])
+			{
+				if (usedBinding.binding.objectId == binding.objectId)
+				{
+					usedBinding.binding = binding;
+					break;
+				}
+			}
+		}
 
+		m_objects[index].cells = std::move(newCells);
 	}
 }

@@ -45,7 +45,7 @@ namespace ST
 	struct ST_API GridObjectBinding
 	{
 		BroadphaseObjectBinding binding;
-		//which cells this object is in
+		//This represents the cells in which the object lands
 		std::set<CellPosition> cells;
 	};
 
