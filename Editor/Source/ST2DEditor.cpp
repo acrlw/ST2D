@@ -127,6 +127,9 @@ namespace STEditor
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
 
+			//static bool open = true;
+			//ImGui::ShowDemoWindow(&open);
+
 			onRenderUI();
 
 			// ImGUI Rendering

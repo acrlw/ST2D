@@ -143,11 +143,17 @@ namespace STEditor
 		bool m_showVelocityMagnitude = false;
 		bool m_showAngularVelocity = false;
 
+		bool m_showDBVTLeaf = false;
+		bool m_showGridLeaf = false;
+
 		bool m_enableDamping = true;
 		bool m_enableGravity = true;
 		bool m_solveByGraphColoring = false;
 		bool m_enableGraphColoring = false;
-		bool m_enableGrid = false;
+		bool m_enableGrid = true;
+		bool m_enableDBVTRebuild = false;
+
+		int m_currentBroadphaseIndex = 0;
 
 		bool m_simulate = false;
 		bool m_enableWarmstart = true;

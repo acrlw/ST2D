@@ -72,7 +72,6 @@ namespace ST
 
 		void checkHeight() const;
 
-	private:
 
 
 		void rotateNode(int nodeIndex);

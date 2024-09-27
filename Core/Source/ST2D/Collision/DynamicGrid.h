@@ -79,7 +79,7 @@ namespace ST
 
 		const std::map<CellPosition, GridCellObjectsList>& usedCells() const { return m_usedCells; }
 
-		private:
+
 
 
 		void incrementalUpdate(const BroadphaseObjectBinding& binding);

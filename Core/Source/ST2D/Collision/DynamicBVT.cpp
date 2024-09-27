@@ -56,6 +56,7 @@ namespace ST
 	{
 		ZoneScopedN("[DBVT] Query Overlaps");
 		std::vector<ObjectPair> result;
+		std::set<ObjectPair> resultSet;
 
 		if (m_nodes.size() < 2)
 			return result;
@@ -63,6 +64,7 @@ namespace ST
 		int counter = 0;
 
 		std::vector<std::tuple<int, int, bool>> stack;
+		stack.reserve(m_leaves.size());
 		stack.push_back({ m_nodes[m_rootIndex].left, m_nodes[m_rootIndex].right, true });
 		while (!stack.empty())
 		{
@@ -93,9 +95,11 @@ namespace ST
 					int rightId = m_leaves[rightLeafIndex].binding.objectId;
 
 					if (leftId < rightId)
-						result.push_back({ leftId, rightId });
+						resultSet.insert({ leftId, rightId });
+						//result.push_back({ leftId, rightId });
 					else
-						result.push_back({ rightId, leftId });
+						resultSet.insert({ rightId, leftId });
+						//result.push_back({ rightId, leftId });
 				}
 
 			}
@@ -121,9 +125,12 @@ namespace ST
 
 
 		}
+		for (auto&& elem : resultSet)
+			result.push_back(elem);
 
-		//CORE_INFO("[DBVT] Overlaps Query Counter: {}", counter);
-
+		//std::string msg = std::format("[DBVT] Overlaps Query Counter: {}", counter);
+		//ZoneText(msg.c_str(), msg.size());
+		
 		return result;
 	}
 
@@ -294,11 +301,11 @@ namespace ST
 			if (index == -1)
 				continue;
 
-			//std::string line = prefix + (isLeft ? "©À©¤©¤ " : "©¸©¤©¤ ") + std::to_string(index);
-			std::string line = prefix + "- " + std::to_string(index);
+			std::string line = prefix + (isLeft ? "©À©¤©¤ " : "©¸©¤©¤ ") + std::to_string(index);
+			//std::string line = prefix + "- " + std::to_string(index);
 
-			//std::string newPrefix = prefix + (isLeft ? "©¦   " : "    ");
-			std::string newPrefix = prefix + "  ";
+			std::string newPrefix = prefix + (isLeft ? "©¦   " : "    ");
+			//std::string newPrefix = prefix + "  ";
 
 			if (m_nodes[index].isLeaf())
 			{
@@ -701,7 +708,9 @@ namespace ST
 		{
 			int leftIndex = m_nodes[currentIndex].left;
 			int rightIndex = m_nodes[currentIndex].right;
-			m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
+			if (leftIndex != -1 && rightIndex != -1)
+				m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
+			
 			currentIndex = m_nodes[currentIndex].parent;
 		}
 	}
@@ -715,7 +724,9 @@ namespace ST
 		{
 			int leftIndex = m_nodes[currentIndex].left;
 			int rightIndex = m_nodes[currentIndex].right;
-			m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
+			if (leftIndex != -1 && rightIndex != -1)
+				m_nodes[currentIndex].aabb = AABB::combine(m_nodes[leftIndex].aabb, m_nodes[rightIndex].aabb);
+			
 			currentIndex = m_nodes[currentIndex].parent;
 		}
 	}

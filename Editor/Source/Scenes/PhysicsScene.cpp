@@ -204,6 +204,26 @@ namespace STEditor
 
 		}
 
+		if(m_showDBVTLeaf)
+		{
+			for (auto&& elem : m_dbvt.m_leaves)
+			{
+				if(elem.isValid())
+				{
+					renderer.aabb(elem.binding.aabb, Palette::Cyan);
+				}
+			}
+		}
+
+		if(m_showGridLeaf)
+		{
+			for (auto&& elem : m_grid.m_objects)
+			{
+				renderer.aabb(elem.binding.aabb, Palette::Orange);
+			}
+		}
+
+
 		if(m_showGraphColoring && !m_objectGraph.m_colorToEdges.empty())
 		{
 			float max = static_cast<float>(m_objectGraph.m_colorToEdges.size());
@@ -266,7 +286,46 @@ namespace STEditor
 			m_threadPool.readyToWork();
 		}
 
+
+
+		if (ImGui::Button("Print Tree"))
+		{
+			m_dbvt.printTree();
+		}
+
 		ImGui::SameLine();
+
+		if(ImGui::Button("Query DBVT"))
+		{
+			auto pairs = m_dbvt.queryOverlaps();
+			
+			std::string str;
+			for (auto iter = pairs.begin(); iter != pairs.end(); ++iter)
+			{
+				str += std::format("({0}, {1})", iter->idA, iter->idB);
+				if (iter != pairs.end() - 1)
+					str += ", ";
+			}
+			CORE_INFO("DBVT Result: {}", str);
+			CORE_INFO("DBVT Overlaps Count: {}", pairs.size());
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Query Grid"))
+		{
+			auto pairs = m_grid.queryOverlaps();
+			
+			std::string str;
+			for (auto iter = pairs.begin(); iter != pairs.end(); ++iter)
+			{
+				str += std::format("({0}, {1})", iter->idA, iter->idB);
+				if (iter != pairs.end() - 1)
+					str += ", ";
+			}
+			CORE_INFO("Grid Result: {}", str);
+			CORE_INFO("Grid Overlaps Count: {}", pairs.size());
+		}
 
 		ImGui::Text("Step Count: %d", m_stepCount);
 
@@ -279,14 +338,21 @@ namespace STEditor
 		ImGui::Checkbox("Damping", &m_enableDamping);
 		ImGui::Checkbox("Warmstart", &m_enableWarmstart);
 		ImGui::Checkbox("Use Graph Coloring", &m_solveByGraphColoring);
-		ImGui::Checkbox("Enable Coloring", &m_enableGraphColoring);
+		ImGui::Checkbox("Coloring", &m_enableGraphColoring);
+		ImGui::Checkbox("DBVT Rebuild", &m_enableDBVTRebuild);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Vel Block Solver", &m_enableVelocityBlockSolver);
 		ImGui::Checkbox("Pos Block Solver", &m_enablePositionBlockSolver);
 		ImGui::Checkbox("Parallel Process", &m_parallelProcessing);
 		ImGui::Checkbox("Use SIMD", &m_useSIMD);
 		ImGui::Checkbox("Enable Grid", &m_enableGrid);
+		ImGui::Combo("Broadphase", &m_currentBroadphaseIndex, "DBVT\0Grid");
+
 		ImGui::Columns(1);
+
+		ImGui::Checkbox("Show DBVT Leaf", &m_showDBVTLeaf);
+		ImGui::SameLine();
+		ImGui::Checkbox("Show Grid Leaf", &m_showGridLeaf);
 
 		ImGui::DragFloat("Bias Factor", &m_biasFactor, 0.01f, 0.01f, 1.0f);
 		ImGui::DragFloat("Slop", &m_slop, 0.001f, 0.005f, 1.0f);
@@ -506,7 +572,10 @@ namespace STEditor
 	{
 		ZoneScopedN("Generate and Color Contacts");
 
-		m_objectPairs = m_dbvt.queryOverlaps();
+		if(m_currentBroadphaseIndex == 0)
+			m_objectPairs = m_dbvt.queryOverlaps();
+		else if(m_currentBroadphaseIndex == 1)
+			m_objectPairs = m_grid.queryOverlaps();
 
 		{
 			ZoneScopedN("Contacts Generation");
@@ -577,17 +646,29 @@ namespace STEditor
 	{
 		ZoneScopedN("Update Broadphase");
 
-		m_dbvt.clearAllObjects();
-		m_dbvt.setOnlyInsert(true);
+		if(m_enableDBVTRebuild)
+		{
+			m_dbvt.clearAllObjects();
+			m_dbvt.setOnlyInsert(true);
+		}
+		else
+			m_dbvt.setOnlyInsert(false);
+
 		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
 			m_aabbs[i] = AABB::fromShape(Transform(m_positions[i], m_rotations[i], 1.0f), m_shapes[i]);
 			BroadphaseObjectBinding binding(m_objectIds[i], m_bitmasks[i], m_aabbs[i]);
-			m_dbvt.addObject(binding);
+
+			if (m_enableDBVTRebuild)
+				m_dbvt.addObject(binding);
+			else
+				m_dbvt.updateObject(binding);
+
 			if (m_enableGrid)
 				m_grid.updateObject(binding);
 		}
-		m_dbvt.rebuildTree();
+		if(m_enableDBVTRebuild)
+			m_dbvt.rebuildTree();
 	}
 
 	void PhysicsScene::integrateVelocities(float dt)

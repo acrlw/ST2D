@@ -35,7 +35,9 @@ namespace ST
 
 		bool operator<(const ObjectPair& other) const
 		{
-			return key < other.key;
+			if (idA != other.idA)
+				return idA < other.idA;
+			return idB < other.idB;
 		}
 
 	};
