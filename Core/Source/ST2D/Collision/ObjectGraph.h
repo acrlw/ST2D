@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include "ST2D/Core.h"
 
 namespace ST
@@ -11,6 +12,7 @@ namespace ST
 		int rank = 1;
 		std::set<ObjectPair> edges;
 		bool visited = false;
+		std::bitset<16> enableColor = 0;
 	};
 
 	class ST_API ObjectGraph
@@ -52,6 +54,8 @@ namespace ST
 		std::vector<std::vector<ObjectPair>> m_colorToEdges;
 
 		std::unordered_set<ObjectID> m_enableColorRepeated;
+
+		//must be ordered because incremental update is based on this
 		std::set<ObjectPair> m_edges;
 
 	};

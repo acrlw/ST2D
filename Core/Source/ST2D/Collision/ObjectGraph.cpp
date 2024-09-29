@@ -64,37 +64,29 @@ namespace ST
 
 		std::array enableRepeated = { m_enableColorRepeated.contains(edge.idA), m_enableColorRepeated.contains(edge.idB) };
 
-		m_edgeToColor[edge] = -1;
+		if (enableRepeated[0] && enableRepeated[1])
+		{
+			// this should not happen, such as collision pair of two static bodies 
+			CORE_ASSERT(false, "Objects that can have duplicate colors cannot be processed together.");
+		}
+
+		std::bitset<16> usedColor;
+
+		if(!enableRepeated[0] && !enableRepeated[1])
+			usedColor = m_nodes[edge.idA].enableColor | m_nodes[edge.idB].enableColor;
+		else if (!enableRepeated[0] && enableRepeated[1])
+			usedColor = m_nodes[edge.idA].enableColor;
+		else if (!enableRepeated[1] && enableRepeated[0])
+			usedColor = m_nodes[edge.idB].enableColor;
 
 		int color = 0;
-
-		std::set<int> usedColors;
-
-		std::array nodeStack = { edge.idA, edge.idB };
-
-		for(int i = 0;i < 2;++i)
-		{
-			ObjectID currentNode = nodeStack[i];
-
-			const auto& nodeEdges = m_nodes[currentNode].edges;
-
-			if (!enableRepeated[i])
-			{
-				for (const auto& nodeEdge : nodeEdges)
-				{
-					if (m_edgeToColor.contains(nodeEdge) && m_edgeToColor[nodeEdge] != -1)
-						usedColors.insert(m_edgeToColor[nodeEdge]);
-				}
-			}
-		}
-
-
-		for (const auto& usedColor : usedColors)
-		{
-			if (color != usedColor)
+		for (; color < 16; color++)
+			if (!usedColor.test(color))
 				break;
-			color++;
-		}
+
+
+		m_nodes[edge.idA].enableColor.set(color);
+		m_nodes[edge.idB].enableColor.set(color);
 
 		m_maxColor = std::max(m_maxColor, color);
 
@@ -110,6 +102,11 @@ namespace ST
 	{
 		if (!m_edges.contains(edge))
 			return;
+
+		int color = m_edgeToColor[edge];
+
+		m_nodes[edge.idA].enableColor.reset(color);
+		m_nodes[edge.idB].enableColor.reset(color);
 
 		m_edges.erase(edge);
 

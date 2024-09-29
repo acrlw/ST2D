@@ -1337,7 +1337,7 @@ namespace STEditor
 				m_positions[pair.idA] += impulse * imA;
 				m_rotations[pair.idA] += iiA * rA.cross(impulse);
 
-				m_positions[pair.idB] += -impulse * imB;
+				m_positions[pair.idB] -= imB * impulse;
 				m_rotations[pair.idB] += iiB * rB.cross(-impulse);
 			}
 		}
