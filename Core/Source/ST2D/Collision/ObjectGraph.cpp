@@ -64,26 +64,7 @@ namespace ST
 
 		std::array enableRepeated = { m_enableColorRepeated.contains(edge.idA), m_enableColorRepeated.contains(edge.idB) };
 
-		if (!enableRepeated[0])
-			addToUF(edge.idA);
-
-		if (!enableRepeated[1])
-			addToUF(edge.idB);
-
-		if (!enableRepeated[0] && !enableRepeated[1])
-			unionUF(edge.idA, edge.idB);
-
 		m_edgeToColor[edge] = -1;
-
-		ObjectID root = -1;
-
-		if (!enableRepeated[0])
-			root = findUF(edge.idA);
-		else if (!enableRepeated[1])
-			root = findUF(edge.idB);
-
-		if (root != -1 && !m_roots.contains(root))
-			m_roots.insert(root);
 
 		int color = 0;
 
@@ -322,9 +303,61 @@ namespace ST
 		}
 	}
 
+	void ObjectGraph::buildIsland()
+	{
+		ZoneScopedN("[ObjectGraph] buildIsland");
+
+		for (auto& value : m_nodes | std::views::values)
+		{
+			value.ufParent = -1;
+			value.rank = 1;
+			value.visited = false;
+		}
+
+		for (const auto& edge : m_edges)
+		{
+			//find union
+			bool enableRepeatedA = m_enableColorRepeated.contains(edge.idA);
+			bool enableRepeatedB = m_enableColorRepeated.contains(edge.idB);
+
+			if (!enableRepeatedA && m_nodes[edge.idA].ufParent == -1)
+				m_nodes[edge.idA].ufParent = edge.idA;
+
+			if (!enableRepeatedB && m_nodes[edge.idB].ufParent == -1)
+				m_nodes[edge.idB].ufParent = edge.idB;
+
+			if (!enableRepeatedA && !enableRepeatedB)
+				unionUF(edge.idA, edge.idB);
+
+		}
+
+		for (const auto& edge : m_edges)
+		{
+			bool enableRepeatedA = m_enableColorRepeated.contains(edge.idA);
+			bool enableRepeatedB = m_enableColorRepeated.contains(edge.idB);
+
+			ObjectID root = -1;
+
+			if (!enableRepeatedA)
+				root = findUF(edge.idA);
+			else if (!enableRepeatedB)
+				root = findUF(edge.idB);
+
+			if (root != -1 && !m_roots.contains(root))
+				m_roots.insert(root);
+
+
+			if (enableRepeatedA && enableRepeatedB)
+			{
+				// this should not happen, such as collision pair of two static bodies 
+				CORE_ASSERT(false, "Objects that can have duplicate colors cannot be processed together.");
+			}
+		}
+	}
+
 	void ObjectGraph::addToUF(ObjectID id)
 	{
-		if (m_nodes.contains(id))
+		if (m_nodes.contains(id) && m_nodes[id].ufParent != -1)
 			return;
 
 		m_nodes[id].ufParent = id;

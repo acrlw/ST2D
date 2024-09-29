@@ -7,7 +7,7 @@ namespace ST
 	struct GraphNode
 	{
 		ObjectID id;
-		ObjectID ufParent;
+		ObjectID ufParent = -1;
 		int rank = 1;
 		std::set<ObjectPair> edges;
 		bool visited = false;
@@ -33,6 +33,8 @@ namespace ST
 		void outputColorResult();
 
 		void printGraph();
+
+		void buildIsland();
 
 
 	//private:

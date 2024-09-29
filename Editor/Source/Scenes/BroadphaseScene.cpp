@@ -276,7 +276,7 @@ namespace STEditor
 				float value = static_cast<float>(color) / static_cast<float>(m_graphColorPoints.size());
 				for (auto&& point : points)
 				{
-					renderer.point(point, gistRainbowColormap(value), 3.0f);
+					renderer.point(point, gistRainbowColormap(value), 4.0f);
 				}
 			}
 		}

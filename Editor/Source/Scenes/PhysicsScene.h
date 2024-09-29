@@ -61,11 +61,16 @@ namespace STEditor
 
 
 	private:
-		void step(float dt);
-
 		void createObjects();
 		void clearObjects();
 
+
+		void step(float dt);
+		real naturalFrequency(real frequency);
+		real springDampingCoefficient(real mass, real naturalFrequency, real dampingRatio);
+		real springStiffness(real mass, real naturalFrequency);
+		real constraintImpulseMixing(real dt, real stiffness, real damping);
+		real errorReductionParameter(real dt, real stiffness, real damping);
 		void generateAndColorContacts(float dt);
 		void updateBroadphase(float dt);
 		void integrateVelocities(float dt);
@@ -73,14 +78,13 @@ namespace STEditor
 		void integratePositions(float dt);
 		void solvePositions(float dt);
 		void setUpConstraint(float dt);
-
 		void solveContactVelocity(const ObjectPair& pair);
 		void solveContactPosition(const ObjectPair& pair);
-
 		void solveJointVelocity(real dt);
 		void solveJointPosition(real dt);
-
 		real computeInertia(real mass, const Shape* shape);
+
+
 
 		std::vector<int> m_objectIds;
 

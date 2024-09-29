@@ -236,12 +236,12 @@ namespace STEditor
 				{
 					if(m_contactManifolds[elem].count > 0)
 					{
-						renderer.point(m_contactManifolds[elem].pair.points[0], color, 3);
-						renderer.point(m_contactManifolds[elem].pair.points[2], color, 3);
+						renderer.point(m_contactManifolds[elem].pair.points[0], color, 4);
+						renderer.point(m_contactManifolds[elem].pair.points[2], color, 4);
 						if(m_contactManifolds[elem].count == 2)
 						{
-							renderer.point(m_contactManifolds[elem].pair.points[1], color, 3);
-							renderer.point(m_contactManifolds[elem].pair.points[3], color, 3);
+							renderer.point(m_contactManifolds[elem].pair.points[1], color, 4);
+							renderer.point(m_contactManifolds[elem].pair.points[3], color, 4);
 						}
 					}
 				}
@@ -328,6 +328,14 @@ namespace STEditor
 			CORE_INFO("Grid Overlaps Count: {}", pairs.size());
 		}
 
+		ImGui::SameLine();
+
+		if (ImGui::Button("Print Graph"))
+		{
+			m_objectGraph.buildIsland();
+			m_objectGraph.printGraph();
+		}
+
 		ImGui::Text("Step Count: %d", m_stepCount);
 
 		ImGui::DragInt("Frequency", &m_frequency, 1, 240);
@@ -361,6 +369,7 @@ namespace STEditor
 
 		ImGui::DragFloat("Linear Damp", &m_linearVelocityDamping, 0.01f, 0.0f, 1.0f);
 		ImGui::DragFloat("Angular Damp", &m_angularVelocityDamping, 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("AABB Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
 
 		ImGui::SeparatorText("Visibility");
 
@@ -384,7 +393,6 @@ namespace STEditor
 		ImGui::Checkbox("Friction Normal", &m_showFrictionNormal);
 		ImGui::Columns(1);
 
-		ImGui::DragFloat("Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
 
 		ImGui::SeparatorText("Debug Text");
 		ImGui::Text("Graph Color Size: %d", m_objectGraph.m_colorToEdges.size());
@@ -448,6 +456,33 @@ namespace STEditor
 		m_stepCount++;
 	}
 
+	real PhysicsScene::naturalFrequency(real frequency)
+	{
+		return Constant::DoublePi * frequency;
+	}
+
+	real PhysicsScene::springDampingCoefficient(real mass, real naturalFrequency, real dampingRatio)
+	{
+		return dampingRatio * 2.0f * mass * naturalFrequency;
+	}
+
+	real PhysicsScene::springStiffness(real mass, real naturalFrequency)
+	{
+		return mass * naturalFrequency * naturalFrequency;
+	}
+
+	real PhysicsScene::constraintImpulseMixing(real dt, real stiffness, real damping)
+	{
+		real cim = dt * (dt * stiffness + damping);
+		return realEqual(cim, 0.0f) ? 0.0f : 1.0f / cim;
+	}
+
+	real PhysicsScene::errorReductionParameter(real dt, real stiffness, real damping)
+	{
+		real erp = dt * stiffness + damping;
+		return realEqual(erp, 0.0f) ? 0.0f : stiffness / erp;
+	}
+
 	void PhysicsScene::createObjects()
 	{
 		clearObjects();
@@ -466,7 +501,7 @@ namespace STEditor
 				for (real i = 0.0; i < max - j; i += 1.0f)
 				{
 					Transform t;
-					t.position.set( i * 1.1f + offset, j * 1.05f + 0.6f);
+					t.position.set( i * 1.11f + offset, j * 1.05f + 0.6f);
 					t.rotation = 0;
 
 					auto id = m_objectIdPool.getNewId();
@@ -1244,7 +1279,7 @@ namespace STEditor
 			m_positions[pair.idA] += (impulse1 + impulse2) * imA;
 			m_rotations[pair.idA] += iiA * (rA1.cross(impulse1) + rA2.cross(impulse2));
 
-			m_positions[pair.idB] += -(impulse1 + impulse2) * imB;
+			m_positions[pair.idB] -= (impulse1 + impulse2) * imB;
 			m_rotations[pair.idB] += iiB * (rB1.cross(-impulse1) + rB2.cross(-impulse2));
 		}
 		else
