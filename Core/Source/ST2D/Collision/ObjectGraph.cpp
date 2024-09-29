@@ -295,10 +295,7 @@ namespace ST
 
 		for (int i = 0; i < m_colorToEdges.size(); i++)
 		{
-			std::string result = std::format("Color ({0}) : \n", i);
-			for (const auto& edge : m_colorToEdges[i])
-				result += std::format("({0}, {1}) ", edge.idA, edge.idB);
-
+			std::string result = std::format("Color ({}) Count : {} ", i, m_colorToEdges[i].size());
 			CORE_INFO(result);
 		}
 	}

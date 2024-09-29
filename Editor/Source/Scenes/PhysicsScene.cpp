@@ -12,7 +12,7 @@ namespace STEditor
 	void PhysicsScene::onLoad()
 	{
 		rect.set(1.0f, 1.0f);
-		land.set(200.0f, 0.1f);
+		land.set(400.0f, 0.1f);
 		capsule.set(1.0f, 2.0f);
 		ellipse.set(1.0f, 2.0f);
 		circle.setRadius(0.25f);
@@ -246,7 +246,28 @@ namespace STEditor
 					}
 				}
 			}
+		}
 
+		if(m_showContactOrder && !m_objectPairs.empty())
+		{
+			ZoneScopedN("Contact Order");
+			float max = static_cast<float>(m_objectPairs.size());
+			for (int i = 0; i < m_objectPairs.size(); ++i)
+			{
+				float value = static_cast<float>(i) / max;
+				Color color = jetColorMap(value);
+				auto& elem = m_objectPairs[i];
+				if (m_contactManifolds[elem].count > 0)
+				{
+					renderer.point(m_contactManifolds[elem].pair.points[0], color, 4);
+					renderer.point(m_contactManifolds[elem].pair.points[2], color, 4);
+					if (m_contactManifolds[elem].count == 2)
+					{
+						renderer.point(m_contactManifolds[elem].pair.points[1], color, 4);
+						renderer.point(m_contactManifolds[elem].pair.points[3], color, 4);
+					}
+				}
+			}
 		}
 
 	}
@@ -336,7 +357,7 @@ namespace STEditor
 			m_objectGraph.printGraph();
 		}
 
-		ImGui::Text("Step Count: %d", m_stepCount);
+		ImGui::Text("Step Count: %d, Frame Time: %f", m_stepCount, m_currentFrameTime);
 
 		ImGui::DragInt("Frequency", &m_frequency, 1, 240);
 		ImGui::DragInt("Vel Iteration", &m_solveVelocityCount, 1, 100);
@@ -381,10 +402,11 @@ namespace STEditor
 		ImGui::Checkbox("Grid", &m_showGrid);
 		ImGui::Checkbox("DBVT", &m_showDBVT);
 		ImGui::Checkbox("Graph Coloring", &m_showGraphColoring);
-		ImGui::Checkbox("Angular Vel", &m_showAngularVelocity);
+		ImGui::Checkbox("Contact  Order", &m_showContactOrder);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Velocity", &m_showVelocity);
 		ImGui::Checkbox("Velocity Mag", &m_showVelocityMagnitude);
+		ImGui::Checkbox("Angular Vel", &m_showAngularVelocity);
 		ImGui::Checkbox("Joint", &m_showJoint);
 		ImGui::Checkbox("Contact", &m_showContacts);
 		ImGui::Checkbox("Contact Mag", &m_showContactsMagnitude);
@@ -454,6 +476,9 @@ namespace STEditor
 		}
 
 		m_stepCount++;
+		double currentTime = glfwGetTime();
+		m_currentFrameTime = (currentTime - m_stepLastFrameTime) * 1000.0;
+		m_stepLastFrameTime = currentTime;
 	}
 
 	real PhysicsScene::naturalFrequency(real frequency)

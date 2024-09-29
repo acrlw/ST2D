@@ -114,7 +114,7 @@ namespace ST
 	{
 		ZoneScopedN("[Grid] Query Overlaps");
 		std::vector<ObjectPair> result;
-		std::set<ObjectPair> uniquePairs;
+		std::unordered_set<ObjectPair, ObjectPairHash> uniquePairs;
 
 		if (m_usedCells.empty())
 			return result;
@@ -144,15 +144,16 @@ namespace ST
 					if (!uniquePairs.contains(pair))
 					{
 						uniquePairs.insert(pair);
+						result.push_back(pair);
 					}
 				}
 			}
 		}
 
-		for (auto&& elem : uniquePairs)
-		{
-			result.push_back(elem);
-		}
+		//for (auto&& elem : uniquePairs)
+		//{
+		//	result.push_back(elem);
+		//}
 
 		//CORE_INFO("[Grid] Overlaps Query Counter: {}", counter);
 

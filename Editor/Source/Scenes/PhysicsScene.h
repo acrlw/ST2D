@@ -142,6 +142,7 @@ namespace STEditor
 		bool m_showFrictionMagnitude = false;
 		bool m_showFrictionNormal = false;
 		bool m_showGraphColoring = false;
+		bool m_showContactOrder = false;
 
 		bool m_showVelocity = false;
 		bool m_showVelocityMagnitude = false;
@@ -176,6 +177,8 @@ namespace STEditor
 		int m_frequency = 60;
 
 		size_t m_stepCount = 0;
+		double m_stepLastFrameTime = 0.0;
+		double m_currentFrameTime = 0.0;
 
 		int m_solveVelocityCount = 1;
 		int m_solvePositionCount = 1;
