@@ -1240,10 +1240,8 @@ namespace STEditor
 			real bias1 = Math::max(m_biasFactor * (c1.dot(contact.normal) - m_slop), 0.0f);
 			real bias2 = Math::max(m_biasFactor * (c2.dot(contact.normal) - m_slop), 0.0f);
 
-			const real bias = Math::max(bias1, bias2);
-
-			bias1 = -bias;
-			bias2 = -bias;
+			bias1 = -bias1;
+			bias2 = -bias2;
 
 			real rnA1 = rA1.cross(contact.normal);
 			real rnB1 = rB1.cross(contact.normal);
