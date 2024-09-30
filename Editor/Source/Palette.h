@@ -77,7 +77,8 @@ namespace STEditor
 
 	namespace LightPalette
 	{
-		constexpr Color Background(237, 249, 245);
+		//constexpr Color Background(237, 249, 245);
+		constexpr Color Background(255, 255, 255);
 		constexpr Color Red(229, 57, 53);
 		constexpr Color Green(67, 160, 71);
 		constexpr Color Blue(30, 136, 229);

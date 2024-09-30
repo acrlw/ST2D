@@ -236,12 +236,12 @@ namespace STEditor
 				{
 					if(m_contactManifolds[elem].count > 0)
 					{
-						renderer.point(m_contactManifolds[elem].pair.points[0], color, 4);
-						renderer.point(m_contactManifolds[elem].pair.points[2], color, 4);
+						renderer.point(m_contactManifolds[elem].pair.points[0], color, 4.0f);
+						renderer.point(m_contactManifolds[elem].pair.points[2], color, 4.0f);
 						if(m_contactManifolds[elem].count == 2)
 						{
-							renderer.point(m_contactManifolds[elem].pair.points[1], color, 4);
-							renderer.point(m_contactManifolds[elem].pair.points[3], color, 4);
+							renderer.point(m_contactManifolds[elem].pair.points[1], color, 4.0f);
+							renderer.point(m_contactManifolds[elem].pair.points[3], color, 4.0f);
 						}
 					}
 				}
@@ -259,12 +259,12 @@ namespace STEditor
 				auto& elem = m_objectPairs[i];
 				if (m_contactManifolds[elem].count > 0)
 				{
-					renderer.point(m_contactManifolds[elem].pair.points[0], color, 4);
-					renderer.point(m_contactManifolds[elem].pair.points[2], color, 4);
+					renderer.point(m_contactManifolds[elem].pair.points[0], color, 3);
+					renderer.point(m_contactManifolds[elem].pair.points[2], color, 3);
 					if (m_contactManifolds[elem].count == 2)
 					{
-						renderer.point(m_contactManifolds[elem].pair.points[1], color, 4);
-						renderer.point(m_contactManifolds[elem].pair.points[3], color, 4);
+						renderer.point(m_contactManifolds[elem].pair.points[1], color, 3);
+						renderer.point(m_contactManifolds[elem].pair.points[3], color, 3);
 					}
 				}
 			}

@@ -64,11 +64,7 @@ namespace ST
 
 		std::array enableRepeated = { m_enableColorRepeated.contains(edge.idA), m_enableColorRepeated.contains(edge.idB) };
 
-		if (enableRepeated[0] && enableRepeated[1])
-		{
-			// this should not happen, such as collision pair of two static bodies 
-			CORE_ASSERT(false, "Objects that can have duplicate colors cannot be processed together.");
-		}
+		CORE_ASSERT(!(enableRepeated[0] && enableRepeated[1]), "Objects that can have duplicate colors cannot be processed together.");
 
 		std::bitset<16> usedColor;
 
