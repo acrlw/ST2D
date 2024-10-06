@@ -251,10 +251,6 @@ namespace ST
 
 		}
 		m_maxColor = maxColor;
-		
-
-
-
 	}
 
 	void ObjectGraph::clearGraph()

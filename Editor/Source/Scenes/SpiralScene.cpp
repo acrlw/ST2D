@@ -594,11 +594,10 @@ namespace STEditor
 			ref1 = Vector2((m_halfWidth - m_currentRadius) * m_innerWidthFactor, m_roundCorner.y);
 			ref2 = Vector2(m_roundCorner.x, (m_halfHeight - m_currentRadius) * m_innerHeightFactor);
 
-			renderer.line(m_roundCenter, ref1, Palette::LightGray);
-			renderer.line(m_roundCenter, ref2, Palette::LightGray);
+			renderer.line(m_roundCorner, ref1, Palette::LightGray);
+			renderer.line(m_roundCorner, ref2, Palette::LightGray);
 			renderer.line(m_roundCenter, m_startRoundedPos, Palette::LightGray);
 			renderer.line(m_roundCenter, m_endRoundedPos, Palette::LightGray);
-
 		}
 	}
 
