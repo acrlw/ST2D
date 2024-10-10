@@ -369,21 +369,24 @@ namespace STEditor
 		ImGui::Checkbox("Warmstart", &m_enableWarmstart);
 		ImGui::Checkbox("Use Graph Coloring", &m_solveByGraphColoring);
 		ImGui::Checkbox("Coloring", &m_enableGraphColoring);
-		ImGui::Checkbox("DBVT Rebuild", &m_enableDBVTRebuild);
 		ImGui::NextColumn();
 		ImGui::Checkbox("Vel Block Solver", &m_enableVelocityBlockSolver);
 		ImGui::Checkbox("Pos Block Solver", &m_enablePositionBlockSolver);
 		ImGui::Checkbox("Parallel Process", &m_parallelProcessing);
 		ImGui::Checkbox("Use SIMD", &m_useSIMD);
-		ImGui::Checkbox("Enable Grid", &m_enableGrid);
-		ImGui::Checkbox("Enable DBVT", &m_enableDBVT);
+		ImGui::Checkbox("Use Substep", &m_substep);
 		ImGui::Columns(1);
 
 		ImGui::Combo("Broadphase", &m_currentBroadphaseIndex, "DBVT\0Grid");
 
+		ImGui::Columns(2);
+		ImGui::Checkbox("Enable Grid", &m_enableGrid);
+		ImGui::Checkbox("Enable DBVT", &m_enableDBVT);
+		ImGui::Checkbox("DBVT Rebuild", &m_enableDBVTRebuild);
+		ImGui::NextColumn();
 		ImGui::Checkbox("Show DBVT Leaf", &m_showDBVTLeaf);
-		ImGui::SameLine();
 		ImGui::Checkbox("Show Grid Leaf", &m_showGridLeaf);
+		ImGui::Columns(1);
 
 		ImGui::DragFloat("Bias Factor", &m_biasFactor, 0.01f, 0.01f, 1.0f);
 		ImGui::DragFloat("Slop", &m_slop, 0.001f, 0.005f, 1.0f);
@@ -433,20 +436,39 @@ namespace STEditor
 			generateAndColorContacts(dt);
 		}
 
-		// integrate velocities
-		integrateVelocities(dt);
 
-		// set up contact constraint
-		setUpConstraint(dt);
+		if(m_substep)
+		{
+			setUpConstraint(dt);
+			// sub step velocities and positions
+			real subDt = dt / static_cast<real>(m_solveVelocityCount);
 
-		// solve velocity
-		solveVelocities(dt);
+			for (int i = 0; i < m_solveVelocityCount; ++i)
+			{
+				integrateVelocities(subDt);
+				solveVelocities(subDt);
+				real subDt2 = subDt / static_cast<real>(m_solvePositionCount);
+				for (int j = 0; j < m_solvePositionCount; ++j)
+				{
+					integratePositions(subDt2);
+					solvePositions(subDt2);
+				}
+			}
+		}
+		else
+		{
+			setUpConstraint(dt);
+			integrateVelocities(dt);
 
-		// integrate positions
-		integratePositions(dt);
+			for (int i = 0; i < m_solveVelocityCount; ++i)
+				solveVelocities(dt);
 
-		// solve position
-		solvePositions(dt);
+			integratePositions(dt);
+
+			for (int i = 0; i < m_solvePositionCount; ++i)
+				solvePositions(dt);
+			
+		}
 
 		// disable all contacts
 
@@ -773,35 +795,35 @@ namespace STEditor
 			__m128 grav = _mm_set_ps(gravity.y, gravity.x, gravity.y, gravity.x);
 			__m256 vGravity = _mm256_set_m128(grav, grav);
 
-			int index = 0;
-			for (; index + 4 <= m_objectIds.size(); index += 4)
+			int i = 0;
+			for (; i + 4 <= m_objectIds.size(); i += 4)
 			{
-				__m256 vVel = _mm256_loadu_ps(&m_velocities[index].x);
-				__m256 vForce = _mm256_loadu_ps(&m_forces[index].x);
+				__m256 vVel = _mm256_loadu_ps(&m_velocities[i].x);
+				__m256 vForce = _mm256_loadu_ps(&m_forces[i].x);
 
-				__m128 vAngularVel = _mm_loadu_ps(&m_angularVelocities[index]);
-				__m128 vTorque = _mm_loadu_ps(&m_torques[index]);
+				__m128 vAngularVel = _mm_loadu_ps(&m_angularVelocities[i]);
+				__m128 vTorque = _mm_loadu_ps(&m_torques[i]);
 
-				__m128 vTmpInvMass = _mm_loadu_ps(&m_invMasses[index]);
+				__m128 vTmpInvMass = _mm_loadu_ps(&m_invMasses[i]);
 				__m128 vInvMassLo = _mm_unpacklo_ps(vTmpInvMass, vTmpInvMass);
 				__m128 vInvMassHi = _mm_unpackhi_ps(vTmpInvMass, vTmpInvMass);
 
 				__m256 vInvMass = _mm256_set_m128(vInvMassHi, vInvMassLo);
 
-
-				__m128 vTmpMass = _mm_loadu_ps(&m_masses[index]);
+				__m128 vTmpMass = _mm_loadu_ps(&m_masses[i]);
 				__m128 vMassLo = _mm_unpacklo_ps(vTmpMass, vTmpMass);
 				__m128 vMassHi = _mm_unpackhi_ps(vTmpMass, vTmpMass);
 				__m256 vMass = _mm256_set_m128(vMassHi, vMassLo);
 
-				__m128 vInvInertia = _mm_loadu_ps(&m_invInertias[index]);
 
-				// vForce += vGravity * vMass
-				// vVel += vForce * vInvMass * dt8
+				__m128 vInvInertia = _mm_loadu_ps(&m_invInertias[i]);
+
+
+				// vVel += (vForce + gravity * mass) * invMass * dt8
 				// vVel *= lvd4
 
-				vForce = _mm256_add_ps(vForce, _mm256_mul_ps(vGravity, vMass));
-				vVel = _mm256_add_ps(vVel, _mm256_mul_ps(_mm256_mul_ps(vForce, vInvMass), dt8));
+				vVel = _mm256_add_ps(vVel, _mm256_mul_ps(_mm256_add_ps(vForce, _mm256_mul_ps(vGravity, vMass)), vInvMass));
+				vVel = _mm256_mul_ps(vVel, dt8);
 				vVel = _mm256_mul_ps(vVel, lvd4);
 
 				// vAngularVel += vTorque * vInvInertia * dt4
@@ -812,28 +834,26 @@ namespace STEditor
 
 				// store back
 
-				_mm256_storeu_ps(&m_velocities[index].x, vVel);
-				_mm_storeu_ps(&m_angularVelocities[index], vAngularVel);
+				_mm256_storeu_ps(&m_velocities[i].x, vVel);
+				_mm_storeu_ps(&m_angularVelocities[i], vAngularVel);
 
 
 			}
 
-			for (; index < m_objectIds.size(); ++index)
+			for (; i < m_objectIds.size(); ++i)
 			{
-				m_forces[index] += gravity * m_masses[index];
-				m_velocities[index] += m_invMasses[index] * m_forces[index] * dt;
-				m_angularVelocities[index] +=  m_invInertias[index] * m_torques[index] * dt;
+				m_velocities[i] += (m_forces[i] + gravity * m_masses[i]) * m_invMasses[i] * dt;
+				m_angularVelocities[i] += m_invInertias[i] * m_torques[i] * dt;
 
-				m_velocities[index] *= lvd;
-				m_angularVelocities[index] *= avd;
+				m_velocities[i] *= lvd;
+				m_angularVelocities[i] *= avd;
 			}
 		}
 		else
 		{
 			for (int i = 0; i < m_objectIds.size(); ++i)
 			{
-				m_forces[i] += gravity * m_masses[i];
-				m_velocities[i] += m_forces[i] * m_invMasses[i] * dt;
+				m_velocities[i] += (m_forces[i] + gravity * m_masses[i]) * m_invMasses[i] * dt;
 				m_angularVelocities[i] += m_torques[i] * m_invInertias[i] * dt;
 
 				m_velocities[i] *= lvd;
@@ -847,50 +867,43 @@ namespace STEditor
 	{
 		ZoneScopedN("Solve Velocity");
 
-		for (int solveIndex = 0; solveIndex < m_solveVelocityCount; ++solveIndex)
+		//parallel
+		if (m_parallelProcessing)
 		{
-			//parallel
-			if (m_parallelProcessing)
+			for (auto&& elem : m_objectGraph.m_colorToEdges)
+			{
+				std::vector<std::future<void>> futures;
+
+				for (auto&& pair : elem)
+				{
+					futures.emplace_back(
+						m_threadPool.enqueue([this, pair, dt]
+							{
+								solveContactVelocity(pair);
+							}));
+
+				}
+
+				for (auto& future : futures)
+					future.get();
+			}
+		}
+		else
+		{
+			if (m_solveByGraphColoring)
 			{
 				for (auto&& elem : m_objectGraph.m_colorToEdges)
-				{
-					std::vector<std::future<void>> futures;
-
 					for (auto&& pair : elem)
-					{
-						futures.emplace_back(
-							m_threadPool.enqueue([this, pair, dt]
-								{
-									solveContactVelocity(pair);
-								}));
-
-					}
-
-					for (auto& future : futures)
-						future.get();
-				}
+						solveContactVelocity(pair);
 			}
 			else
 			{
-				if(m_solveByGraphColoring)
-				{
-					for (auto&& elem : m_objectGraph.m_colorToEdges)
-						for (auto&& pair : elem)
-							solveContactVelocity(pair);
-				}
-				else
-				{
-					for (auto&& elem : m_objectPairs)
-						solveContactVelocity(elem);
-				}
+				for (auto&& elem : m_objectPairs)
+					solveContactVelocity(elem);
 			}
-
-			solveJointVelocity(dt);
-
-
 		}
 
-
+		solveJointVelocity(dt);
 	}
 
 	void PhysicsScene::integratePositions(float dt)
@@ -935,8 +948,6 @@ namespace STEditor
 	void PhysicsScene::solvePositions(float dt)
 	{
 		ZoneScopedN("Solve Position");
-		for (int solveIndex = 0; solveIndex < m_solvePositionCount; ++solveIndex)
-		{
 			if(m_parallelProcessing)
 			{
 				for (auto&& elem : m_objectGraph.m_colorToEdges)
@@ -973,7 +984,7 @@ namespace STEditor
 			}
 
 			solveJointPosition(dt);
-		}
+		
 	}
 
 	void PhysicsScene::setUpConstraint(float dt)
@@ -1027,6 +1038,7 @@ namespace STEditor
 
 						m_velocities[key.idB] += imB * -impulse;
 						m_angularVelocities[key.idB] += iiB * contact.rB.cross(-impulse);
+
 					}
 
 					Vector2 wa = Vector2::crossProduct(m_angularVelocities[key.idA], contact.rA);
@@ -1059,6 +1071,35 @@ namespace STEditor
 			}
 		}
 
+	}
+
+	void PhysicsScene::warmstart(const ObjectPair& pair, ContactManifold& manifold, float dt)
+	{
+		if (manifold.count > 0)
+		{
+			const real imA = m_invMasses[pair.idA];
+			const real imB = m_invMasses[pair.idB];
+			const real iiA = m_invInertias[pair.idA];
+			const real iiB = m_invInertias[pair.idB];
+
+			for (int i = 0; i < manifold.count; ++i)
+			{
+				auto& contact = manifold.contacts[i];
+
+				Vector2 impulse = contact.sumNormalImpulse * manifold.normal + contact.sumTangentImpulse * manifold.tangent;
+
+				m_velocities[pair.idA] += imA * impulse;
+				m_angularVelocities[pair.idA] += iiA * contact.rA.cross(impulse);
+
+				m_velocities[pair.idB] += imB * -impulse;
+				m_angularVelocities[pair.idB] += iiB * contact.rB.cross(-impulse);
+
+				Vector2 wa = Vector2::crossProduct(m_angularVelocities[pair.idA], contact.rA);
+				Vector2 wb = Vector2::crossProduct(m_angularVelocities[pair.idB], contact.rB);
+				contact.vA = m_velocities[pair.idA] + wa;
+				contact.vB = m_velocities[pair.idB] + wb;
+			}
+		}
 	}
 
 	void PhysicsScene::solveContactVelocity(const ObjectPair& pair)
@@ -1184,13 +1225,13 @@ namespace STEditor
 					Vector2 dv = singleContact.vA - singleContact.vB;
 
 					real jvn = manifold.normal.dot(dv + singleContact.velocityBias);
-					real lamndaN = -jvn * singleContact.effectiveMassNormal;
+					real lambdaN = -jvn * singleContact.effectiveMassNormal;
 
 					real oldImpulse = singleContact.sumNormalImpulse;
-					singleContact.sumNormalImpulse = Math::max(oldImpulse + lamndaN, 0);
-					lamndaN = singleContact.sumNormalImpulse - oldImpulse;
+					singleContact.sumNormalImpulse = Math::max(oldImpulse + lambdaN, 0);
+					lambdaN = singleContact.sumNormalImpulse - oldImpulse;
 
-					Vector2 impulseN = lamndaN * manifold.normal;
+					Vector2 impulseN = lambdaN * manifold.normal;
 
 					m_velocities[pair.idA] += impulseN * m_invMasses[pair.idA];
 					m_angularVelocities[pair.idA] += m_invInertias[pair.idA] * singleContact.rA.cross(impulseN);

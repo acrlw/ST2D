@@ -78,6 +78,7 @@ namespace STEditor
 		void integratePositions(float dt);
 		void solvePositions(float dt);
 		void setUpConstraint(float dt);
+		void warmstart(const ObjectPair& pair, ContactManifold& manifold, float dt);
 		void solveContactVelocity(const ObjectPair& pair);
 		void solveContactPosition(const ObjectPair& pair);
 		void solveJointVelocity(real dt);
@@ -168,6 +169,7 @@ namespace STEditor
 		bool m_parallelProcessing = false;
 		bool m_useSIMD = false;
 		bool m_flagInitial = true;
+		bool m_substep = true;
 
 		float m_linearVelocityDamping = 0.9f;
 		float m_angularVelocityDamping = 0.9f;
