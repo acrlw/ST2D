@@ -807,7 +807,6 @@ namespace STEditor
 				__m128 vTmpInvMass = _mm_loadu_ps(&m_invMasses[i]);
 				__m128 vInvMassLo = _mm_unpacklo_ps(vTmpInvMass, vTmpInvMass);
 				__m128 vInvMassHi = _mm_unpackhi_ps(vTmpInvMass, vTmpInvMass);
-
 				__m256 vInvMass = _mm256_set_m128(vInvMassHi, vInvMassLo);
 
 				__m128 vTmpMass = _mm_loadu_ps(&m_masses[i]);
@@ -815,15 +814,13 @@ namespace STEditor
 				__m128 vMassHi = _mm_unpackhi_ps(vTmpMass, vTmpMass);
 				__m256 vMass = _mm256_set_m128(vMassHi, vMassLo);
 
-
 				__m128 vInvInertia = _mm_loadu_ps(&m_invInertias[i]);
 
 
 				// vVel += (vForce + gravity * mass) * invMass * dt8
 				// vVel *= lvd4
 
-				vVel = _mm256_add_ps(vVel, _mm256_mul_ps(_mm256_add_ps(vForce, _mm256_mul_ps(vGravity, vMass)), vInvMass));
-				vVel = _mm256_mul_ps(vVel, dt8);
+				vVel = _mm256_add_ps(vVel, _mm256_mul_ps(_mm256_mul_ps(_mm256_add_ps(vForce, _mm256_mul_ps(vGravity, vMass)), vInvMass), dt8));
 				vVel = _mm256_mul_ps(vVel, lvd4);
 
 				// vAngularVel += vTorque * vInvInertia * dt4
