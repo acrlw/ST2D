@@ -59,25 +59,31 @@ namespace STEditor
 			if (m_showAABB)
 				renderer.aabb(m_aabbs[i], Palette::Teal);
 
-			if(m_showVelocity)
+
+			Vector2 end = m_positions[i] + m_velocities[i];
+
+			real mag = m_velocities[i].length();
+
+			if (m_showVelocityMagnitude)
 			{
-				Vector2 end = m_positions[i] + m_velocities[i];
-
-				if(m_showVelocityMagnitude)
-				{
-					real mag = m_velocities[i].length();
-					std::string str = std::format("Vel: {:.3f}", mag);
-					renderer.text(end + Vector2(0.1f, 0.1f), Palette::LightCyan, str);
-				}
-
-				renderer.arrow(m_positions[i], end, Palette::LightCyan);
+				std::string str = std::format("{:.3f}", mag);
+				renderer.text(m_positions[i] + Vector2(0.1f, 0.1f), Palette::LightCyan, str);
 			}
+
+			if (m_showVelocityColormap)
+			{
+				Color color = jetColorMap(mag / m_maxVelocityColormap);
+				renderer.shape(transform, m_shapes[i], color);
+			}
+
+			if (m_showVelocityArrow)
+				renderer.arrow(m_positions[i], end, Palette::LightCyan);
+
 
 			if(m_showAngularVelocity)
 			{
-				Vector2 end = m_positions[i] - Vector2(0.1f, 0.1f);
-				std::string str = std::format("Ang Vel: {:.3f}", m_angularVelocities[i]);
-				renderer.text(end, Palette::Teal, str);
+				std::string str = std::format("{:.3f}", m_angularVelocities[i]);
+				renderer.text(m_positions[i] - Vector2(0.1f, 0.1f), Palette::Teal, str);
 			}
 		}
 
@@ -396,6 +402,7 @@ namespace STEditor
 		ImGui::DragFloat("AABB Expand Ratio", &m_expandRatio, 0.01f, 0.0f, 1.0f);
 
 		ImGui::SeparatorText("Visibility");
+		ImGui::DragFloat("Max Velocity Colormap", &m_maxVelocityColormap, 0.5f, 1.0f, 100.0f);
 
 		ImGui::Columns(2);
 		ImGui::Checkbox("Object", &m_showObject);
@@ -406,11 +413,12 @@ namespace STEditor
 		ImGui::Checkbox("DBVT", &m_showDBVT);
 		ImGui::Checkbox("Graph Coloring", &m_showGraphColoring);
 		ImGui::Checkbox("Contact  Order", &m_showContactOrder);
-		ImGui::NextColumn();
-		ImGui::Checkbox("Velocity", &m_showVelocity);
-		ImGui::Checkbox("Velocity Mag", &m_showVelocityMagnitude);
-		ImGui::Checkbox("Angular Vel", &m_showAngularVelocity);
 		ImGui::Checkbox("Joint", &m_showJoint);
+		ImGui::NextColumn();
+		ImGui::Checkbox("Vel Arrow", &m_showVelocityArrow);
+		ImGui::Checkbox("Vel Mag", &m_showVelocityMagnitude);
+		ImGui::Checkbox("Vel Colormap", &m_showVelocityColormap);
+		ImGui::Checkbox("Angular Vel", &m_showAngularVelocity);
 		ImGui::Checkbox("Contact", &m_showContacts);
 		ImGui::Checkbox("Contact Mag", &m_showContactsMagnitude);
 		ImGui::Checkbox("Contact Normal", &m_showContactNormal);
@@ -447,12 +455,12 @@ namespace STEditor
 			{
 				integrateVelocities(subDt);
 				solveVelocities(subDt);
-				real subDt2 = subDt / static_cast<real>(m_solvePositionCount);
-				for (int j = 0; j < m_solvePositionCount; ++j)
-				{
-					integratePositions(subDt2);
-					solvePositions(subDt2);
-				}
+			}
+			real subDt2 = dt / static_cast<real>(m_solvePositionCount);
+			for (int j = 0; j < m_solvePositionCount; ++j)
+			{
+				integratePositions(subDt2);
+				solvePositions(subDt2);
 			}
 		}
 		else

@@ -145,8 +145,9 @@ namespace STEditor
 		bool m_showGraphColoring = false;
 		bool m_showContactOrder = false;
 
-		bool m_showVelocity = false;
+		bool m_showVelocityArrow = false;
 		bool m_showVelocityMagnitude = false;
+		bool m_showVelocityColormap = false;
 		bool m_showAngularVelocity = false;
 
 		bool m_showDBVTLeaf = false;
@@ -173,6 +174,7 @@ namespace STEditor
 
 		float m_linearVelocityDamping = 0.9f;
 		float m_angularVelocityDamping = 0.9f;
+		float m_maxVelocityColormap = 10.0f;
 
 		float m_biasFactor = 0.3f;
 		float m_slop = 0.001f;
