@@ -196,7 +196,7 @@ namespace STEditor
 		{
 			Vector2 n = end[i] - start[i];
 			n = n * m_curvatureScaleFactor;
-
+			real dist = n.length();
 			if(flip)
 				n = -n;
 
@@ -216,7 +216,7 @@ namespace STEditor
 		float maxRadius = min * m_percentage;
 
 		if (!m_lockRadius)
-			currentRadius = maxRadius * m_percentage;
+			currentRadius = maxRadius;
 
 		roundCenter.set(m_halfWidth - currentRadius, m_halfHeight - currentRadius);
 		roundCorner.set(currentRadius * std::cos(Math::radians(45)),

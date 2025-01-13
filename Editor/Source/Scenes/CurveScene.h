@@ -76,15 +76,15 @@ namespace STEditor
 		float m_cornerSmoothing = 0.6f;
 		float m_residualResolution = 1e-5f;
 		float m_optimizeSpeed = 1e-5f;
-		float m_innerWidthFactor = 0.678f;
-		float m_innerHeightFactor = 0.678f;
+		float m_innerWidthFactor = 0.5f;
+		float m_innerHeightFactor = 0.5f;
 		float m_curvatureScaleFactor = 0.1f;
 		int m_bezierCount = 8000;
 		int m_count = 100;
 		float m_halfWidth = 1.0f;
 		float m_halfHeight = 1.0f;
-		float m_percentage = 0.670f;
-		float m_cornerPercentage = 0.367f;
+		float m_percentage = 0.4f;
+		float m_cornerPercentage = 0.4f;
 		float m_thickness = 2;
 
 		float m_relativeRatio1 = 0.0f;

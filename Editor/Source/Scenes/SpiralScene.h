@@ -51,13 +51,13 @@ namespace STEditor
 		bool m_showG2Curvature = false;
 		bool m_curvatureFlip = true;
 
-		float m_innerWidthFactor = 0.55f;
-		float m_innerHeightFactor = 0.55f;
+		float m_innerWidthFactor = 0.5f;
+		float m_innerHeightFactor = 0.5f;
 		float m_curvatureScaleFactor = 0.1f;
 		float m_halfWidth = 1.0f;
 		float m_halfHeight = 1.0f;
-		float m_percentage = 0.638f;
-		float m_cornerPercentage = 0.301f;
+		float m_percentage = 0.4f;
+		float m_cornerPercentage = 0.4f;
 
 		float m_relativeRatio1 = 0.0f;
 		float m_relativeRatio2 = 0.0f;

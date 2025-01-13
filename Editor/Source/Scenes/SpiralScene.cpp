@@ -179,7 +179,7 @@ namespace STEditor
 		float maxRadius = min * m_percentage;
 
 		if(!m_lockRadius)
-			m_currentRadius = maxRadius * m_percentage;
+			m_currentRadius = maxRadius;
 
 		m_roundCenter.set(m_halfWidth - m_currentRadius, m_halfHeight - m_currentRadius);
 		m_roundCorner.set(m_currentRadius * std::cos(Math::radians(45)),
