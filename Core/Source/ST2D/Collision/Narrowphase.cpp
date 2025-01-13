@@ -181,7 +181,7 @@ namespace ST
 		CollisionInfo info;
 		info.simplex = simplex;
 
-		std::priority_queue<SimplexDistPair, std::vector<SimplexDistPair>, std::greater<SimplexDistPair>> queue;
+		std::priority_queue<SimplexDistPair, std::vector<SimplexDistPair>, std::greater<>> queue;
 
 		{
 			//build queue from simplex;

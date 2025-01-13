@@ -111,6 +111,8 @@ namespace STEditor
 
 			onUpdate(static_cast<float>(deltaTime));
 
+			m_isImGUIActive = ImGui::GetIO().WantCaptureMouse;
+
 			// clear
 
 			glClearColor(Palette::Background.r, Palette::Background.g, Palette::Background.b, 1.0f);
@@ -367,7 +369,7 @@ namespace STEditor
 	{
 		m_referenceLayer.onMouseScroll(window, *m_renderer2D, xoffset, yoffset);
 
-		if (m_renderer2D != nullptr)
+		if (m_renderer2D != nullptr && !m_isImGUIActive)
 			m_renderer2D->onMouseScroll(xoffset, yoffset);
 
 		if (m_currentScene != nullptr)
