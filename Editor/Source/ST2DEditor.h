@@ -72,5 +72,6 @@ namespace STEditor
 
 		bool m_nightMode = true;
 		bool m_currentNightMode = true;
+		bool m_isImGUIActive = false;
 	};
 }
