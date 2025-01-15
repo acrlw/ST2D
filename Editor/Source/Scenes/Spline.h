@@ -28,6 +28,11 @@ namespace STEditor
 		std::vector<Vector2> m_controlPoints;
 		std::vector<real> m_knots;
 	};
-	
+
+	class NURBS
+	{
+	public:
+		
+	};
 
 }
