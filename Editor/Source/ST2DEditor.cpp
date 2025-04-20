@@ -1,5 +1,7 @@
 ﻿#include "ST2DEditor.h"
 
+#include "Scenes/ContinuousScene.h"
+
 namespace STEditor
 {
 	ST2DEditor::ST2DEditor()
@@ -8,6 +10,7 @@ namespace STEditor
 			{
 				[&]() { return std::make_unique<HelloWorldScene>(); },
 				[&]() { return std::make_unique<CurveScene>(); },
+				[&]() { return std::make_unique<ContinuousScene>(); },
 				[&]() { return std::make_unique<BroadphaseScene>(); },
 				[&]() { return std::make_unique<NarrowphaseScene>(); },
 				[&]() { return std::make_unique<PhysicsScene>(); },

@@ -568,6 +568,22 @@ namespace STEditor
 
 	}
 
+	void Renderer2D::pointFixedSize(const Vector2& position, const Color& color, float size)
+	{
+		AABB aabb = m_screenAABB;
+		aabb.expand(2.0f * size);
+		if (!AABB::collide(aabb, position))
+			return;
+
+		// compute ndc position
+		Vector2 p = worldToScreen(position);
+		p = screenToNDC(p);
+
+		pushVector(m_ndcPoints, p);
+		pushColor(m_ndcPoints, color);
+		m_ndcPoints.push_back(size);
+	}
+
 	void Renderer2D::point(const Vector2& position, const Color& color, float size)
 	{
 		AABB aabb = m_screenAABB;

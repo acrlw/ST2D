@@ -50,11 +50,11 @@ namespace STEditor
 
 		bool m_userDrawVisible = true;
 
-		int m_currentSceneIndex = 4;
+		int m_currentSceneIndex = 2;
 
-		std::array<const char*, 8> m_sceneName = { "HelloWorld", "Curve", "Broadphase", "Narrowphase", "Physics", "Empty", "Spline", "Spiral" };
+		std::array<const char*, 9> m_sceneName = { "HelloWorld", "Curve", "Continuous", "Broadphase", "Narrowphase", "Physics", "Empty", "Spline", "Spiral" };
 
-		std::array<std::function<std::unique_ptr<AbstractScene>()>, 8> m_sceneList;
+		std::array<std::function<std::unique_ptr<AbstractScene>()>, 9> m_sceneList;
 		
 
 		GLFWwindow* m_window;

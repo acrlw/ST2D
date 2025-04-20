@@ -366,8 +366,8 @@ namespace STEditor
 		ImGui::Text("Step Count: %d, Frame Time: %f", m_stepCount, m_currentFrameTime);
 
 		ImGui::DragInt("Frequency", &m_frequency, 1, 240);
-		ImGui::DragInt("Vel Iteration", &m_solveVelocityCount, 1, 100);
-		ImGui::DragInt("Pos Iteration", &m_solvePositionCount, 1, 100);
+		ImGui::DragInt("Vel Iteration", &m_solveVelocityCount, 1,1, 100);
+		ImGui::DragInt("Pos Iteration", &m_solvePositionCount, 1,1, 100);
 
 		ImGui::Columns(2);
 		ImGui::Checkbox("Gravity", &m_enableGravity);

@@ -32,7 +32,7 @@ namespace STEditor
 	void SplineScene::onRender(Renderer2D& renderer)
 	{
 		if (m_addPoint)
-			renderer.point(m_mousePoint, Palette::Blue, 8.0f);
+			renderer.pointFixedSize(m_mousePoint, Palette::Blue, 6.0f);
 
 		if (!m_samplePoints.empty())
 		{
@@ -45,7 +45,7 @@ namespace STEditor
 			{
 				Vector2 point(elem.x, elem.y);
 				points.emplace_back(elem.x, elem.y);
-				renderer.point(point, Palette::Green, 8.0f);
+				renderer.pointFixedSize(point, Palette::Green, 6.0f);
 			}
 		}
 		else
