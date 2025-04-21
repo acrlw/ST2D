@@ -1063,6 +1063,35 @@ namespace STEditor
 		polyDashedLines({ aabb.topLeft(), aabb.topRight(), aabb.bottomRight(), aabb.bottomLeft(),aabb.topLeft() }, color, dashLength, gapLength);
 	}
 
+	void Renderer2D::dashedArrow(const Vector2& start, const Vector2& end, const Color& color, const float& size, const float& degree, float dashLength,
+		float gapLength)
+	{
+		Vector2 tf = start - end;
+		real length = tf.length();
+		real scale = size;
+		if (length < 1.0f)
+			scale = length * size;
+		if (realEqual(length, 0))
+			return;
+
+		Vector2 n = tf.normal();
+		Vector2 normal = n * scale;
+		Complex c(Math::radians(degree * 0.5f));
+		Vector2 d1 = c.multiply(normal);
+		Vector2 d2 = c.set(-Math::radians(degree * 0.5f)).multiply(normal);
+
+		Vector2 p1 = d1 + end;
+		Vector2 p2 = d2 + end;
+		real p = d1.dot(n);
+		real l = (d1 - p * n).length();
+		real x = l / Math::tanx(Math::radians(degree));
+		real f = p - x;
+		Vector2 p3 = f * n + end;
+
+		fill({ end, p1, p3, p2 }, color);
+		dashedLine(start, p3, color, dashLength, gapLength);
+	}
+
 	void Renderer2D::arrow(const Vector2& start, const Vector2& end, const Color& color, const float& size, const float& degree)
 	{
 		Vector2 tf = start - end;

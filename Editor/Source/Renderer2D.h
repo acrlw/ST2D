@@ -102,6 +102,7 @@ namespace STEditor
 		void aabb(const AABB& aabb, const Color& color);
 		void dashedAABB(const AABB& aabb, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
 
+		void dashedArrow(const Vector2& start, const Vector2& end, const Color& color, const float& size = 0.2, const float& degree = 45, float dashLength = 0.1f, float gapLength = 0.1f);
 		void arrow(const Vector2& start, const Vector2& end, const Color& color, const float& size = 0.2f, const float& degree = 45);
 
 		void text(const Vector2& position, const Color& color, const std::string& text, const float& scale = 1.0f, bool centered = true);

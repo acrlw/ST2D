@@ -58,7 +58,8 @@ namespace STEditor
 		bool m_showVelocityColormap = false;
 		bool m_showAngularVelocity = false;
 
-		bool m_showBulletTrajPrediction = true;	
+		bool m_showBulletTrajPrediction = true;
+		bool m_showFeature = true;
 
 		bool m_enableDamping = false;
 		bool m_enableGravity = false;
@@ -74,6 +75,9 @@ namespace STEditor
 		int m_frequency = 60;
 		float m_timeStep = 1.0f / m_frequency;
 
+		Vector2 m_initVelocity{ 500, 50 };
+		real m_initAngularVelocity = 500.0f;
+
 		size_t m_stepCount = 0;
 		double m_stepLastFrameTime = 0.0;
 		double m_currentFrameTime = 0.0;
@@ -81,7 +85,10 @@ namespace STEditor
 		size_t m_idIndex = 0;
 
 		int m_showTrajIndex = 0;
+		int m_maxTrajIndex = 3;
 		int m_trajSampleCount = 200;
 		ObjectID m_bulletId = 0;
+		ObjectID m_objectId = 0;
+		float m_t = 0.0f;
 	};
 }

@@ -49,7 +49,7 @@ namespace STEditor
 				h = 20;
 			else if (meterToPixel <= 20)
 				h = 10;
-			else if (meterToPixel <= 40)
+			else if (meterToPixel <= 28)
 				h = 5;
 			else if (meterToPixel <= 60)
 				h = 2;

@@ -101,15 +101,19 @@ namespace STEditor
 			{
 				if (i != m_bulletId)
 					continue;
+
 				Transform tf;
 				Transform objectTf{ m_positions[i], m_rotations[i], 1.0f };
 				AABB localAABB = AABB::fromShape(tf, m_shapes[i]);
-				std::vector<Vector2> points = { localAABB.topLeft(), localAABB.bottomLeft(), localAABB.bottomRight(), localAABB.topRight() };
+				
 
 				real minX = std::numeric_limits<real>::max();
 				real maxX = -std::numeric_limits<real>::max();
 				real minY = std::numeric_limits<real>::max();
 				real maxY = -std::numeric_limits<real>::max();
+
+				std::vector<Vector2> points = static_cast<ST::Polygon*>(m_shapes[i])->vertices();
+				m_maxTrajIndex = points.size() - 1;
 
 				for (int j = 0; j < points.size(); ++j)
 				{
@@ -128,6 +132,27 @@ namespace STEditor
 				stepTf.position += stepVelocity;
 				stepTf.rotation += stepRotation;
 
+				Transform specificTf;
+				// lerp
+				specificTf.position = m_positions[i] + (stepTf.position - m_positions[i]) * m_t;
+				specificTf.rotation = m_rotations[i] + (stepTf.rotation - m_rotations[i]) * m_t;
+				specificTf.scale = 1.0f;
+
+				renderer.shape(specificTf, m_shapes[i], Palette::LightBlue);
+
+				if (m_showFeature)
+				{
+					Transform tfB;
+					tfB.position = m_positions[m_objectId];
+					tfB.rotation = m_rotations[m_objectId];
+					tfB.scale = 1.0f;
+					auto distInfo = Narrowphase::distance(objectTf, m_shapes[m_bulletId], tfB, m_shapes[m_objectId]);
+					renderer.point(distInfo.pair.pointA, Palette::Yellow);
+					renderer.point(distInfo.pair.pointB, Palette::Cyan);
+
+					renderer.dashedLine(distInfo.pair.pointA, distInfo.pair.pointB, Palette::LightGray);
+				}
+
 				for (int j = 0; j < points.size(); ++j)
 				{
 					Vector2 point = stepTf.translatePoint(points[j]);
@@ -145,7 +170,8 @@ namespace STEditor
 					Vector2 afterStepPoint = stepTf.translatePoint(points[j]);
 					renderer.point(afterStepPoint, Palette::Red);
 					std::string str = std::format("idx: {}", j);
-					renderer.arrow(beforeStepPoint, afterStepPoint, Palette::Red);
+					
+					renderer.dashedArrow(beforeStepPoint, afterStepPoint, Palette::Red);
 					renderer.text(beforeStepPoint, Palette::Red, str);
 
 					real x0 = m_positions[i].x;
@@ -172,7 +198,7 @@ namespace STEditor
 					trajectory.reserve(m_trajSampleCount);
 					trajX.reserve(m_trajSampleCount);
 					trajY.reserve(m_trajSampleCount);
-					for (int k = 0; k < m_trajSampleCount; ++k)
+					for (int k = 0; k <= m_trajSampleCount; ++k)
 					{
 						real t = static_cast<real>(k) * m_timeStep / static_cast<float>(m_trajSampleCount);
 						Vector2 p = pt(t, x0, y0, theta_0, vx, vy, w, lx, ly);
@@ -314,9 +340,12 @@ namespace STEditor
 
 		ImGui::Separator();
 		ImGui::Checkbox("Bullet Traj Prediction", &m_showBulletTrajPrediction);
-		ImGui::SliderInt("Traj Index", &m_showTrajIndex, 0, 3);
+		ImGui::SliderInt("Traj Index", &m_showTrajIndex, 0, m_maxTrajIndex);
+		ImGui::Checkbox("Show Feature", &m_showFeature);
 		ImGui::DragInt("Traj Sample Count", &m_trajSampleCount, 10, 10, 1000);
-
+		ImGui::DragFloat("Time", &m_t, 0.001f, 0.0f, 1.0f);
+		ImGui::DragFloat2("Init Vel", &m_initVelocity.x, 10, 0, 5000);
+		ImGui::DragFloat("Init Angular Vel", &m_initAngularVelocity, 10.0f, 0, 5000);
 		ImGui::End();
 	}
 
@@ -352,8 +381,8 @@ namespace STEditor
 		m_bulletId = m_idIndex - 1;
 		m_positions.emplace_back(-18.0f, 4.0f);
 		m_rotations.push_back(Math::radians(45));
-		m_velocities.emplace_back(500.0f, 50.0f);
-		m_angularVelocities.push_back(500.0f);
+		m_velocities.emplace_back(m_initVelocity);
+		m_angularVelocities.push_back(m_initAngularVelocity);
 		m_shapes.push_back(&triangle);
 		tf.position = m_positions.back();
 		tf.rotation = m_rotations.back();
@@ -361,6 +390,7 @@ namespace STEditor
 
 		// create rectangle
 		m_objectIds.push_back(m_idIndex++);
+		m_objectId = m_idIndex - 1;
 		m_positions.emplace_back(-4.0f, 4.0f);
 		m_rotations.push_back(Math::radians(45));
 		m_velocities.emplace_back(0.0f, 1.0f);
