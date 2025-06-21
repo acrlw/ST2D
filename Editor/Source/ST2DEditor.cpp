@@ -93,7 +93,7 @@ namespace STEditor
 		//io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-		io.Fonts->AddFontFromFileTTF("./Resource/Fonts/MiSans-Medium.ttf", 18);
+		io.Fonts->AddFontFromFileTTF("./Resource/Fonts/SourceSans3-Medium.ttf", 20);
 		// Setup Dear ImGui style
 		styleDarkUI();
 

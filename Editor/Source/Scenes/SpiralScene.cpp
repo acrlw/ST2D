@@ -166,6 +166,110 @@ namespace STEditor
 			m_innerHeightFactor = m_innerWidthFactor;
 		}
 
+		if (ImGui::Button("Maximize Round Radius"))
+		{
+			// check if current spiral is g2 continuity
+			if (m_currentShapeIndex == 0)
+			{
+				double pc = m_cornerPercentage;
+				double A = std::numbers::pi * (1.0 - pc) * 0.5;
+				double C = std::numbers::sqrt2 * std::sin(std::numbers::pi * pc / 4.0);
+				
+				int num_steps = m_spiral.size();
+
+				double coeff = std::numbers::pi * (1 - pc) / 4;
+				double dt = 1.0 / static_cast<double>(num_steps);
+				double integral_C = 0.0;
+				double integral_S = 0.0;
+
+				double last_t = 0.0;
+				double last_f_cos = std::cos(coeff * last_t * last_t);
+				double last_f_sin = std::sin(coeff * last_t * last_t);
+
+
+				for (int i = 0; i < num_steps; ++i)
+				{
+					double current_t = static_cast<double>(i + 1) * dt;
+					double mid_t = last_t + dt / 2.0;
+
+					double current_f_cos = std::cos(coeff * current_t * current_t);
+					double current_f_sin = std::sin(coeff * current_t * current_t);
+					double mid_f_cos = std::cos(coeff * mid_t * mid_t);
+					double mid_f_sin = std::sin(coeff * mid_t * mid_t);
+
+
+					integral_C += (dt / 6.0) * (last_f_cos + 4.0 * mid_f_cos + current_f_cos);
+					integral_S += (dt / 6.0) * (last_f_sin + 4.0 * mid_f_sin + current_f_sin);
+
+
+					last_t = current_t;
+					last_f_cos = current_f_cos;
+					last_f_sin = current_f_sin;
+				}
+
+
+				double B = integral_C + integral_S;
+				double K = A * B + C;
+
+
+				real oldR = m_currentRadius;
+				real newR = std::min(m_halfWidth, m_halfWidth) / K;
+				m_percentage = newR / std::min(m_halfWidth, m_halfWidth);
+				APP_INFO("old radius:{}, max radius:{}", oldR, newR)
+			}
+			else if (m_currentShapeIndex == 1)
+			{
+				double pc = m_cornerPercentage;
+				double A = std::numbers::pi * (1.0 - pc) * 0.5;
+				double C = std::numbers::sqrt2 * std::sin(std::numbers::pi * pc / 4.0);
+
+				int num_steps = m_spiral.size();
+
+				double coeff1 = -std::numbers::pi * (1 - pc) / 4.0;
+				double coeff2 = std::numbers::pi * (1 - pc) / 2.0;
+				double dt = 1.0 / static_cast<double>(num_steps);
+				double integral_C = 0.0;
+				double integral_S = 0.0;
+
+				double last_t = 0.0;
+				double last_f_cos = 1.0;
+				double last_f_sin = 0.0;
+
+
+				for (int i = 0; i < num_steps; ++i)
+				{
+					double current_t = static_cast<double>(i + 1) * dt;
+					double mid_t = last_t + dt / 2.0;
+
+					double curr_theta = coeff1 * std::pow(current_t, 4) + coeff2 * std::pow(current_t, 3);
+					double mid_theta = coeff1 * std::pow(mid_t, 4) + coeff2 * std::pow(mid_t, 3);
+					double current_f_cos = std::cos(curr_theta);
+					double current_f_sin = std::sin(curr_theta);
+					double mid_f_cos = std::cos(mid_theta);
+					double mid_f_sin = std::sin(mid_theta);
+
+
+					integral_C += (dt / 6.0) * (last_f_cos + 4.0 * mid_f_cos + current_f_cos);
+					integral_S += (dt / 6.0) * (last_f_sin + 4.0 * mid_f_sin + current_f_sin);
+
+
+					last_t = current_t;
+					last_f_cos = current_f_cos;
+					last_f_sin = current_f_sin;
+				}
+
+
+				double B = integral_C + integral_S;
+				double K = A * B + C;
+
+
+				real oldR = m_currentRadius;
+				real newR = std::min(m_halfWidth, m_halfWidth) / K;
+				m_percentage = newR / std::min(m_halfWidth, m_halfWidth);
+				APP_INFO("old radius:{}, max radius:{}", oldR, newR)
+			}
+		}
+
 
 		ImGui::End();
 	}

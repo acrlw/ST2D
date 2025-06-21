@@ -124,7 +124,7 @@ namespace STEditor
 			APP_ERROR("[FreeType] Failed to init FreeType library");
 		}
 
-		if(FT_New_Face(m_ftLibrary, "Resource/Fonts/MiSans-Medium.ttf", 0, &m_ftFace))
+		if(FT_New_Face(m_ftLibrary, "Resource/Fonts/SourceSans3-Medium.ttf", 0, &m_ftFace))
 		{
 			APP_ERROR("[FreeType] Failed to load font");
 		}

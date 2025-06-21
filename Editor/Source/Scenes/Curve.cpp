@@ -156,6 +156,7 @@ namespace STEditor
 		gsl_poly_complex_workspace* w = gsl_poly_complex_workspace_alloc(4);
 		gsl_poly_complex_solve(coeffs, 4, w, &roots[0].dat[0]);
 		gsl_poly_complex_workspace_free(w);
+		
 		real t = 0.0f;
 		for (int i = 0; i < 3; i++) {
 			double realPart = GSL_REAL(roots[i]);

@@ -72,8 +72,6 @@ namespace STEditor
 		float m_roundStartRadians = 0.0f;
 		float m_roundEndRadians = 0.0f;
 
-
-		float m_scaleK = 1.0f;
 		float m_thickness = 2.0f;
 
 		int N = 600;
@@ -103,6 +101,8 @@ namespace STEditor
 		float m_weight = 0.5f;
 		float m_weight1 = 0.392f;
 		float m_weight2 = 0.339f;
+
+		float m_K = 1.0f;
 		CubicBezier m_bezier;
 
 		Spiral m_spiralCurve;
