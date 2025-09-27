@@ -60,7 +60,7 @@ namespace ST
 	struct ST_API Feature
 	{
 		//circle and ellipse, use index 0
-		//edge use index 0 and 1
+		//segment use index 0 and 1
 		Vector2 vertex[2];
 		Index index[2] = { UINT32_MAX, UINT32_MAX };
 	};

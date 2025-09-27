@@ -908,8 +908,8 @@ namespace STEditor
 		case ShapeType::Polygon:
 			polygon(transform, shape, color);
 			break;
-		case ShapeType::Edge:
-			edge(transform, shape, color);
+		case ShapeType::Segment:
+			segment(transform, shape, color);
 			break;
 		case ShapeType::Circle:
 			circle(transform, shape, color);
@@ -936,10 +936,10 @@ namespace STEditor
 		fillAndStroke(vertices, fillColor, color);
 	}
 
-	void Renderer2D::edge(const Transform& transform, Shape* shape, const Color& color)
+	void Renderer2D::segment(const Transform& transform, Shape* shape, const Color& color)
 	{
-		assert(shape != nullptr && shape->type() == ShapeType::Edge);
-		auto edge = static_cast<Edge*>(shape);
+		assert(shape != nullptr && shape->type() == ShapeType::Segment);
+		auto edge = static_cast<Segment*>(shape);
 		Vector2 p1 = edge->startPoint() + transform.position;
 		Vector2 p2 = edge->endPoint() + transform.position;
 		Vector2 center = (edge->startPoint() + edge->endPoint()) / 2.0f;
@@ -1289,7 +1289,7 @@ namespace STEditor
 			if (showIndex)
 			{
 				Vector2 offset = simplex.vertices[1].result - simplex.vertices[0].result;
-				offset = -offset.perpendicular().normal() * m_simplexIndexOffset * m_pixelToMeter;
+				offset = -offset.ortho().normal() * m_simplexIndexOffset * m_pixelToMeter;
 				text(simplex.vertices[0].result + offset, color, "0");
 				text(simplex.vertices[1].result + offset, color, "1");
 			}

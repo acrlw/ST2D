@@ -9,7 +9,7 @@ namespace ST
 	enum class ShapeType
 	{
 		Polygon,
-		Edge,
+		Segment,
 		Capsule,
 		Circle,
 		Ellipse

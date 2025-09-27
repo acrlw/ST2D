@@ -33,7 +33,7 @@ namespace STEditor
 		ST::Capsule capsule;
 		ST::Circle circle;
 		ST::Polygon polygon;
-		ST::Edge edge;
+		ST::Segment edge;
 
 		std::vector<ObjectID> m_objectIds;
 		std::vector<Vector2> m_positions;

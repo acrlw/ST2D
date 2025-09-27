@@ -719,7 +719,7 @@ namespace STEditor
 			float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.length(), 3.0f);
 
 			Vector2 tangent = dp.normal();
-			Vector2 normal = tangent.perpendicular();
+			Vector2 normal = tangent.ortho();
 			Vector2 v = normal * k;
 
 			Vector2 curvaturePoint = v + p1;
@@ -873,7 +873,7 @@ namespace STEditor
 			float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.length(), 3.0f);
 
 			Vector2 tangent = dp.normal();
-			Vector2 normal = tangent.perpendicular();
+			Vector2 normal = tangent.ortho();
 			Vector2 v = normal;
 
 			Vector2 curvaturePoint = v * k + p1 ;

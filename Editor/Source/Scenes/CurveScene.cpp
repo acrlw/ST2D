@@ -282,12 +282,12 @@ namespace STEditor
 		endRoundedPos += roundCenter;
 
 		Vector2 endDir = roundCenter - endRoundedPos;
-		endDir = endDir.normal().perpendicular();
+		endDir = endDir.normal().ortho();
 		float t = (m_halfHeight - endRoundedPos.y) / endDir.y;
 		b1P10 = endRoundedPos + t * endDir;
 
 		endDir = roundCenter - startRoundedPos;
-		endDir = endDir.normal().perpendicular();
+		endDir = endDir.normal().ortho();
 		t = (m_halfWidth - startRoundedPos.x) / endDir.x;
 		b2P10 = startRoundedPos + t * endDir;
 

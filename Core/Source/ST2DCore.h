@@ -17,6 +17,7 @@
 #include "ST2D/Algorithms/Algorithm2D.h"
 #include "ST2D/Collision/Simplex.h"
 #include "ST2D/Collision/Narrowphase.h"
+#include "ST2D/Collision/Narrowphase2D.h"
 #include "ST2D/Collision/DynamicBVT.h"
 #include "ST2D/Collision/DynamicGrid.h"
 #include "ST2D/Collision/ObjectGraph.h"
@@ -25,7 +26,7 @@
 
 #include "ST2D/Shape/Ellipse.h"
 #include "ST2D/Shape/AABB.h"
-#include "ST2D/Shape/Edge.h"
+#include "ST2D/Shape/Segment.h"
 #include "ST2D/Shape/Polygon.h"
 #include "ST2D/Shape/Circle.h"
 #include "ST2D/Shape/Capsule.h"

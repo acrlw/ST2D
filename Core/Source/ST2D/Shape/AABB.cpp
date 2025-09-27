@@ -2,7 +2,7 @@
 
 #include "Ellipse.h"
 #include "Circle.h"
-#include "Edge.h"
+#include "Segment.h"
 #include "Rectangle.h"
 #include "ST2D/Log.h"
 #include "ST2D/Algorithms/Algorithm2D.h"
@@ -191,9 +191,9 @@ namespace ST
 			aabb.height = circle->radius() * 2;
 			break;
 		}
-		case ShapeType::Edge:
+		case ShapeType::Segment:
 		{
-			const Edge* edge = static_cast<const Edge*>(shape);
+			const Segment* edge = static_cast<const Segment*>(shape);
 			aabb.width = std::fabs(edge->startPoint().x - edge->endPoint().x);
 			aabb.height = std::fabs(edge->startPoint().y - edge->endPoint().y);
 			aabb.position.set(edge->startPoint().x + edge->endPoint().x, edge->startPoint().y + edge->endPoint().y);

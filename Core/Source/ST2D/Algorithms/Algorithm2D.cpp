@@ -744,7 +744,7 @@ namespace ST
 	}
 	Vector2 Algorithm2D::lineSegmentNormal(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refDirection)
 	{
-		Vector2 normal = (edgePoint2 - edgePoint1).normal().perpendicular();
+		Vector2 normal = (edgePoint2 - edgePoint1).normal().ortho();
 		if (refDirection.dot(normal) < 0)
 			normal.negate();
 		return normal;

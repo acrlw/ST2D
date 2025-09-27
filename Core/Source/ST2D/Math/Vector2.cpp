@@ -212,7 +212,7 @@ namespace ST
 		return data[index];
 	}
 
-	Vector2 Vector2::perpendicular() const
+	Vector2 Vector2::ortho() const
 	{
 		return { -y, x };
 	}

@@ -42,7 +42,7 @@ namespace STEditor
 		tf2.rotation = Math::radians(100.0f);
 
 		shape1 = &rect;
-		shape2 = &ellipse;
+		shape2 = &capsule;
 	}
 
 	void NarrowphaseScene::onUnLoad()
@@ -60,157 +60,69 @@ namespace STEditor
 		renderer.shape(tf1, shape1, Palette::Yellow);
 		renderer.shape(tf2, shape2, Palette::Cyan);
 
-		Color simplexColor = Palette::Purple;
 
 		Color polytopeColor = Palette::Teal;
+		Color penetrationColor = Palette::Yellow;
 		polytopeColor.a = 150.0f / 255.0f;
+		
+		auto result = Narrowphase2D::gjk(tf1, shape1, tf2, shape2);
 
-		auto gjkSimplex = Narrowphase::gjk(tf1, shape1, tf2, shape2);
-
-		if(selectedTransform != nullptr)
-		{
-			if (selectedTransform == &tf1)
-			{
-				Vector2 diff = selectedTransform->position - oldTransform.position;
-				if (diff.length() > 0.0f)
-				{
-					if (m_enableLinearSweep)
-					{
-						auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, shape1);
-						renderer.shape(oldTransform, shape1, Palette::Gray);
-
-						Color fill = Palette::Yellow;
-						fill.a = 100.0f / 255.0f;
-
-						renderer.fillAndStroke(volume.vertices(), fill, Palette::Yellow);
-					}
-					else if(m_enableLinearSweepCast)
-					{
-						Vector2 start = oldTransform.position;
-						Vector2 end = selectedTransform->position;
-						Vector2 direction = end - start;
-						direction.normalize();
-						real maxDistance = 10.0f;
-
-						Transform maxTransform, result;
-						maxTransform.position = start + direction * maxDistance;
-						maxTransform.rotation = oldTransform.rotation;
-
-						bool hit = Narrowphase::linearSweepCast(oldTransform, shape1, tf2, shape2, direction, maxDistance, result);
-
-						renderer.shape(oldTransform, shape1, Palette::Gray);
-						renderer.shape(maxTransform, shape1, Palette::LightCyan);
-						if(hit)
-						{
-							renderer.shape(result, shape1, Palette::LightRed);
-						}
-
-					}
-				}
-
-			}
-			else if (selectedTransform == &tf2)
-			{
-				Vector2 diff = selectedTransform->position - oldTransform.position;
-				if (diff.length() > 0.0f)
-				{
-					if (m_enableLinearSweep)
-					{
-						auto volume = Narrowphase::linearSweep(oldTransform, *selectedTransform, shape2);
-						renderer.shape(oldTransform, shape2, Palette::Gray);
-
-						Color fill = Palette::Cyan;
-						fill.a = 150.0f / 255.0f;
-
-						renderer.fillAndStroke(volume.vertices(), fill, Palette::Cyan);
-					}
-					else if (m_enableLinearSweepCast)
-					{
-						Vector2 start = oldTransform.position;
-						Vector2 end = selectedTransform->position;
-						Vector2 direction = end - start;
-						direction.normalize();
-						real maxDistance = 10.0f;
-
-						Transform maxTransform, result;
-						maxTransform.position = start + direction * maxDistance;
-						maxTransform.rotation = oldTransform.rotation;
-
-						bool hit = Narrowphase::linearSweepCast(oldTransform, shape2, tf1, shape1, direction, maxDistance, result);
-
-						renderer.shape(oldTransform, shape2, Palette::Gray);
-						renderer.shape(maxTransform, shape2, Palette::LightCyan);
-						if (hit)
-						{
-							renderer.shape(result, shape2, Palette::LightRed);
-						}
-					}
-				}
-			}
-		}
+		Color simplexColor = result.isContainOrigin ? Palette::Green : Palette::Purple;
 
 		if (m_showGJKSimplex)
-			renderer.simplex(gjkSimplex, Palette::DarkRed);
-
-		if(gjkSimplex.isContainOrigin)
 		{
+			for (size_t i = 0; i < result.count; ++i)
 			{
-				auto info = Narrowphase::epa(gjkSimplex, tf1, shape1, tf2, shape2);
-
-				auto contacts = Narrowphase::generateContacts(info, tf1, shape1, tf2, shape2);
-
-				renderer.point(contacts.points[0], Palette::Yellow);
-				renderer.point(contacts.points[2], Palette::Cyan);
-				renderer.dashedLine(contacts.points[0], contacts.points[2], Palette::LightGray);
-
-				//renderer.arrow({}, info.normal, Palette::Red);
-				if (contacts.count == 2)
-				{
-					renderer.point(contacts.points[1], Palette::Yellow);
-					renderer.point(contacts.points[3], Palette::Cyan);
-					renderer.dashedLine(contacts.points[1], contacts.points[3], Palette::LightGray);
-				}
-
-				if (m_showPolytope)
-				{
-					std::vector<Vector2> points;
-					for (auto&& elem : info.polytope)
-						points.push_back(elem.vertex.result);
-
-					renderer.polytope(points, polytopeColor);
-				}
-
-				if (m_showSimplex)
-				{
-					renderer.simplex(info.simplex, simplexColor);
-				}
-
+				renderer.pointFixedSize(result.m[i].p, simplexColor, 6.0f);
+				renderer.line(result.m[i].p, result.m[i].p, simplexColor);
+			}
+			if (result.count == 2)
+			{
+				Vector2 dir = Narrowphase2D::getDirection(result.m[0].p, result.m[1].p, true);
+				Vector2 p = (result.m[0].p + result.m[1].p) * 0.5f;
+				renderer.line(p, p + dir, simplexColor);
+			}
+			else if (result.count == 3)
+			{
+				Color fillColor = simplexColor * 0.3f;
+				fillColor.a = 150.0f / 255.0f;
+				renderer.fillAndStroke({ result.m[0].p, result.m[1].p, result.m[2].p }, fillColor, simplexColor);
 			}
 		}
-		else
+		if (m_showPolytope)
 		{
-
-			auto distInfo = Narrowphase::distance(tf1, shape1, tf2, shape2);
-
-			renderer.point(distInfo.pair.pointA, Palette::Yellow);
-			renderer.point(distInfo.pair.pointB, Palette::Cyan);
-
-			renderer.dashedLine(distInfo.pair.pointA, distInfo.pair.pointB, Palette::LightGray);
-
-			if (m_showPolytope)
+			if (result.isContainOrigin)
 			{
-				std::vector<Vector2> points;
-				for (auto&& elem : distInfo.polytope)
-					points.push_back(elem.vertex.result);
+				auto epaResult = Narrowphase2D::epa(result, tf1, shape1, tf2, shape2);
+				if (epaResult.state != EpaState::InvalidInput)
+				{
+					// draw polytope vertices
+					for (uint32_t i = 0; i < epaResult.polytope.nVertex; ++i)
+					{
+						renderer.pointFixedSize(epaResult.polytope.vertices[i].p, polytopeColor, 6.0f);
+					}
 
-				renderer.polytope(points, polytopeColor);
+					// draw polytope active faces
+					for (uint32_t i = 0; i < epaResult.polytope.nFace; ++i)
+					{
+						if (epaResult.polytope.activeFaces[i] == 0)
+							continue;
+						auto v1 = epaResult.polytope.vertices[epaResult.polytope.faces[i][0]].p;
+						auto v2 = epaResult.polytope.vertices[epaResult.polytope.faces[i][1]].p;
+						renderer.line(v1, v2, polytopeColor);
+						// draw face normal
+						//Vector2 faceCenter = (v1 + v2) * 0.5f;
+						//Vector2 faceDir = (v2 - v1).normal();
+						//Vector2 normalEnd = faceCenter + faceDir * 0.3f;
+						//renderer.line(faceCenter, normalEnd, polytopeColor);
+					}
+
+					// draw penetration normal
+					Vector2 penEnd = epaResult.normal * epaResult.penetration;
+					renderer.arrow({}, penEnd, penetrationColor, 0.3f, 30.0f);
+				}
 			}
-
-			if (m_showSimplex)
-				renderer.simplex(distInfo.simplex, simplexColor);
-
 		}
-
 	}
 
 	void NarrowphaseScene::onRenderUI()

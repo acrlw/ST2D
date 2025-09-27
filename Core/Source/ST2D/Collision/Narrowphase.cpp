@@ -5,7 +5,7 @@
 #include "ST2D/Shape/Ellipse.h"
 #include "ST2D/Shape/Polygon.h"
 #include "ST2D/Shape/Circle.h"
-#include "ST2D/Shape/Edge.h"
+#include "ST2D/Shape/Segment.h"
 
 namespace ST
 {
@@ -296,9 +296,9 @@ namespace ST
 			target = Algorithm2D::computeEllipseProjectionPoint(ellipse->A(), ellipse->B(), rot_dir);
 			break;
 		}
-		case ShapeType::Edge:
+		case ShapeType::Segment:
 		{
-			auto edge = static_cast<const Edge*>(shape);
+			auto edge = static_cast<const Segment*>(shape);
 			const real dot1 = Vector2::dotProduct(edge->startPoint(), direction);
 			const real dot2 = Vector2::dotProduct(edge->endPoint(), direction);
 			target = dot1 > dot2 ? edge->startPoint() : edge->endPoint();
@@ -332,7 +332,7 @@ namespace ST
 		const Vector2 p2 = v2.result;
 		const Vector2 ao = p1.negative();
 		const Vector2 ab = p2 - p1;
-		Vector2 perpendicularOfAB = ab.perpendicular();
+		Vector2 perpendicularOfAB = ab.ortho();
 		if ((Vector2::dotProduct(ao, perpendicularOfAB) < 0 && pointToOrigin) || (
 			Vector2::dotProduct(ao, perpendicularOfAB) > 0 && !pointToOrigin))
 			perpendicularOfAB.negate();
@@ -394,7 +394,7 @@ namespace ST
 			case ShapeType::Polygon:
 				pair = clipPolygonPolygon(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
-			case ShapeType::Edge:
+			case ShapeType::Segment:
 				pair = clipPolygonEdge(transformA, realShapeA, transformB, realShapeB, featureA, featureB, info);
 				break;
 			case ShapeType::Capsule:
@@ -406,11 +406,11 @@ namespace ST
 				break;
 			}
 		}
-		else if (typeA == ShapeType::Edge)
+		else if (typeA == ShapeType::Segment)
 		{
 			switch (typeB)
 			{
-			case ShapeType::Edge:
+			case ShapeType::Segment:
 				CORE_ASSERT(false, "Not support edge vs edge contact.");
 				break;
 			case ShapeType::Capsule:
@@ -480,7 +480,7 @@ namespace ST
 		vertex = support(transformA, shapeA, transformB, shapeB, direction);
 		info.simplex.addSimplexVertex(vertex);
 		//third
-		direction = direction.perpendicular();
+		direction = direction.ortho();
 		vertex = support(transformA, shapeA, transformB, shapeB, direction);
 		info.simplex.addSimplexVertex(vertex);
 
@@ -688,7 +688,7 @@ namespace ST
 			return volume;
 
 		direction.normalize();
-		Vector2 t1 = direction.perpendicular();
+		Vector2 t1 = direction.ortho();
 		Vector2 t2 = -t1;
 
 		volume = SweepVolume::fromPolygon(findFurthestPoint(start, shape, t1).vertex, findFurthestPoint(start, shape, t2).vertex,
@@ -916,7 +916,7 @@ namespace ST
 				const Index idxPrev = (idxCurr + realSize - 1) % realSize;
 
 
-				//check most perpendicular
+				//check most ortho
 				const Vector2 ab = (polygon->vertices()[idxNext] - polygon->vertices()[idxCurr]).normal();
 				const Vector2 ac = (polygon->vertices()[idxCurr] - polygon->vertices()[idxPrev]).normal();
 
@@ -1121,7 +1121,7 @@ namespace ST
 		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		auto polygonA = static_cast<const Polygon*>(shapeA);
-		auto edgeB = static_cast<const Edge*>(shapeB);
+		auto edgeB = static_cast<const Segment*>(shapeB);
 
 		const Vector2 va1 = transformA.translatePoint(polygonA->vertices()[featureA.index[0]]);
 		const Vector2 va2 = transformA.translatePoint(polygonA->vertices()[featureA.index[1]]);
@@ -1221,7 +1221,7 @@ namespace ST
 
 		auto capsule = static_cast<const Capsule*>(shapeB);
 
-		auto edgeA = static_cast<const Edge*>(shapeA);
+		auto edgeA = static_cast<const Segment*>(shapeA);
 		const Vector2 va1 = transformA.translatePoint(edgeA->startPoint());
 		const Vector2 va2 = transformA.translatePoint(edgeA->endPoint());
 
@@ -1285,7 +1285,7 @@ namespace ST
 	ContactPair Narrowphase::clipEdgeRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
-		auto edgeA = static_cast<const Edge*>(shapeA);
+		auto edgeA = static_cast<const Segment*>(shapeA);
 		const Vector2 va1 = transformA.translatePoint(edgeA->startPoint());
 		const Vector2 va2 = transformA.translatePoint(edgeA->endPoint());
 

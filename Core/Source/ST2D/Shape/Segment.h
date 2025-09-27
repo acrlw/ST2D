@@ -3,11 +3,11 @@
 #include "Shape.h"
 namespace ST
 {
-    class ST_API Edge : public Shape
+    class ST_API Segment : public Shape
     {
 
     public:
-        Edge();
+        Segment();
 
         void set(const Vector2& start, const Vector2& end);
 

@@ -697,7 +697,7 @@ namespace STEditor
 					manifold.count = newContacts.count;
 					manifold.pair = newContacts;
 					manifold.normal = info.normal;
-					manifold.tangent = info.normal.perpendicular();
+					manifold.tangent = info.normal.ortho();
 					manifold.penetration = info.penetration;
 
 					if (m_contactManifolds.contains(objPair))

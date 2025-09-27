@@ -49,7 +49,7 @@ namespace ST
 		Vector2& swap(Vector2& other) noexcept;
 
 		Vector2& normalize();
-		Vector2 perpendicular() const;
+		Vector2 ortho() const;
 		Vector2& matchSign(const Vector2& rhs);
 
 		real& operator[](const int& index);

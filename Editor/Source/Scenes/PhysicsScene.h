@@ -122,7 +122,7 @@ namespace STEditor
 		ST::Capsule capsule;
 		ST::Circle circle;
 		ST::Polygon polygon;
-		ST::Edge edge;
+		ST::Segment edge;
 
 		IdPool m_objectIdPool;
 

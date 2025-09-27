@@ -93,7 +93,7 @@ namespace STEditor
 
 		void shape(const Transform& transform, Shape* shape, const Color& color);
 		void polygon(const Transform& transform, Shape* shape, const Color& color);
-		void edge(const Transform& transform, Shape* shape, const Color& color);
+		void segment(const Transform& transform, Shape* shape, const Color& color);
 		void circle(const Transform& transform, Shape* shape, const Color& color);
 		void capsule(const Transform& transform, Shape* shape, const Color& color);
 		void ellipse(const Transform& transform, Shape* shape, const Color& color);

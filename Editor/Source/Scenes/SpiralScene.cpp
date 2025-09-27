@@ -348,12 +348,12 @@ namespace STEditor
 		m_endRoundedPos += m_roundCenter;
 
 		Vector2 endDir = m_roundCenter - m_endRoundedPos;
-		endDir = endDir.normal().perpendicular();
+		endDir = endDir.normal().ortho();
 		float t = (m_halfHeight - m_endRoundedPos.y) / endDir.y;
 		m_b1P10 = m_endRoundedPos + t * endDir;
 
 		endDir = m_roundCenter - m_startRoundedPos;
-		endDir = endDir.normal().perpendicular();
+		endDir = endDir.normal().ortho();
 		t = (m_halfWidth - m_startRoundedPos.x) / endDir.x;
 		m_b2P10 = m_startRoundedPos + t * endDir;
 
@@ -385,7 +385,7 @@ namespace STEditor
 
 		//transform += m_p01;
 
-		Vector2 tangent = Vector2(std::cos(m_spiralStartRadians), std::sin(m_spiralStartRadians)).perpendicular();
+		Vector2 tangent = Vector2(std::cos(m_spiralStartRadians), std::sin(m_spiralStartRadians)).ortho();
 		real C_f = 1.0f / m_currentRadius;
 		real a_c = std::acos(tangent.x);
 
@@ -596,7 +596,7 @@ namespace STEditor
 		//RenderSFMLImpl::renderLine(window, *m_settings.camera, { 1, 0 }, m_spiralSymmetry.front(), RenderConstant::Green);
 
 
-		//Vector2 v = -m_endRoundedPos.perpendicular();
+		//Vector2 v = -m_endRoundedPos.ortho();
 		//RenderSFMLImpl::renderArrow(window, *m_settings.camera, {}, v, RenderConstant::Red);
 
 		auto color = Palette::Yellow;
