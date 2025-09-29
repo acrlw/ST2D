@@ -33,7 +33,7 @@ namespace ST
 			result.start = (p0 + p1) * 0.5f;
 			result.end = (p2 + p3) * 0.5f;
 			Vector2 dir = p1 - p0;
-			real length = dir.length();
+			real length = dir.norm();
 			result.halfWidth = length * 0.5f;
 			result.direction = dir / length;
 			return result;

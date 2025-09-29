@@ -305,7 +305,7 @@ namespace ST
 				Vector2 v1 = origin - p1;
 				Vector2 v2 = origin - p2;
 
-				if (v1.lengthSquare() > maxSquare && v2.lengthSquare() > maxSquare)
+				if (v1.square() > maxSquare && v2.square() > maxSquare)
 					continue;
 
 				bool isP1Inside = Algorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight());

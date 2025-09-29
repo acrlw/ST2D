@@ -11,7 +11,7 @@
 namespace ST
 {
 	Simplex2D Narrowphase2D::gjk(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const uint32_t& iteration)
+		const Shape* shapeB, const uint32_t& iteration, const Vector2& initialDirection)
 	{
 		CORE_ASSERT(shapeA != nullptr && shapeB != nullptr, "Shape is nullptr.");
 
@@ -20,6 +20,9 @@ namespace ST
 
 		if (direction.fuzzyEqual({ 0, 0 }))
 			direction.set(1, 1);
+
+		if (!initialDirection.fuzzyEqual({0, 0}))
+			direction = initialDirection;
 
 		simplex.m[0] = support(transformA, shapeA, transformB, shapeB, direction);
 		simplex.m[1] = support(transformA, shapeA, transformB, shapeB, direction.negative());
@@ -75,7 +78,7 @@ namespace ST
 		result.state = EpaState::MaxIteration;
 
 		// get the struct data size of polytope [debug]
-		auto size = sizeof(Polytope);
+		// auto size = sizeof(Polytope);
 
 
 		//3. EPA loop
@@ -109,7 +112,7 @@ namespace ST
 			const real dotm0dir = Vector2::dotProduct(m0.p, direction);
 			const real dotm2dir = Vector2::dotProduct(m2.p, direction);
 			const real gain = dotm2dir - dotm0dir;
-			if (gain * gain < epsilon * epsilon * direction.lengthSquare())
+			if (gain * gain < epsilon * epsilon * direction.square())
 			{
 				result.state = EpaState::Valid;
 				break;
@@ -129,8 +132,8 @@ namespace ST
 
 			// calculate distance from origin to face m0-m2, m1-m2
 
-			const real distm0m2 = Algorithm2D::pointToLineSegment(m0.p, m2.p, { 0, 0 }).lengthSquare();
-			const real distm1m2 = Algorithm2D::pointToLineSegment(m1.p, m2.p, { 0, 0 }).lengthSquare();
+			const real distm0m2 = Algorithm2D::pointToLineSegment(m0.p, m2.p, { 0, 0 }).square();
+			const real distm1m2 = Algorithm2D::pointToLineSegment(m1.p, m2.p, { 0, 0 }).square();
 
 			// construct m0-m2
 			// 1. add new face m0-m2
@@ -171,7 +174,8 @@ namespace ST
 		result.simplex.m[1] = polytope.vertices[closestFace[1]];
 		result.simplex.count = 2;
 		const Vector2 edge = result.simplex.m[1].p - result.simplex.m[0].p;
-		result.normal = Vector2(-edge.y, edge.x).normal();
+		const real length = edge.norm();
+		result.normal = Vector2(-edge.y, edge.x) / length;
 
 		result.penetration = Vector2::dotProduct(result.simplex.m[0].p, result.normal);
 		//ensure normal always point from A to B
@@ -181,8 +185,99 @@ namespace ST
 			result.penetration = -result.penetration;
 		}
 
+		// get witness points on both shapes, save on simplex.m[2]
+		result.simplex.m[2].p = result.normal * result.penetration;
+		Vector2 m1m2 = result.simplex.m[1].p - result.simplex.m[2].p;
+		real t = m1m2.norm() / length;
+		result.simplex.m[2].v[0].v = t * result.simplex.m[0].v[0].v + (1 - t) * result.simplex.m[1].v[0].v;
+		result.simplex.m[2].v[1].v = t * result.simplex.m[0].v[1].v + (1 - t) * result.simplex.m[1].v[1].v;
+
 		result.polytope = polytope; //[debug]
 		return result;
+	}
+
+	Distance2DResult Narrowphase2D::distance(const Transform& transformA, const Shape* shapeA,
+		const Transform& transformB, const Shape* shapeB, const uint32_t& iteration, const real& epsilon)
+	{
+		Distance2DResult result;
+		Vector2 direction = transformB.position - transformA.position;
+		if (direction.fuzzyEqual({ 0, 0 }))
+			direction.set(1, 1);
+
+		// get minkowski difference from direction to build initial simplex1(point)
+		//result.simplex.m[0] = support(transformA, shapeA, transformB, shapeB, direction);
+		//result.simplex.count++;
+		uint32_t i = 0;
+
+		for (;i < iteration; ++i)
+		{
+			MinkowskiDiff newM = support(transformA, shapeA, transformB, shapeB, direction);
+			bool isExists1 = result.simplex.count == 1 && result.simplex.m[0].p == newM.p;
+			bool isExists2 = result.simplex.count == 2 &&
+				result.simplex.m[0].p == newM.p ||
+				result.simplex.m[1].p == newM.p;
+
+			// check if repeated
+			if (isExists1 || isExists2)
+				break;
+
+			const real dotm0dir = Vector2::dotProduct(result.simplex.m[0].p, direction);
+			const real dotm2dir = Vector2::dotProduct(newM.p, direction);
+			const real gain = dotm2dir - dotm0dir;
+			// check if close enough
+			if (gain * gain < epsilon * epsilon * direction.square())
+				break;
+
+			// add newM to simplex
+			uint32_t count = result.simplex.count;
+			result.simplex.m[count] = newM;
+			result.simplex.count++;
+
+			SolveSimplexResult solveResult;
+			switch (result.simplex.count)
+			{
+			case 1:
+				solveResult = solveSimplex1(result.simplex);
+				break;
+			case 2:
+				solveResult = solveSimplex2(result.simplex);
+				break;
+			case 3:
+				solveResult = solveSimplex3(result.simplex);
+				break;
+			default:
+				assert(false && "Invalid simplex for GJK distance check");
+				return result;
+			}
+			// the simplex of solution is always a segment(count=2)
+
+			result.simplex = solveResult.simplex;
+
+			if (result.simplex.isContainOrigin)
+				return result;
+
+			direction = solveResult.direction;
+			
+
+		}
+
+		if (result.simplex.count == 1)
+		{
+			result.closestPoints[0] = result.simplex.m[0].v[0].v;
+			result.closestPoints[1] = result.simplex.m[0].v[1].v;
+			result.distance = (result.closestPoints[0] - result.closestPoints[1]).norm();
+		}
+		else if (result.simplex.count == 2)
+		{
+			const real t = Math::clamp(getOriginToSegmentWeight(result.simplex.m[0].p, result.simplex.m[1].p), 0, 1);
+			
+			result.closestPoints[0] = t * result.simplex.m[0].v[0].v + (1 - t) * result.simplex.m[1].v[0].v;
+			result.closestPoints[1] = t * result.simplex.m[0].v[1].v + (1 - t) * result.simplex.m[1].v[1].v;
+			result.distance = (result.closestPoints[0] - result.closestPoints[1]).norm();
+		}
+
+		return result;
+
 	}
 
 	Polytope Narrowphase2D::initializePolytope(const Simplex2D& simplex)
@@ -225,7 +320,7 @@ namespace ST
 			const auto& face = polytope.faces[i];
 			const auto& m0 = polytope.vertices[face[0]];
 			const auto& m1 = polytope.vertices[face[1]];
-			polytope.distances[i] = Algorithm2D::pointToLineSegment(m0.p, m1.p, { 0, 0 }).lengthSquare();
+			polytope.distances[i] = Algorithm2D::pointToLineSegment(m0.p, m1.p, { 0, 0 }).square();
 			if (minDist > polytope.distances[i])
 			{
 				minDist = polytope.distances[i];
@@ -347,9 +442,9 @@ namespace ST
 		const Vector2& B = simplex.m[1].p;
 		const Vector2& C = simplex.m[2].p;
 		// 0. find barycentric coordinates of origin
-		const real normAB = (B - A).lengthSquare();
-		const real normAC = (C - A).lengthSquare();
-		const real normBC = (C - B).lengthSquare();
+		const real normAB = (B - A).square();
+		const real normAC = (C - A).square();
+		const real normBC = (C - B).square();
 		const real det = A.y * B.x - A.x * B.y + A.x * C.y - A.y * C.x + B.y * C.x - B.x * C.y;
 		assert(det != 0.0f);
 		const real u = (B.y * C.x - C.y * B.x) / det;
@@ -391,5 +486,135 @@ namespace ST
 		result.isContainOrigin = u > 0 && v > 0 && w > 0;
 		result.count = 3;
 		return result;
+	}
+
+	SolveSimplexResult Narrowphase2D::solveSimplex3(const Simplex2D& simplex)
+	{
+		assert(simplex.count == 3 && "solveSimplex3 requires simplex count=3");
+		SolveSimplexResult result;
+		result.simplex = simplex;
+		const Vector2& A = simplex.m[0].p;
+		const Vector2& B = simplex.m[1].p;
+		const Vector2& C = simplex.m[2].p;
+		
+		// find barycentric coordinates of origin
+		const real det = A.y * B.x - A.x * B.y + A.x * C.y - A.y * C.x + B.y * C.x - B.x * C.y;
+		assert(det != 0.0f);
+		const real u = (B.y * C.x - C.y * B.x) / det;
+		const real v = (C.y * A.x - A.y * C.x) / det;
+		const real w = 1 - u - v;
+
+		// get barycentric weight of AB, AC, BC
+		const real t_AB = getOriginToSegmentWeight(A, B);
+		const real t_AC = getOriginToSegmentWeight(A, C);
+		const real t_BC = getOriginToSegmentWeight(B, C);
+
+		// use them two check closest feature
+
+		// three points
+		if (u >= 0 && v >= 0 && w >= 0)
+		{
+			result.simplex.isContainOrigin = true;
+			return result;
+		}
+
+		// two points
+		result.simplex.count = 2;
+		
+		if (t_AB >=0 && t_AB <= 1 && w < 0)
+		{
+			// save A and B
+			result.simplex.m[0] = simplex.m[0];
+			result.simplex.m[1] = simplex.m[1];
+			result.direction = getDirection(result.simplex.m[0].p, result.simplex.m[1].p, true);
+		}
+		else if (t_AC >= 0 && t_AC <= 1 && v < 0)
+		{
+			// save A and C
+			result.simplex.m[0] = simplex.m[0];
+			result.simplex.m[1] = simplex.m[2];
+			result.direction = getDirection(result.simplex.m[0].p, result.simplex.m[1].p, true);
+		}
+		else if (t_BC >= 0 && t_BC <= 1 && u < 0)
+		{
+			// save B and C
+			result.simplex.m[0] = simplex.m[1];
+			result.simplex.m[1] = simplex.m[2];
+			result.direction = getDirection(result.simplex.m[0].p, result.simplex.m[1].p, true);
+		}
+		// one point
+		else if (t_AC > 1 && t_AB > 1)
+		{
+			// save A and B, reduce to 2, use A as direction
+			result.simplex.m[0] = simplex.m[0];
+			result.simplex.m[1] = simplex.m[1];
+			result.direction = result.simplex.m[0].p.negative();
+		}
+		else if (t_AB < 0 && t_BC > 1)
+		{
+			// save B and C, reduce to 2, use B as direction
+			result.simplex.m[0] = simplex.m[1];
+			result.simplex.m[1] = simplex.m[2];
+			result.direction = result.simplex.m[0].p.negative();
+		}
+		else if (t_BC < 0 && t_AC < 0)
+		{
+			// save C and A, reduce to 2, use C as direction
+			result.simplex.m[0] = simplex.m[2];
+			result.simplex.m[1] = simplex.m[0];
+			result.direction = result.simplex.m[0].p.negative();
+		}
+
+		
+		return result;
+	}
+
+	SolveSimplexResult Narrowphase2D::solveSimplex2(const Simplex2D& simplex)
+	{
+		assert(simplex.count == 2 && "solveSimplex2 requires simplex count=2");
+		SolveSimplexResult result;
+		result.simplex = simplex;
+		const real t = getOriginToSegmentWeight(simplex.m[0].p, simplex.m[1].p);
+		if (t > 1)
+		{
+			// M0
+			result.simplex.count = 1;
+			result.simplex.m[0] = simplex.m[0];
+			result.direction = simplex.m[0].p.negative();
+		}
+		else if (t < 0)
+		{
+			// M1
+			result.simplex.count = 1;
+			result.simplex.m[0] = simplex.m[1];
+			result.direction = simplex.m[1].p.negative();
+		}
+		else
+		{
+			result.direction = getDirection(simplex.m[0].p, simplex.m[1].p, true);
+		}
+
+
+		return result;
+	}
+
+	SolveSimplexResult Narrowphase2D::solveSimplex1(const Simplex2D& simplex)
+	{
+		assert(simplex.count == 1 && "solveSimplex1 requires simplex count=1");
+		SolveSimplexResult result;
+		// construct direction : M0-O
+		result.simplex = simplex;
+		result.direction = simplex.m[0].p.negative();
+		return result;
+	}
+
+	real Narrowphase2D::getOriginToSegmentWeight(const Vector2& p1, const Vector2& p2)
+	{
+		const Vector2 m0m1 = p2 - p1;
+		const real square = m0m1.square();
+		const Vector2 m0O = p1.negative();
+		const real dotM0M1_M0O = Vector2::dotProduct(m0O, m0m1);
+		// P = t * p1 + (1-t) * p2;
+		return 1 - dotM0M1_M0O / square;
 	}
 }

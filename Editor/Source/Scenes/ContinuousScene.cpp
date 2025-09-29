@@ -59,7 +59,7 @@ namespace STEditor
 
 			Vector2 end = m_positions[i] + m_velocities[i];
 
-			real mag = m_velocities[i].length();
+			real mag = m_velocities[i].norm();
 
 			if (m_showVelocityMagnitude)
 			{
@@ -77,7 +77,7 @@ namespace STEditor
 			{
 				if (m_showVelocityNormal)
 				{
-					real length = m_velocities[i].length();
+					real length = m_velocities[i].norm();
 					if (length > 0.01f)
 					{
 						Vector2 normal = m_velocities[i].normal();

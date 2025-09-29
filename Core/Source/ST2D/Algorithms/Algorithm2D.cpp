@@ -76,7 +76,7 @@ namespace ST
 		const Vector2& center, const real& radius)
 	{
 		RaycastHit result;
-		if ((p - center).lengthSquare() < radius * radius)
+		if ((p - center).square() < radius * radius)
 		{
 			return result;
 		}
@@ -144,7 +144,7 @@ namespace ST
 	bool Algorithm2D::fuzzyCheckPointOnSegment(const Vector2& a, const Vector2& b, const Vector2& c,
 		const real& epsilon)
 	{
-		return fuzzyRealEqual(pointToLineSegment(a, b, c).lengthSquare(), epsilon);
+		return fuzzyRealEqual(pointToLineSegment(a, b, c).square(), epsilon);
 	}
 	bool Algorithm2D::fuzzyCheckCollinear(const Vector2& a, const Vector2& b, const Vector2& c)
 	{
@@ -160,7 +160,7 @@ namespace ST
 		const Vector2 bc = c - b;
 		Vector2 ba = a - b;
 		const Vector2 bd = d - b;
-		const real ab_length = ab.length();
+		const real ab_length = ab.norm();
 
 		if (realEqual(ab_length, 0.0))
 		{
@@ -187,7 +187,7 @@ namespace ST
 
 		const real cp = cproj_dproj / denominator;
 		const Vector2 bp = ba.normalize() * (bc_proj + cp);
-		if (realEqual(bp.length(), 0))
+		if (realEqual(bp.norm(), 0))
 			return false;
 
 		Vector2 p = bp + b;
@@ -523,7 +523,7 @@ namespace ST
 			{
 				const Vector2 p1_p = shortestLengthPointOfEllipse(a, b, p1);
 				const Vector2 p2_p = shortestLengthPointOfEllipse(a, b, p2);
-				if ((p1 - p1_p).lengthSquare() > (p2 - p2_p).lengthSquare())
+				if ((p1 - p1_p).square() > (p2 - p2_p).square())
 				{
 					p_ellipse = p2_p;
 					p_line = p2;

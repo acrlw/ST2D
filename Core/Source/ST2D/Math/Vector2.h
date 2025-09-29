@@ -34,8 +34,8 @@ namespace ST
 		bool isOrigin(const real& epsilon = Constant::GeometryEpsilon) const;
 		bool isSameQuadrant(const Vector2& rhs) const;
 
-		real lengthSquare() const;
-		real length() const;
+		real square() const;
+		real norm() const;
 		real theta() const;
 		Vector2 normal() const;
 		Vector2 negative() const;

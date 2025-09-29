@@ -609,7 +609,7 @@ namespace STEditor
 
 		ddp /= det;
 
-		float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.length(), 3.0f);
+		float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.norm(), 3.0f);
 
 		return k;
 	}
@@ -630,7 +630,7 @@ namespace STEditor
 				continue;
 			}
 
-			if ((lastPoint - p).length() > m_threshold && i != m_count)
+			if ((lastPoint - p).norm() > m_threshold && i != m_count)
 			{
 				m_curvePoints.push_back(p);
 				lastPoint = p;
@@ -652,7 +652,7 @@ namespace STEditor
 
 			Vector2 p1 = sample(t);
 
-			if (!lastPoint.isOrigin() && (lastPoint - p1).length() <= m_threshold && i != m_count)
+			if (!lastPoint.isOrigin() && (lastPoint - p1).norm() <= m_threshold && i != m_count)
 				continue;
 
 
@@ -716,7 +716,7 @@ namespace STEditor
 
 			ddp /= det;
 
-			float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.length(), 3.0f);
+			float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.norm(), 3.0f);
 
 			Vector2 tangent = dp.normal();
 			Vector2 normal = tangent.ortho();
@@ -769,7 +769,7 @@ namespace STEditor
 			(6.0f - 18.0f * t) * m_points[2] +
 			6.0f * t * m_points[3];
 
-		float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.length(), 3.0f);
+		float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.norm(), 3.0f);
 
 		return k;
 	}
@@ -820,7 +820,7 @@ namespace STEditor
 				continue;
 			}
 
-			if ((lastPoint - p).length() > m_threshold && i != m_count)
+			if ((lastPoint - p).norm() > m_threshold && i != m_count)
 			{
 				m_curvePoints.push_back(p);
 				lastPoint = p;
@@ -842,7 +842,7 @@ namespace STEditor
 
 			Vector2 p1 = sample(t);
 
-			if (!lastPoint.isOrigin() && (lastPoint - p1).length() <= m_threshold && i != m_count)
+			if (!lastPoint.isOrigin() && (lastPoint - p1).norm() <= m_threshold && i != m_count)
 				continue;
 
 
@@ -870,7 +870,7 @@ namespace STEditor
 			//	(6.0f - 18.0f * t) * m_points[2] +
 			//	6.0f * t * m_points[3];
 
-			float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.length(), 3.0f);
+			float k = std::abs(dp.x * ddp.y - dp.y * ddp.x) / std::pow(dp.norm(), 3.0f);
 
 			Vector2 tangent = dp.normal();
 			Vector2 normal = tangent.ortho();

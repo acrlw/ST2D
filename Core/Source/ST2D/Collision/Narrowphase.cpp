@@ -116,9 +116,9 @@ namespace ST
 
 			SimplexVertexDistPair pair;
 			const Vector2 t1 = Algorithm2D::pointToLineSegment(info.simplex.vertices[0].result, vertex.result, { 0, 0 });
-			const real dist1 = t1.lengthSquare();
+			const real dist1 = t1.square();
 			const Vector2 t2 = Algorithm2D::pointToLineSegment(vertex.result, info.simplex.vertices[1].result, { 0, 0 });
-			const real dist2 = t2.lengthSquare();
+			const real dist2 = t2.square();
 
 			itA->distance = dist1;
 
@@ -159,7 +159,7 @@ namespace ST
 			info.simplex.vertices[1].result
 			, { 0, 0 });
 
-		info.penetration = temp.length();
+		info.penetration = temp.norm();
 		info.normal = temp;
 
 		if (info.penetration < Constant::GeometryEpsilon)
@@ -192,7 +192,7 @@ namespace ST
 
 			for (Index i = 0; i < 3; ++i)
 			{
-				real dist = Algorithm2D::pointToLineSegment(points[i], points[(i + 1) % 3], { 0, 0 }).length();
+				real dist = Algorithm2D::pointToLineSegment(points[i], points[(i + 1) % 3], { 0, 0 }).norm();
 				Simplex tempSimplex;
 				tempSimplex.addSimplexVertex(info.simplex.vertices[i]);
 				tempSimplex.addSimplexVertex(info.simplex.vertices[(i + 1) % 3]);
@@ -224,14 +224,14 @@ namespace ST
 
 			queue.pop();
 
-			real dist = Algorithm2D::pointToLineSegment(info.simplex.vertices[0].result, vertex.result, { 0, 0 }).length();
+			real dist = Algorithm2D::pointToLineSegment(info.simplex.vertices[0].result, vertex.result, { 0, 0 }).norm();
 			Simplex tempSimplex;
 			tempSimplex.addSimplexVertex(info.simplex.vertices[0]);
 			tempSimplex.addSimplexVertex(vertex);
 
 			queue.push(SimplexDistPair{ tempSimplex, dist });
 
-			dist = Algorithm2D::pointToLineSegment(vertex.result, info.simplex.vertices[1].result, { 0, 0 }).length();
+			dist = Algorithm2D::pointToLineSegment(vertex.result, info.simplex.vertices[1].result, { 0, 0 }).norm();
 			tempSimplex.vertices[0] = info.simplex.vertices[1];
 
 			queue.push(SimplexDistPair{ tempSimplex, dist });
@@ -242,7 +242,7 @@ namespace ST
 			info.simplex.vertices[1].result
 			, { 0, 0 });
 
-		info.penetration = temp.length();
+		info.penetration = temp.norm();
 		//assert(!realEqual(info.penetration, 0));
 		info.normal.clear();
 		//penetration is close to zero, just return
@@ -595,9 +595,9 @@ namespace ST
 			SimplexVertexDistPair pair;
 			pair.vertex = vertex;
 			const Vector2 t1 = Algorithm2D::pointToLineSegment(itA->vertex.result, vertex.result, { 0, 0 });
-			const real dist1 = t1.lengthSquare();
+			const real dist1 = t1.square();
 			const Vector2 t2 = Algorithm2D::pointToLineSegment(vertex.result, itB->vertex.result, { 0, 0 });
-			const real dist2 = t2.lengthSquare();
+			const real dist2 = t2.square();
 
 			itA->distance = dist1;
 			pair.distance = dist2;
@@ -672,7 +672,7 @@ namespace ST
 		}
 		info.pair = result;
 		Vector2 penetrationVector = result.pointB - result.pointA;
-		real length = penetrationVector.length();
+		real length = penetrationVector.norm();
 
 		info.normal = penetrationVector;
 		info.penetration = length;
@@ -825,9 +825,9 @@ namespace ST
 		const Vector2 ab = b - a;
 		const Vector2 ac = c - a;
 		const Vector2 bc = c - b;
-		const real ab_length = ab.length();
-		const real ac_length = ac.length();
-		const real bc_length = bc.length();
+		const real ab_length = ab.norm();
+		const real ac_length = ac.norm();
+		const real bc_length = bc.norm();
 
 		const real u_ac = -a.dot(ac.normal()) / ac_length;
 		const real u_bc = -b.dot(bc.normal()) / bc_length;
@@ -1459,7 +1459,7 @@ namespace ST
 			pair.addContact(info.simplex.vertices[1].point[0], info.simplex.vertices[1].point[1]);
 
 		const Vector2 newNormal = pair.points[2] - pair.points[0];
-		info.penetration = newNormal.length();
+		info.penetration = newNormal.norm();
 		const real res = newNormal.dot(info.normal);
 		info.normal = newNormal.normal();
 		if (res < 0)
@@ -1484,7 +1484,7 @@ namespace ST
 			pair.addContact(pA, vb);
 		else
 		{
-			const Vector2 realPa = (pA - va1).lengthSquare() > (pA - va2).lengthSquare() ? va2 : va1;
+			const Vector2 realPa = (pA - va1).square() > (pA - va2).square() ? va2 : va1;
 			pair.addContact(realPa, realPa + info.normal * info.penetration);
 		}
 
@@ -1518,7 +1518,7 @@ namespace ST
 			SimplexVertexDistPair pair;
 			pair.vertex = *iter;
 			pair.distance = Algorithm2D::pointToLineSegment(iter->result, next->result, { 0, 0 })
-				.lengthSquare(); //use lengthSquare() to avoid sqrt
+				.square(); //use lengthSquare() to avoid sqrt
 			polytope.emplace_back(pair);
 		}
 	}

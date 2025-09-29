@@ -664,7 +664,7 @@ namespace STEditor
 		float gapLength)
 	{
 		Vector2 direction = end - start;
-		real length = direction.length();
+		real length = direction.norm();
 		real lengthStep = dashLength / length;
 		real step = (dashLength + gapLength) / length;
 		for (real i = 0; i <= 1; i += step)
@@ -689,7 +689,7 @@ namespace STEditor
 			Vector2 p1 = points[i - 1];
 			Vector2 p2 = points[i];
 			Vector2 direction = p2 - p1;
-			real length = direction.length();
+			real length = direction.norm();
 			if (realEqual(length, 0.0f))
 				continue;
 
@@ -798,7 +798,7 @@ namespace STEditor
 			Vector2 p1 = points[i - 1];
 			Vector2 p2 = points[i];
 			Vector2 direction = p2 - p1;
-			real length = direction.length();
+			real length = direction.norm();
 			if (realEqual(length, 0.0f))
 				continue;
 
@@ -1067,7 +1067,7 @@ namespace STEditor
 		float gapLength)
 	{
 		Vector2 tf = start - end;
-		real length = tf.length();
+		real length = tf.norm();
 		real scale = size;
 		if (length < 1.0f)
 			scale = length * size;
@@ -1083,7 +1083,7 @@ namespace STEditor
 		Vector2 p1 = d1 + end;
 		Vector2 p2 = d2 + end;
 		real p = d1.dot(n);
-		real l = (d1 - p * n).length();
+		real l = (d1 - p * n).norm();
 		real x = l / Math::tanx(Math::radians(degree));
 		real f = p - x;
 		Vector2 p3 = f * n + end;
@@ -1095,7 +1095,7 @@ namespace STEditor
 	void Renderer2D::arrow(const Vector2& start, const Vector2& end, const Color& color, const float& size, const float& degree)
 	{
 		Vector2 tf = start - end;
-		real length = tf.length();
+		real length = tf.norm();
 		real scale = size;
 		if (length < 1.0f)
 			scale = length * size;
@@ -1111,7 +1111,7 @@ namespace STEditor
 		Vector2 p1 = d1 + end;
 		Vector2 p2 = d2 + end;
 		real p = d1.dot(n);
-		real l = (d1 - p * n).length();
+		real l = (d1 - p * n).norm();
 		real x = l / Math::tanx(Math::radians(degree));
 		real f = p - x;
 		Vector2 p3 = f * n + end;

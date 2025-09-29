@@ -62,7 +62,7 @@ namespace STEditor
 
 			Vector2 end = m_positions[i] + m_velocities[i];
 
-			real mag = m_velocities[i].length();
+			real mag = m_velocities[i].norm();
 
 			if (m_showVelocityMagnitude)
 			{
@@ -1018,7 +1018,7 @@ namespace STEditor
 					contact.localB = transformB.inverseTranslatePoint(value.pair.points[i + 2]);
 					contact.rA = value.pair.points[i] - transformA.position;
 					contact.rB = value.pair.points[i + 2] - transformB.position;
-					contact.penetration = (value.pair.points[i] - value.pair.points[i + 2]).length();
+					contact.penetration = (value.pair.points[i] - value.pair.points[i + 2]).norm();
 
 					const real rnA = contact.rA.cross(value.normal);
 					const real rnB = contact.rB.cross(value.normal);

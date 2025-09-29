@@ -42,7 +42,7 @@ namespace ST
 		std::array<MinkowskiDiff, MaxPolytopeVertices> vertices;
 		//face idx -> (vertex idx 1, vertex idx 2)
 		std::array<std::array<uint32_t, 2>, MaxPolytopeFaces> faces = { 0 };
-		//active face idx, same length as faces, 0 means inactive
+		//active face idx, same norm as faces, 0 means inactive
 		std::array<uint32_t, MaxPolytopeFaces> activeFaces = { 0 };
 		std::array<real, MaxPolytopeFaces> distances = { 0.0f };
 		uint32_t nVertex = 0;
@@ -59,17 +59,31 @@ namespace ST
 		Polytope polytope; // debug info
 	};
 
+	struct ST_API Distance2DResult
+	{
+		real distance = 0.0f;
+		Simplex2D simplex;
+		std::array<Vector2, 2> closestPoints; //closestPoints[0] from shape A, closestPoints[1] from shape B
+	};
+
+	struct ST_API SolveSimplexResult
+	{
+		Simplex2D simplex;
+		Vector2 direction;
+	};
+
 
 	class ST_API Narrowphase2D
 	{
 	public:
 		static Simplex2D gjk(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const uint32_t& iteration = 30);
+			const Shape* shapeB, const uint32_t& iteration = 30, const Vector2& initialDirection = Vector2(0, 0));
 
 		static Epa2DResult epa(const Simplex2D& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const uint32_t& iteration = 30, const real& epsilon = Constant::GeometryEpsilon);
 
-		static Polytope initializePolytope(const Simplex2D& simplex);
+		static Distance2DResult distance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+			const Shape* shapeB, const uint32_t& iteration = 30, const real& epsilon = Constant::GeometryEpsilon);
 
 		static MinkowskiDiff support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 		                             const Shape* shapeB, const Vector2& direction);
@@ -81,9 +95,20 @@ namespace ST
 
 		static Vector2 getDirection(const Vector2 p1, const Vector2 p2, bool pointToOrigin);
 
-		static Simplex2D solveSimplex(const Simplex2D& simplex);
 
 	private:
+
+		static Polytope initializePolytope(const Simplex2D& simplex);
+
+		static Simplex2D solveSimplex(const Simplex2D& simplex);
+
+		static SolveSimplexResult solveSimplex3(const Simplex2D& simplex);
+
+		static SolveSimplexResult solveSimplex2(const Simplex2D& simplex);
+
+		static SolveSimplexResult solveSimplex1(const Simplex2D& simplex);
+
+		static real getOriginToSegmentWeight(const Vector2& p1, const Vector2& p2);
 	};
 
 }

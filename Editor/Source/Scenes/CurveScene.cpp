@@ -196,7 +196,7 @@ namespace STEditor
 		{
 			Vector2 n = end[i] - start[i];
 			n = n * m_curvatureScaleFactor;
-			real dist = n.length();
+			real dist = n.norm();
 			if(flip)
 				n = -n;
 

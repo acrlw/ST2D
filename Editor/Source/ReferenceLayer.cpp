@@ -29,7 +29,7 @@ namespace STEditor
 			else
 				offsetX -= 50;
 
-			std::string text = std::format("{:.3f}", diff.length());
+			std::string text = std::format("{:.3f}", diff.norm());
 			renderer.text(offsetX, offsetY, Palette::Teal, text, 1.0f, true);
 		}
 

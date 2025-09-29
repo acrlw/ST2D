@@ -212,7 +212,7 @@ namespace ST
 			Vector2 v1 = origin - p1;
 			Vector2 v2 = origin - p2;
 
-			if (v1.lengthSquare() > maxSquare && v2.lengthSquare() > maxDistance)
+			if (v1.square() > maxSquare && v2.square() > maxDistance)
 				continue;
 
 			bool isP1Inside = Algorithm2D::checkPointOnAABB(p1, aabb.topLeft(), aabb.bottomRight());
@@ -970,8 +970,8 @@ namespace ST
 				currentIndex = m_nodes[currentIndex].right;
 			else
 			{
-				real leftDist = (m_nodes[m_nodes[currentIndex].left].aabb.position - m_nodes[nodeIndex].aabb.position).lengthSquare();
-				real rightDist = (m_nodes[m_nodes[currentIndex].right].aabb.position - m_nodes[nodeIndex].aabb.position).lengthSquare();
+				real leftDist = (m_nodes[m_nodes[currentIndex].left].aabb.position - m_nodes[nodeIndex].aabb.position).square();
+				real rightDist = (m_nodes[m_nodes[currentIndex].right].aabb.position - m_nodes[nodeIndex].aabb.position).square();
 				if (leftDist < rightDist)
 					currentIndex = m_nodes[currentIndex].left;
 				else

@@ -77,14 +77,14 @@ namespace ST
 		return !realEqual(x, rhs.x) || !realEqual(y, rhs.y);
 	}
 
-	real Vector2::lengthSquare() const
+	real Vector2::square() const
 	{
 		return x * x + y * y;
 	}
 
-	real Vector2::length() const
+	real Vector2::norm() const
 	{
-		return std::sqrt(lengthSquare());
+		return std::sqrt(square());
 	}
 
 	real Vector2::theta() const
@@ -129,7 +129,7 @@ namespace ST
 
 	Vector2& Vector2::normalize()
 	{
-		const real length_inv = 1.0f / std::sqrt(lengthSquare());
+		const real length_inv = 1.0f / std::sqrt(square());
 		assert(!std::isinf(length_inv));
 
 		//const real length_inv = Math::fastInverseSqrt<real>(lengthSquare());
@@ -151,7 +151,7 @@ namespace ST
 
 	real Vector2::distance(const Vector2& rhs) const
 	{
-		return (*this - rhs).length();
+		return (*this - rhs).norm();
 	}
 
 	bool Vector2::equal(const Vector2& rhs) const
@@ -186,7 +186,7 @@ namespace ST
 
 	real Vector2::distance(const Vector2& lhs, const Vector2& rhs)
 	{
-		return (lhs - rhs).length();
+		return (lhs - rhs).norm();
 	}
 
 	Vector2& Vector2::matchSign(const Vector2& rhs)
@@ -249,8 +249,8 @@ namespace ST
 
 	real Vector2::cosTheta(const Vector2& lhs, const Vector2& rhs)
 	{
-		const real lengthLhs = lhs.length();
-		const real lengthRhs = rhs.length();
+		const real lengthLhs = lhs.norm();
+		const real lengthRhs = rhs.norm();
 		assert(lengthLhs > 0 && lengthRhs > 0);
 		return dotProduct(lhs, rhs) / (lengthLhs * lengthRhs);
 	}

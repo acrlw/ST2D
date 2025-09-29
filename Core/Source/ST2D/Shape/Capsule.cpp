@@ -33,8 +33,8 @@ namespace ST
 				&& point.x - r <= epsilon && point.x + r >= epsilon)
 				return true;
 		}
-		if ((anchorPoint1 - point).lengthSquare() - r * r <= epsilon ||
-			(anchorPoint2 - point).lengthSquare() - r * r <= epsilon)
+		if ((anchorPoint1 - point).square() - r * r <= epsilon ||
+			(anchorPoint2 - point).square() - r * r <= epsilon)
 			return true;
 
 		return false;

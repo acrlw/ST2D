@@ -40,9 +40,7 @@ namespace ST
 		const real a = A();
 		const real b = B();
 		assert(!realEqual(a, 0) && !realEqual(b, 0));
-		const real x = m_width > m_height ? point.x : point.y;
-		const real y = m_width > m_height ? point.y : point.x;
-		return (x / a) * (x / a) + (y / b) * (y / b) <= 1.0f;
+		return (point.x / a) * (point.x / a) + (point.y / b) * (point.y / b) <= 1.0f;
 	}
 
 	Vector2 Ellipse::center() const

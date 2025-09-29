@@ -12,7 +12,7 @@ namespace STEditor
 		rect.set(1.0f, 1.0f);
 		ellipse.set(1.0f, 2.0f);
 		capsule.set(1.0f, 2.0f);
-		circle.setRadius(1.0f);
+		circle.setRadius(0.5f);
 
 		real innerRadius = ellipse.A();
 		real outerRadius = ellipse.B();
@@ -36,13 +36,14 @@ namespace STEditor
 		discreteEllipse.set(m_ellipseVertices);
 
 		//bug: -0.122633040, -0.174755722
-		tf1.position.set(-0.122633040f, -0.174755722f);
-		tf2.position.set(-1.0f, -1.0f);
-		tf1.rotation = Math::radians(45.0f);
+		//tf1.position.set(-0.122633040f, -0.174755722f);
+		tf1.position.set(0, -0.25);
+		tf2.position.set(-0.0f, -1.0f);
+		//tf1.rotation = Math::radians(45.0f);
 		tf2.rotation = Math::radians(100.0f);
 
-		shape1 = &rect;
-		shape2 = &capsule;
+		shape1 = &ellipse;
+		shape2 = &rect;
 	}
 
 	void NarrowphaseScene::onUnLoad()
@@ -74,7 +75,6 @@ namespace STEditor
 			for (size_t i = 0; i < result.count; ++i)
 			{
 				renderer.pointFixedSize(result.m[i].p, simplexColor, 6.0f);
-				renderer.line(result.m[i].p, result.m[i].p, simplexColor);
 			}
 			if (result.count == 2)
 			{
@@ -120,7 +120,46 @@ namespace STEditor
 					// draw penetration normal
 					Vector2 penEnd = epaResult.normal * epaResult.penetration;
 					renderer.arrow({}, penEnd, penetrationColor, 0.3f, 30.0f);
+
+					// get witness points
+					Vector2 pA = epaResult.simplex.m[2].v[0].v;
+					Vector2 pB = epaResult.simplex.m[2].v[1].v;
+					renderer.pointFixedSize(pA, Palette::Yellow, 8.0f);
+					renderer.pointFixedSize(pB, Palette::Cyan, 8.0f);
+					renderer.line(pA, pB, Palette::LightRed);
+
 				}
+			}
+			else
+			{
+				//do distance check
+				auto distanceResult = Narrowphase2D::distance(tf1, shape1, tf2, shape2);
+				auto& simplex = distanceResult.simplex;
+				for (size_t i = 0; i < simplex.count; ++i)
+				{
+					std::string num = std::format("{}", i);
+					renderer.pointFixedSize(simplex.m[i].p, simplexColor, 6.0f);
+				}
+				if (simplex.count == 2)
+				{
+					renderer.line(simplex.m[0].p, simplex.m[1].p, simplexColor);
+				}
+				else if (simplex.count == 3)
+				{
+					Color fillColor = simplexColor * 0.3f;
+					fillColor.a = 150.0f / 255.0f;
+					renderer.fillAndStroke({ simplex.m[0].p, simplex.m[1].p, simplex.m[2].p }, fillColor, simplexColor);
+				}
+
+				if (distanceResult.distance > 0)
+				{
+					auto v1 = distanceResult.closestPoints[0];
+					auto v2 = distanceResult.closestPoints[1];
+					renderer.pointFixedSize(v1, Palette::Yellow, 8.0f);
+					renderer.pointFixedSize(v2, Palette::Cyan, 8.0f);
+					renderer.line(v1, v2, Palette::LightRed);
+				}
+
 			}
 		}
 	}
@@ -153,13 +192,13 @@ namespace STEditor
 			Vector2 mousePos = renderer.screenToWorld({ static_cast<real>(xpos) , static_cast<real>(ypos)});
 			Vector2 p1 = tf1.inverseTranslatePoint(mousePos);
 			Vector2 p2 = tf2.inverseTranslatePoint(mousePos);
-			if (rect.contains(p1))
+			if (shape1->contains(p1))
 			{
 				selectedTransform = &tf1;
 				oldTransform = tf1;
 				mouseStart = mousePos;
 			}
-			else if (ellipse.contains(p2))
+			else if (shape2->contains(p2))
 			{
 				selectedTransform = &tf2;
 				oldTransform = tf2;

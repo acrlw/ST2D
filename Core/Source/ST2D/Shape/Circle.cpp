@@ -23,7 +23,7 @@ namespace ST
 
 	bool Circle::contains(const Vector2& point, const real& epsilon)
 	{
-		return (m_radius * m_radius - point.lengthSquare()) > epsilon;
+		return (m_radius * m_radius - point.square()) > epsilon;
 	}
 
 	Vector2 Circle::center()const
