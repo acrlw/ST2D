@@ -217,27 +217,27 @@ namespace ST
 		return { -y, x };
 	}
 
-	real Vector2::dotProduct(const Vector2& lhs, const Vector2& rhs)
+	real Vector2::dot(const Vector2& lhs, const Vector2& rhs)
 	{
 		return lhs.x * rhs.x + lhs.y * rhs.y;
 	}
 
-	real Vector2::crossProduct(const Vector2& lhs, const Vector2& rhs)
+	real Vector2::cross(const Vector2& lhs, const Vector2& rhs)
 	{
 		return lhs.x * rhs.y - lhs.y * rhs.x;
 	}
 
-	real Vector2::crossProduct(const real& x1, const real& y1, const real& x2, const real& y2)
+	real Vector2::cross(const real& x1, const real& y1, const real& x2, const real& y2)
 	{
 		return x1 * y2 - x2 * y1;
 	}
 
-	Vector2 Vector2::crossProduct(const real& lhs, const Vector2& rhs)
+	Vector2 Vector2::cross(const real& lhs, const Vector2& rhs)
 	{
 		return { -rhs.y * lhs, rhs.x * lhs };
 	}
 
-	Vector2 Vector2::crossProduct(const Vector2& lhs, const real& rhs)
+	Vector2 Vector2::cross(const Vector2& lhs, const real& rhs)
 	{
 		return {lhs.y * rhs, -lhs.x * rhs };
 	}
@@ -252,7 +252,7 @@ namespace ST
 		const real lengthLhs = lhs.norm();
 		const real lengthRhs = rhs.norm();
 		assert(lengthLhs > 0 && lengthRhs > 0);
-		return dotProduct(lhs, rhs) / (lengthLhs * lengthRhs);
+		return dot(lhs, rhs) / (lengthLhs * lengthRhs);
 	}
 
 	Vector2& Vector2::operator/=(const int& factor)

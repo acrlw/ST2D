@@ -235,7 +235,7 @@ namespace ST
 
 			Vector2 ab = *itCurr - *itLast;
 			Vector2 bc = *itNext - *itCurr;
-			const real res = Vector2::crossProduct(ab, bc);
+			const real res = Vector2::cross(ab, bc);
 			if (realEqual(res, 0))
 				zero++;
 			else if (res < 0)
@@ -372,7 +372,7 @@ namespace ST
 
 	real Algorithm2D::triangleArea(const Vector2& a1, const Vector2& a2, const Vector2& a3)
 	{
-		return std::fabs(Vector2::crossProduct(a1 - a2, a1 - a3)) / 2.0f;
+		return std::fabs(Vector2::cross(a1 - a2, a1 - a3)) / 2.0f;
 	}
 
 	Vector2 Algorithm2D::computeCenter(const std::vector<Vector2>& vertices)
@@ -498,10 +498,10 @@ namespace ST
 				f_arr[1].set(-f_x, f_y);
 				f_arr[2].set(-f_x, -f_y);
 				f_arr[3].set(f_x, -f_y);
-				real min = Vector2::crossProduct(p1p2, f_arr[0] - p1);
+				real min = Vector2::cross(p1p2, f_arr[0] - p1);
 				for (int i = 1; i < 4; i++)
 				{
-					const real value = Vector2::crossProduct(p1p2, f_arr[i] - p1);
+					const real value = Vector2::cross(p1p2, f_arr[i] - p1);
 					if (min > value)
 					{
 						f = f_arr[i];
@@ -641,7 +641,7 @@ namespace ST
 			const real b2 = pow(b, 2.0f);
 			const real k2 = pow(k, 2.0f);
 			real d = sqrt((a2 + b2 * k2) / k2);
-			if (Vector2::dotProduct(Vector2(0, d), direction) < 0)
+			if (Vector2::dot(Vector2(0, d), direction) < 0)
 				d = d * -1;
 			const real x1 = k * d - (b2 * k2 * k * d) / (a2 + b2 * k2);
 			const real y1 = (b2 * k2 * d) / (a2 + b2 * k2);
@@ -749,6 +749,8 @@ namespace ST
 			normal.negate();
 		return normal;
 	}
+
+
 	Vector2 Algorithm2D::pointToLineSegment(const Vector2& a, const Vector2& b, const Vector2& p)
 	{
 		if (a == b)
@@ -771,6 +773,30 @@ namespace ST
 		//return point p_proj
 		return op_proj;
 	}
+
+	Vector2 Algorithm2D::pointToSegment(const Vector2& a, const Vector2& b, const Vector2& p, bool clamp)
+	{
+		if (a == b)
+			return a;
+
+		const real t = pointToSegmentWeight(a, b, p, clamp);
+		return t * a + (1 - t) * b;
+	}
+
+	real Algorithm2D::pointToSegmentWeight(const Vector2& a, const Vector2& b, const Vector2& p, bool clamp)
+	{
+		if (a == b)
+			return 1.0;
+
+		const Vector2 ab = b - a;
+		const Vector2 ap = p - a;
+		const real square = ab.square();
+		const real dot = Vector2::dot(ap, ab);
+		if (clamp)
+			return Math::clamp(1 - dot / square, 0.0, 1.0);
+		return 1 - dot / square;
+	}
+
 	Vector2 Algorithm2D::rayRayIntersectionUnsafe(const Vector2& p1, const Vector2& dir1, const Vector2& p2, const Vector2& dir2)
 	{
 		//https://stackoverflow.com/a/2932601

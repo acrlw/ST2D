@@ -299,8 +299,8 @@ namespace ST
 		case ShapeType::Segment:
 		{
 			auto edge = static_cast<const Segment*>(shape);
-			const real dot1 = Vector2::dotProduct(edge->startPoint(), direction);
-			const real dot2 = Vector2::dotProduct(edge->endPoint(), direction);
+			const real dot1 = Vector2::dot(edge->startPoint(), direction);
+			const real dot2 = Vector2::dot(edge->endPoint(), direction);
 			target = dot1 > dot2 ? edge->startPoint() : edge->endPoint();
 			break;
 		}
@@ -333,8 +333,8 @@ namespace ST
 		const Vector2 ao = p1.negative();
 		const Vector2 ab = p2 - p1;
 		Vector2 perpendicularOfAB = ab.ortho();
-		if ((Vector2::dotProduct(ao, perpendicularOfAB) < 0 && pointToOrigin) || (
-			Vector2::dotProduct(ao, perpendicularOfAB) > 0 && !pointToOrigin))
+		if ((Vector2::dot(ao, perpendicularOfAB) < 0 && pointToOrigin) || (
+			Vector2::dot(ao, perpendicularOfAB) > 0 && !pointToOrigin))
 			perpendicularOfAB.negate();
 		return perpendicularOfAB;
 	}
@@ -347,7 +347,7 @@ namespace ST
 		Index index = 0;
 		for (Index i = 0; i < vertices.size(); i++)
 		{
-			real result = Vector2::dotProduct(vertices[i], direction);
+			real result = Vector2::dot(vertices[i], direction);
 			if (max < result)
 			{
 				max = result;
@@ -565,13 +565,13 @@ namespace ST
 
 			const Vector2 ab = itB->vertex.result - itA->vertex.result;
 			const Vector2 bc = itC->vertex.result - itB->vertex.result;
-			const real res1 = Vector2::crossProduct(ab, bc);
+			const real res1 = Vector2::cross(ab, bc);
 
 			const Vector2 an = vertex.result - itA->vertex.result;
 			const Vector2 nb = itB->vertex.result - vertex.result;
-			const real res2 = Vector2::crossProduct(an, nb);
+			const real res2 = Vector2::cross(an, nb);
 
-			const real res3 = Vector2::crossProduct(nb, bc);
+			const real res3 = Vector2::cross(nb, bc);
 
 			const bool validConvexity = Math::sameSignStrict(res1, res2, res3);
 

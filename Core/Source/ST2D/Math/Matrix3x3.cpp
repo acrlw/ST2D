@@ -234,9 +234,9 @@ namespace ST
 
 	real Matrix3x3::determinant(const Matrix3x3& mat)
 	{
-		return mat.columns[0].x * Vector2::crossProduct(mat.columns[1].y, mat.columns[1].z, mat.columns[2].y, mat.columns[2].z) +
-			mat.columns[1].x * Vector2::crossProduct(mat.columns[2].y, mat.columns[2].z, mat.columns[0].y, mat.columns[0].z) +
-			mat.columns[2].x * Vector2::crossProduct(mat.columns[0].y, mat.columns[0].z, mat.columns[1].y, mat.columns[1].z);
+		return mat.columns[0].x * Vector2::cross(mat.columns[1].y, mat.columns[1].z, mat.columns[2].y, mat.columns[2].z) +
+			mat.columns[1].x * Vector2::cross(mat.columns[2].y, mat.columns[2].z, mat.columns[0].y, mat.columns[0].z) +
+			mat.columns[2].x * Vector2::cross(mat.columns[0].y, mat.columns[0].z, mat.columns[1].y, mat.columns[1].z);
 	}
 
 	bool Matrix3x3::invert(Matrix3x3& mat)
@@ -245,17 +245,17 @@ namespace ST
 		if (realEqual(det, 0.0f))
 			return false;
 
-		const real det11 = Vector2::crossProduct(mat.columns[1].y, mat.columns[1].z, mat.columns[2].y, mat.columns[2].z);
-		const real det12 = Vector2::crossProduct(mat.columns[1].x, mat.columns[1].z, mat.columns[2].x, mat.columns[2].z) * -1;
-		const real det13 = Vector2::crossProduct(mat.columns[1].x, mat.columns[1].y, mat.columns[2].x, mat.columns[2].y);
+		const real det11 = Vector2::cross(mat.columns[1].y, mat.columns[1].z, mat.columns[2].y, mat.columns[2].z);
+		const real det12 = Vector2::cross(mat.columns[1].x, mat.columns[1].z, mat.columns[2].x, mat.columns[2].z) * -1;
+		const real det13 = Vector2::cross(mat.columns[1].x, mat.columns[1].y, mat.columns[2].x, mat.columns[2].y);
 
-		const real det21 = Vector2::crossProduct(mat.columns[0].y, mat.columns[0].z, mat.columns[2].y, mat.columns[2].z) * -1;
-		const real det22 = Vector2::crossProduct(mat.columns[0].x, mat.columns[0].z, mat.columns[2].x, mat.columns[2].z);
-		const real det23 = Vector2::crossProduct(mat.columns[0].x, mat.columns[0].y, mat.columns[2].x, mat.columns[2].y) * -1;
+		const real det21 = Vector2::cross(mat.columns[0].y, mat.columns[0].z, mat.columns[2].y, mat.columns[2].z) * -1;
+		const real det22 = Vector2::cross(mat.columns[0].x, mat.columns[0].z, mat.columns[2].x, mat.columns[2].z);
+		const real det23 = Vector2::cross(mat.columns[0].x, mat.columns[0].y, mat.columns[2].x, mat.columns[2].y) * -1;
 
-		const real det31 = Vector2::crossProduct(mat.columns[0].y, mat.columns[0].z, mat.columns[1].y, mat.columns[1].z);
-		const real det32 = Vector2::crossProduct(mat.columns[0].x, mat.columns[0].z, mat.columns[1].x, mat.columns[1].z) * -1;
-		const real det33 = Vector2::crossProduct(mat.columns[0].x, mat.columns[0].y, mat.columns[1].x, mat.columns[1].y);
+		const real det31 = Vector2::cross(mat.columns[0].y, mat.columns[0].z, mat.columns[1].y, mat.columns[1].z);
+		const real det32 = Vector2::cross(mat.columns[0].x, mat.columns[0].z, mat.columns[1].x, mat.columns[1].z) * -1;
+		const real det33 = Vector2::cross(mat.columns[0].x, mat.columns[0].y, mat.columns[1].x, mat.columns[1].y);
 
 		mat.set(det11, det12, det13, det21, det22, det23, det31, det32, det33);
 		mat.transpose();

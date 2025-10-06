@@ -1046,8 +1046,8 @@ namespace STEditor
 
 					}
 
-					Vector2 wa = Vector2::crossProduct(m_angularVelocities[key.idA], contact.rA);
-					Vector2 wb = Vector2::crossProduct(m_angularVelocities[key.idB], contact.rB);
+					Vector2 wa = Vector2::cross(m_angularVelocities[key.idA], contact.rA);
+					Vector2 wb = Vector2::cross(m_angularVelocities[key.idB], contact.rB);
 					contact.vA = m_velocities[key.idA] + wa;
 					contact.vB = m_velocities[key.idB] + wb;
 
@@ -1099,8 +1099,8 @@ namespace STEditor
 				m_velocities[pair.idB] += imB * -impulse;
 				m_angularVelocities[pair.idB] += iiB * contact.rB.cross(-impulse);
 
-				Vector2 wa = Vector2::crossProduct(m_angularVelocities[pair.idA], contact.rA);
-				Vector2 wb = Vector2::crossProduct(m_angularVelocities[pair.idB], contact.rB);
+				Vector2 wa = Vector2::cross(m_angularVelocities[pair.idA], contact.rA);
+				Vector2 wb = Vector2::cross(m_angularVelocities[pair.idB], contact.rB);
 				contact.vA = m_velocities[pair.idA] + wa;
 				contact.vB = m_velocities[pair.idB] + wb;
 			}
@@ -1119,8 +1119,8 @@ namespace STEditor
 				// solve friction first
 
 				auto& singleContact = manifold.contacts[i];
-				singleContact.vA = m_velocities[pair.idA] + Vector2::crossProduct(m_angularVelocities[pair.idA], singleContact.rA);
-				singleContact.vB = m_velocities[pair.idB] + Vector2::crossProduct(m_angularVelocities[pair.idB], singleContact.rB);
+				singleContact.vA = m_velocities[pair.idA] + Vector2::cross(m_angularVelocities[pair.idA], singleContact.rA);
+				singleContact.vB = m_velocities[pair.idB] + Vector2::cross(m_angularVelocities[pair.idB], singleContact.rB);
 				Vector2 dv = singleContact.vA - singleContact.vB;
 
 				real jvt = manifold.tangent.dot(dv);
@@ -1145,10 +1145,10 @@ namespace STEditor
 			if (m_contactManifolds[pair].count == 2 && m_enableVelocityBlockSolver)
 			{
 				// solve by block
-				Vector2 wA1 = Vector2::crossProduct(m_angularVelocities[pair.idA], manifold.contacts[0].rA);
-				Vector2 wB1 = Vector2::crossProduct(m_angularVelocities[pair.idB], manifold.contacts[0].rB);
-				Vector2 wA2 = Vector2::crossProduct(m_angularVelocities[pair.idA], manifold.contacts[1].rA);
-				Vector2 wB2 = Vector2::crossProduct(m_angularVelocities[pair.idB], manifold.contacts[1].rB);
+				Vector2 wA1 = Vector2::cross(m_angularVelocities[pair.idA], manifold.contacts[0].rA);
+				Vector2 wB1 = Vector2::cross(m_angularVelocities[pair.idB], manifold.contacts[0].rB);
+				Vector2 wA2 = Vector2::cross(m_angularVelocities[pair.idA], manifold.contacts[1].rA);
+				Vector2 wB2 = Vector2::cross(m_angularVelocities[pair.idB], manifold.contacts[1].rB);
 					    
 				Vector2 vA1 = m_velocities[pair.idA] + wA1;
 				Vector2 vB1 = m_velocities[pair.idB] + wB1;
@@ -1225,8 +1225,8 @@ namespace STEditor
 				{
 					// solve normal
 					auto& singleContact = manifold.contacts[i];
-					singleContact.vA = m_velocities[pair.idA] + Vector2::crossProduct(m_angularVelocities[pair.idA], singleContact.rA);
-					singleContact.vB = m_velocities[pair.idB] + Vector2::crossProduct(m_angularVelocities[pair.idB], singleContact.rB);
+					singleContact.vA = m_velocities[pair.idA] + Vector2::cross(m_angularVelocities[pair.idA], singleContact.rA);
+					singleContact.vB = m_velocities[pair.idB] + Vector2::cross(m_angularVelocities[pair.idB], singleContact.rB);
 					Vector2 dv = singleContact.vA - singleContact.vB;
 
 					real jvn = manifold.normal.dot(dv + singleContact.velocityBias);

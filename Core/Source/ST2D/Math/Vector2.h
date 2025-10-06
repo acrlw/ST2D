@@ -60,11 +60,11 @@ namespace ST
 
 		static real distance(const Vector2& lhs, const Vector2& rhs);
 
-		static real dotProduct(const Vector2& lhs, const Vector2& rhs);
-		static real crossProduct(const Vector2& lhs, const Vector2& rhs);
-		static real crossProduct(const real& x1, const real& y1, const real& x2, const real& y2);
-		static Vector2 crossProduct(const real& lhs, const Vector2& rhs);
-		static Vector2 crossProduct(const Vector2& lhs, const real& rhs);
+		static real dot(const Vector2& lhs, const Vector2& rhs);
+		static real cross(const Vector2& lhs, const Vector2& rhs);
+		static real cross(const real& x1, const real& y1, const real& x2, const real& y2);
+		static Vector2 cross(const real& lhs, const Vector2& rhs);
+		static Vector2 cross(const Vector2& lhs, const real& rhs);
 		static Vector2 lerp(const Vector2& lhs, const Vector2& rhs, const real& t);
 		static real cosTheta(const Vector2& lhs, const Vector2& rhs);
 

@@ -50,7 +50,7 @@ namespace STEditor
 
 		bool m_userDrawVisible = true;
 
-		int m_currentSceneIndex = 2;
+		int m_currentSceneIndex = 4;
 
 		std::array<const char*, 9> m_sceneName = { "HelloWorld", "Curve", "Continuous", "Broadphase", "Narrowphase", "Physics", "Empty", "Spline", "Spiral" };
 
@@ -70,8 +70,8 @@ namespace STEditor
 
 		ReferenceLayer m_referenceLayer;
 
-		bool m_nightMode = true;
-		bool m_currentNightMode = true;
+		bool m_nightMode = false;
+		bool m_currentNightMode = false;
 		bool m_isImGUIActive = false;
 	};
 }

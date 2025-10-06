@@ -26,6 +26,7 @@ namespace STEditor
 		ST::Rectangle rect;
 		ST::Ellipse ellipse;
 		ST::Capsule capsule;
+		ST::Capsule capsule2;
 		ST::Circle circle;
 		ST::Polygon discreteEllipse;
 		Shape* shape1 = nullptr;
@@ -43,5 +44,8 @@ namespace STEditor
 		bool m_enableLinearSweep = false;
 		bool m_enableLinearSweepCast = true;
 		std::vector<Vector2> m_ellipseVertices;
+
+		ST::Circle radius1;
+		ST::Circle radius2;
 	};
 }

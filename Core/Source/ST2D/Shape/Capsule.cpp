@@ -24,7 +24,7 @@ namespace ST
 		}
 		else//Vertical
 		{
-			r = m_halfWidth / 2;
+			r = m_halfWidth;
 			h = m_halfHeight - m_halfWidth;
 			anchorPoint1.set(0, h);
 			anchorPoint2.set(0, -h);

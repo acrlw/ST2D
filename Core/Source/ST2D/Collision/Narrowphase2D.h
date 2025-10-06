@@ -72,6 +72,21 @@ namespace ST
 		Vector2 direction;
 	};
 
+	struct ST_API ContactResult
+	{
+		std::array<Vector2, 2> pA;
+		std::array<Vector2, 2> pB;
+		std::array<real, 2> penetration;
+		Vector2 normal;
+		int count = 0;
+	};
+
+	struct ST_API ClipEdge
+	{
+		std::array<Vector2, 2> refEdge;
+		std::array<Vector2, 2> incEdge;
+		int count = 0;
+	};
 
 	class ST_API Narrowphase2D
 	{
@@ -85,6 +100,9 @@ namespace ST
 		static Distance2DResult distance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 			const Shape* shapeB, const uint32_t& iteration = 30, const real& epsilon = Constant::GeometryEpsilon);
 
+		static Distance2DResult distanceRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+			const Shape* shapeB, const real& radius1, const real& radius2, const uint32_t& iteration = 30, const real& epsilon = Constant::GeometryEpsilon);
+
 		static MinkowskiDiff support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
 		                             const Shape* shapeB, const Vector2& direction);
 
@@ -93,10 +111,31 @@ namespace ST
 		static FurthestVertex findFurthestVertex(const std::vector<Vector2>& vertices,
 			const Vector2& direction);
 
+		static FurthestVertex findFurthestVertexHillClimbing(const std::vector<Vector2>& vertices, const Vector2& direction, int32_t startIndex = 0);
+
 		static Vector2 getDirection(const Vector2 p1, const Vector2 p2, bool pointToOrigin);
 
+		static ContactResult generateContacts(const Epa2DResult& epaResult, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+			const Shape* shapeB);
 
 	private:
+
+		static ClipEdge clipEdges(const std::array<Vector2, 4>& edge, const Vector2& clipNormal);
+
+		static ContactResult clipPolygonPolygon(const Epa2DResult& epaResult, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+			const Shape* shapeB);
+
+		static ContactResult clipPolygonSegment(const Epa2DResult& epaResult, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+			const Shape* shapeB, bool swap = false);
+
+		static ContactResult clipCapsulePolygon(const Epa2DResult& epaResult, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+			const Shape* shapeB, bool swap = false);
+
+		static ContactResult clipCapsuleCapsule(const Epa2DResult& epaResult, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+			const Shape* shapeB);
+
+		static ContactResult clipCapsuleSegment(const Epa2DResult& epaResult, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
+			const Shape* shapeB, bool swap = false);
 
 		static Polytope initializePolytope(const Simplex2D& simplex);
 
@@ -108,7 +147,7 @@ namespace ST
 
 		static SolveSimplexResult solveSimplex1(const Simplex2D& simplex);
 
-		static real getOriginToSegmentWeight(const Vector2& p1, const Vector2& p2);
+		inline static real originToSegmentWeight(const Vector2& p1, const Vector2& p2);
 	};
 
 }

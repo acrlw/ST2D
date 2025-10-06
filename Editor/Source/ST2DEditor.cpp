@@ -95,7 +95,11 @@ namespace STEditor
 
 		io.Fonts->AddFontFromFileTTF("./Resource/Fonts/SourceSans3-Medium.ttf", 20);
 		// Setup Dear ImGui style
-		styleDarkUI();
+		Palette::setThemeMode(m_nightMode ? ThemeMode::Dark : ThemeMode::Light);
+		if (m_nightMode)
+			styleDarkUI();
+		else
+			styleLightUI();
 
 		// Setup Platform/Renderer backends
 		ImGui_ImplGlfw_InitForOpenGL(m_window, true);
@@ -275,8 +279,8 @@ namespace STEditor
 		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.44f, 0.44f, 0.44f, 0.29f);
 		colors[ImGuiCol_SeparatorActive] = ImVec4(0.40f, 0.44f, 0.47f, 1.00f);
 		colors[ImGuiCol_ResizeGrip] = ImVec4(1.00f, 1.00f, 1.00f, 0.50f);
-		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.78f, 0.90f, 0.79f, 1.00f);
+		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.78f, 0.90f, 0.79f, 1.00f);
 		colors[ImGuiCol_Tab] = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
 		colors[ImGuiCol_TabHovered] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
 		colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.20f, 0.20f, 0.36f);
