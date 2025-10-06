@@ -119,6 +119,9 @@ namespace ST
 			const Shape* shapeB);
 
 	private:
+		static std::array<Vector2, 2> getPolygonClipEdge(const Transform& transform, const Shape* shape, const Vector2& clipNormal, const Vector2& supportPoint, const int32_t& idx);
+
+		static std::array<Vector2, 2> getCapsuleClipEdge(const Transform& transform, const real& halfWidth, const real& halfHeight, const Vector2& localP);
 
 		static ClipEdge clipEdges(const std::array<Vector2, 4>& edge, const Vector2& clipNormal);
 

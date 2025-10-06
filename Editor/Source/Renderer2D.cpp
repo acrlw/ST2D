@@ -982,6 +982,7 @@ namespace STEditor
 		float halfHeight = capsule->halfHeight();
 		bool isHorizontal = halfWidth > halfHeight;
 		float radius = halfWidth > halfHeight ? halfHeight : halfWidth;
+		
 
 		auto sampling = [&](const Vector2& center, const real& startRadians, const real& endRadians)
 			{
@@ -1012,6 +1013,17 @@ namespace STEditor
 		Color fillColor = color;
 		fillColor.a = 38.0f / 255.0f;
 		fillAndStroke(vertices, fillColor, color);
+
+		Vector2 anchor1;
+		if (isHorizontal)
+			anchor1.set(halfWidth - halfHeight, 0);
+		else
+			anchor1.set(0, halfHeight - halfWidth);
+
+		Vector2 anchor2 = anchor1.negative();
+		anchor1 = transform.translatePoint(anchor1);
+		anchor2 = transform.translatePoint(anchor2);
+		line(anchor1, anchor2, color);
 	}
 
 	void Renderer2D::ellipse(const Transform& transform, Shape* shape, const Color& color)

@@ -11,8 +11,8 @@ namespace STEditor
 	{
 		rect.set(1.0f, 1.0f);
 		ellipse.set(1.0f, 2.0f);
-		capsule.set(1.0f, 2.0f);
-		capsule2.set(2.0f, 4.0f);
+		capsule.set(2.0f, 4.0f);
+		capsule2.set(0.5f, 1.0f);
 		circle.setRadius(0.5f);
 		radius1.setRadius(0.025f);
 		radius2.setRadius(0.05f);
@@ -43,10 +43,10 @@ namespace STEditor
 		tf1.position.set(0, -0.25);
 		tf2.position.set(-0.0f, -1.0f);
 		tf1.rotation = Math::radians(15);
-		tf2.rotation = Math::radians(0);
+		tf2.rotation = Math::radians(90);
 
-		shape1 = &rect;
-		shape2 = &rect;
+		shape1 = &capsule;
+		shape2 = &capsule2;
 	}
 
 	void NarrowphaseScene::onUnLoad()
@@ -227,8 +227,8 @@ namespace STEditor
 		radius2.setRadius(r2);
 		float deg1 = Math::degree(tf1.rotation);
 		float deg2 = Math::degree(tf2.rotation);
-		ImGui::SliderFloat("Degree 1", &deg1, 0, 360);
-		ImGui::SliderFloat("Degree 2", &deg2, 0, 360);
+		ImGui::SliderFloat("Degree 1", &deg1, 0, 360, "%.1f");
+		ImGui::SliderFloat("Degree 2", &deg2, 0, 360, "%.1f");
 		tf1.rotation = Math::radians(deg1);
 		tf2.rotation = Math::radians(deg2);
 
