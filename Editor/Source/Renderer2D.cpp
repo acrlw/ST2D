@@ -618,6 +618,37 @@ namespace STEditor
 		pushColor(m_lines, color);
 	}
 
+	void Renderer2D::fill(const Vector2* points, const uint32_t& count, const Color& color)
+	{
+		if (count < 2)
+			return;
+
+		Fill shape;
+		for (uint32_t i = 0;i < count;++i)
+		{
+			pushVector(shape.vertices, points[i]);
+			pushColor(shape.vertices, color);
+		}
+		m_fills.push_back(shape);
+	}
+
+	void Renderer2D::fillAndStroke(const Vector2* points, const uint32_t& count, const Color& fillColor,
+		const Color& strokeColor, float thickness)
+	{
+		if (count < 2)
+			return;
+
+		FillStroke shape;
+		for (uint32_t i = 0;i < count;++i)
+		{
+			pushVector(shape.vertices, points[i]);
+			pushColor(shape.vertices, strokeColor);
+		}
+		shape.fillColor = fillColor;
+		shape.thickness = thickness;
+		m_fillStrokes.emplace_back(shape);
+	}
+
 	void Renderer2D::fill(const std::vector<Vector2>& points, const Color& color)
 	{
 		if (points.size() < 2)
@@ -675,8 +706,257 @@ namespace STEditor
 		}
 	}
 
-	void Renderer2D::polyDashedLines(const std::vector<Vector2>& points, const Color& color, float dashLength,
+	void Renderer2D::polyLines(const Vector2* points, const uint32_t& count, const Color& color)
+	{
+		if (count < 2)
+			return;
+
+		PolyLines lines;
+		for (uint32_t i = 0; i < count; ++i)
+		{
+			pushVector(lines.vertices, points[i]);
+			pushColor(lines.vertices, color);
+		}
+
+		m_polyLines.emplace_back(lines);
+	}
+
+	void Renderer2D::closedLines(const Vector2* points, const uint32_t& count, const Color& color)
+	{
+		if (count < 2)
+			return;
+
+		PolyLines lines;
+		for (uint32_t i = 0; i < count; ++i)
+		{
+			pushVector(lines.vertices, points[i]);
+			pushColor(lines.vertices, color);
+		}
+		lines.closed = true;
+		m_polyLines.emplace_back(lines);
+	}
+
+	void Renderer2D::polyDashedLines(const Vector2* points, const uint32_t& count, const Color& color, float dashLength,
 		float gapLength)
+	{
+		if (count < 2)
+			return;
+
+		real dashResidual = 0.0f;
+		real gapResidual = 0.0f;
+		real dashedAndGap = dashLength + gapLength;
+		for (size_t i = 1; i < count; ++i)
+		{
+			Vector2 p1 = points[i - 1];
+			Vector2 p2 = points[i];
+			Vector2 direction = p2 - p1;
+			real length = direction.norm();
+			if (realEqual(length, 0.0f))
+				continue;
+
+			direction /= length;
+
+			Vector2 start = p1;
+
+			if (dashResidual > 0.0f)
+			{
+				if (dashResidual > length)
+				{
+					dashResidual -= length;
+					line(p1, p2, color);
+					continue;
+				}
+
+				Vector2 end = start + direction * dashResidual;
+				line(start, end, color);
+				length -= dashResidual;
+				dashResidual = 0.0f;
+
+				if (length > gapLength)
+				{
+					length -= gapLength;
+					start = end + direction * gapLength;
+				}
+				else
+				{
+					gapResidual = gapLength - length;
+					continue;
+				}
+			}
+
+			if (gapResidual > 0.0f)
+			{
+				if (gapResidual > length)
+				{
+					gapResidual -= length;
+					continue;
+				}
+				start += direction * gapResidual;
+				length -= gapResidual;
+				gapResidual = 0.0f;
+			}
+
+
+			bool finished = false;
+
+			while (!finished)
+			{
+				if (length < dashLength)
+				{
+					line(start, p2, color);
+					dashResidual = dashLength - length;
+					gapResidual = 0.0f;
+					finished = true;
+				}
+				else if (length >= dashLength && length < dashedAndGap)
+				{
+					Vector2 end = start + direction * dashLength;
+					line(start, end, color);
+					dashResidual = 0.0f;
+					gapResidual = dashedAndGap - length;
+					finished = true;
+				}
+				else
+				{
+					Vector2 end = start + direction * dashLength;
+					line(start, end, color);
+					start = end + direction * gapLength;
+					dashResidual = 0.0f;
+					gapResidual = 0.0f;
+					length -= dashedAndGap;
+				}
+
+			}
+		}
+	}
+
+	void Renderer2D::polyThickLine(const Vector2* points, const uint32_t& count, const Color& color, float thickness)
+	{
+		if (count < 2)
+			return;
+
+		PolyLines lines;
+		for (uint32_t i = 0; i < count; ++i)
+		{
+			pushVector(lines.vertices, points[i]);
+			pushColor(lines.vertices, color);
+		}
+		lines.thickness = thickness;
+		m_polyLines.emplace_back(lines);
+	}
+
+	void Renderer2D::polyDashedThickLine(const Vector2* points, const uint32_t& count, const Color& color, float thickness,
+		float dashLength, float gapLength)
+	{
+		if (count < 2)
+			return;
+
+		real dashResidual = 0.0f;
+		real gapResidual = 0.0f;
+		real dashedAndGap = dashLength + gapLength;
+		for (size_t i = 1; i < count; ++i)
+		{
+			Vector2 p1 = points[i - 1];
+			Vector2 p2 = points[i];
+			Vector2 direction = p2 - p1;
+			real length = direction.norm();
+			if (realEqual(length, 0.0f))
+				continue;
+
+			direction /= length;
+
+			Vector2 start = p1;
+
+			if (dashResidual > 0.0f)
+			{
+				if (dashResidual > length)
+				{
+					dashResidual -= length;
+					thickLine(p1, p2, color, thickness);
+					continue;
+				}
+
+				Vector2 end = start + direction * dashResidual;
+				thickLine(start, end, color, thickness);
+				length -= dashResidual;
+				dashResidual = 0.0f;
+
+				if (length > gapLength)
+				{
+					length -= gapLength;
+					start = end + direction * gapLength;
+				}
+				else
+				{
+					gapResidual = gapLength - length;
+					continue;
+				}
+			}
+
+			if (gapResidual > 0.0f)
+			{
+				if (gapResidual > length)
+				{
+					gapResidual -= length;
+					continue;
+				}
+				start += direction * gapResidual;
+				length -= gapResidual;
+				gapResidual = 0.0f;
+			}
+
+
+			bool finished = false;
+
+			while (!finished)
+			{
+				if (length < dashLength)
+				{
+					thickLine(start, p2, color, thickness);
+					dashResidual = dashLength - length;
+					gapResidual = 0.0f;
+					finished = true;
+				}
+				else if (length >= dashLength && length < dashedAndGap)
+				{
+					Vector2 end = start + direction * dashLength;
+					thickLine(start, end, color, thickness);
+					dashResidual = 0.0f;
+					gapResidual = dashedAndGap - length;
+					finished = true;
+				}
+				else
+				{
+					Vector2 end = start + direction * dashLength;
+					thickLine(start, end, color, thickness);
+					start = end + direction * gapLength;
+					dashResidual = 0.0f;
+					gapResidual = 0.0f;
+					length -= dashedAndGap;
+				}
+
+			}
+		}
+	}
+
+	void Renderer2D::polyClosedThickLines(const Vector2* points, const uint32_t& count, const Color& color, float thickness)
+	{
+		if (count < 2)
+			return;
+
+		PolyLines lines;
+		for (uint32_t i = 0; i < count; ++i)
+		{
+			pushVector(lines.vertices, points[i]);
+			pushColor(lines.vertices, color);
+		}
+		lines.closed = true;
+		lines.thickness = thickness;
+		m_polyLines.emplace_back(lines);
+	}
+
+	void Renderer2D::polyDashedLines(const std::vector<Vector2>& points, const Color& color, float dashLength,
+	                                 float gapLength)
 	{
 		if (points.size() < 2)
 			return;
@@ -927,13 +1207,12 @@ namespace STEditor
 	{
 		assert(shape != nullptr && shape->type() == ShapeType::Polygon);
 		auto polygon = static_cast<ST::Polygon*>(shape);
-		std::vector<Vector2> vertices;
-		vertices.reserve(polygon->vertices().size());
-		for (auto&& elem : polygon->vertices())
-			vertices.push_back(transform.translatePoint(elem));
+		std::array<Vector2, MaxPolygonVertices> vertices;
+		for (uint32_t i = 0;i < polygon->count(); ++i)
+			vertices[i] = transform.translatePoint(polygon->vertices()[i]);
 		Color fillColor = color;
 		fillColor.a = 38.0f / 255.0f;
-		fillAndStroke(vertices, fillColor, color);
+		fillAndStroke(vertices.data(), polygon->count(), fillColor, color);
 	}
 
 	void Renderer2D::segment(const Transform& transform, Shape* shape, const Color& color)
@@ -978,52 +1257,50 @@ namespace STEditor
 		int pointCount = 60 + static_cast<int>(meterToPixel());
 		vertices.reserve(pointCount);
 		pointCount /= 2;
-		float halfWidth = capsule->halfWidth();
-		float halfHeight = capsule->halfHeight();
-		bool isHorizontal = halfWidth > halfHeight;
-		float radius = halfWidth > halfHeight ? halfHeight : halfWidth;
-		
+		float halfLength = capsule->halfLength();
+		float radius = capsule->radius();
 
-		auto sampling = [&](const Vector2& center, const real& startRadians, const real& endRadians)
+		Vector2 anchor1(0, halfLength);
+		Vector2 anchor2(0, -halfLength);
+
+
+		auto sampling = [](std::vector<Vector2>& verts, int pointCount, const Vector2& center, const real& radius, const real& startRadians, const real& endRadians)
 			{
 				real step = (endRadians - startRadians) / static_cast<float>(pointCount);
 				for (real radian = startRadians; radian <= endRadians; radian += step)
 				{
 					Vector2 point(radius * Math::cosx(radian), radius * Math::sinx(radian));
 					point += center;
-					const Vector2 worldPos = Complex(transform.rotation).multiply(point) + transform.position;
-					vertices.emplace_back(worldPos);
+					verts.emplace_back(point);
 				}
 			};
-		if (isHorizontal)
-		{
-			sampling((capsule->bottomLeft() + capsule->topLeft()) / 2.0f, Math::radians(90),
-				Math::radians(270));
-			sampling((capsule->topRight() + capsule->bottomRight()) / 2.0f, Math::radians(270),
-				Math::radians(450));
-		}
-		else
-		{
-			sampling((capsule->topLeft() + capsule->topRight()) / 2.0f, Math::radians(0),
-				Math::radians(180));
-			sampling((capsule->bottomLeft() + capsule->bottomRight()) / 2.0f, Math::radians(180),
-				Math::radians(360));
-		}
+
+		sampling(vertices, pointCount, anchor1, radius, Math::radians(0), Math::radians(180));
+		sampling(vertices, pointCount, anchor2, radius, Math::radians(180),Math::radians(360));
+
+		for (auto&& elem: vertices)
+			elem = transform.translatePoint(elem);
+
 
 		Color fillColor = color;
 		fillColor.a = 38.0f / 255.0f;
 		fillAndStroke(vertices, fillColor, color);
 
-		Vector2 anchor1;
-		if (isHorizontal)
-			anchor1.set(halfWidth - halfHeight, 0);
-		else
-			anchor1.set(0, halfHeight - halfWidth);
-
-		Vector2 anchor2 = anchor1.negative();
 		anchor1 = transform.translatePoint(anchor1);
 		anchor2 = transform.translatePoint(anchor2);
-		line(anchor1, anchor2, color);
+		thickLine(anchor1, anchor2, color);
+
+		anchor1.set(radius, halfLength);
+		anchor2.set(-radius, halfLength);
+		anchor1 = transform.translatePoint(anchor1);
+		anchor2 = transform.translatePoint(anchor2);
+		thickLine(anchor1, anchor2, color);
+
+		anchor1.set(radius, -halfLength);
+		anchor2.set(-radius, -halfLength);
+		anchor1 = transform.translatePoint(anchor1);
+		anchor2 = transform.translatePoint(anchor2);
+		thickLine(anchor1, anchor2, color);
 	}
 
 	void Renderer2D::ellipse(const Transform& transform, Shape* shape, const Color& color)
@@ -1335,28 +1612,6 @@ namespace STEditor
 		default:
 			assert(false && "Simplex count must be less than 3");
 			break;
-		}
-	}
-
-	void Renderer2D::polytope(const std::vector<Vector2>& points, const Color& color, float pointSize, bool showIndex)
-	{
-		Vector2 center = Algorithm2D::computeCenter(points);
-		std::vector<Vector2> offsets;
-
-		for (const auto& p : points)
-		{
-			point(p, color, pointSize);
-			offsets.emplace_back((p - center).normal() * m_simplexIndexOffset * m_pixelToMeter);
-		}
-		closedLines(points, color);
-
-		//draw text
-		if(showIndex)
-		{
-			for (size_t i = 0; i < points.size(); ++i)
-			{
-				text(points[i] + offsets[i], color, std::to_string(i));
-			}
 		}
 	}
 

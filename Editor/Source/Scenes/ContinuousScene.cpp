@@ -112,10 +112,10 @@ namespace STEditor
 				real minY = std::numeric_limits<real>::max();
 				real maxY = -std::numeric_limits<real>::max();
 
-				std::vector<Vector2> points = static_cast<ST::Polygon*>(m_shapes[i])->vertices();
-				m_maxTrajIndex = points.size() - 1;
+				const std::array points = static_cast<ST::Polygon*>(m_shapes[i])->vertices();
+				m_maxTrajIndex = static_cast<ST::Polygon*>(m_shapes[i])->count() - 1;
 
-				for (int j = 0; j < points.size(); ++j)
+				for (int j = 0; j < static_cast<ST::Polygon*>(m_shapes[i])->count(); ++j)
 				{
 					Vector2 point = objectTf.translatePoint(points[j]);
 					renderer.point(point, Palette::Yellow);

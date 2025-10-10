@@ -78,11 +78,22 @@ namespace STEditor
 		void line(const Vector2& start, const Vector2& end, float r, float g, float b, float a);
 		void line(const Vector2& start, const Vector2& end, const Color& color);
 
+		void fill(const Vector2* points, const uint32_t& count, const Color& color);
+		void fillAndStroke(const Vector2* points, const uint32_t& count, const Color& fillColor, const Color& strokeColor, float thickness = 1.0f);
+
 		void fill(const std::vector<Vector2>& points, const Color& color);
 		void fillAndStroke(const std::vector<Vector2>& points, const Color& fillColor, const Color& strokeColor, float thickness = 1.0f);
 
 		void thickLine(const Vector2& start, const Vector2& end, const Color& color, float thickness = 2.0f);
 		void dashedLine(const Vector2& start, const Vector2& end, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
+
+		void polyLines(const Vector2* points, const uint32_t& count, const Color& color);
+		void closedLines(const Vector2* points, const uint32_t& count, const Color& color);
+		void polyDashedLines(const Vector2* points, const uint32_t& count, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);
+		void polyThickLine(const Vector2* points, const uint32_t& count, const Color& color, float thickness = 2.0f);
+		void polyDashedThickLine(const Vector2* points, const uint32_t& count, const Color& color, float thickness = 2.0f, float dashLength = 0.1f, float gapLength = 0.1f);
+		void polyClosedThickLines(const Vector2* points, const uint32_t& count, const Color& color, float thickness = 2.0f);
+
 
 		void polyLines(const std::vector<Vector2>& points, const Color& color);
 		void closedLines(const std::vector<Vector2>& points, const Color& color);
@@ -108,7 +119,7 @@ namespace STEditor
 		void text(const Vector2& position, const Color& color, const std::string& text, const float& scale = 1.0f, bool centered = true);
 
 		void simplex(const Simplex& simplex, const Color& color, bool showIndex = true);
-		void polytope(const std::vector<Vector2>& points, const Color& color, float pointSize = 6, bool showIndex = true);
+		
 
 		Vector2 screenToNDC(const Vector2& pos)const;
 		Vector2 ndcToScreen(const Vector2& pos)const;

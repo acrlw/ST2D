@@ -1445,18 +1445,8 @@ namespace STEditor
 		{
 			auto capsule = static_cast<const ST::Capsule*>(shape);
 
-			real r, h;
-
-			if (capsule->width() >= capsule->height())//Horizontal
-			{
-				r = capsule->height() / 2.0f;
-				h = capsule->width() - capsule->height();
-			}
-			else//Vertical
-			{
-				r = capsule->width() / 2.0f;
-				h = capsule->height() - capsule->width();
-			}
+			real r = capsule->radius();
+			real h = 2 * capsule->halfLength();
 
 			real volume = Constant::Pi * r * r + h * 2 * r;
 			real rho = mass / volume;

@@ -367,7 +367,7 @@ namespace ST
 		case ShapeType::Polygon:
 		{
 			auto polygon = static_cast<const Polygon*>(shape);
-			result = findFurthestVertexHillClimbing(polygon->vertices(), rot_dir);
+			result = findFurthestVertexHillClimbing(polygon->vertices().data(), polygon->count(), rot_dir);
 			break;
 		}
 		case ShapeType::Circle:
@@ -397,7 +397,7 @@ namespace ST
 		{
 			auto capsule = static_cast<const Capsule*>(shape);
 			result.v = Algorithm2D::computeCapsuleProjectionPoint(
-				capsule->halfWidth(), capsule->halfHeight(), rot_dir);
+				capsule->halfLength(), capsule->radius(), rot_dir);
 			if (result.v.x > 0 && result.v.y > 0)
 				result.i = 0;
 			else if (result.v.x < 0 && result.v.y > 0)
@@ -434,15 +434,14 @@ namespace ST
 		return FurthestVertex{ target, index };
 	}
 
-	FurthestVertex Narrowphase2D::findFurthestVertexHillClimbing(const std::vector<Vector2>& vertices,
+	FurthestVertex Narrowphase2D::findFurthestVertexHillClimbing(const Vector2* vertices, const int32_t& count,
 		const Vector2& direction, int32_t startIndex)
 	{
-		int count = vertices.size();
 		if (count == 0)
 			return {};
 
 		int32_t currentIndex = startIndex >= 0 && startIndex < count ? startIndex : 0;
-		for (int i = 0; i < vertices.size(); i++)
+		for (int i = 0; i < count; i++)
 		{
 			real currentDot = Vector2::dot(vertices[currentIndex], direction);
 			const int32_t prevIndex = (currentIndex - 1 + count) % count;
@@ -484,14 +483,6 @@ namespace ST
 		{
 			result = clipPolygonPolygon(epaResult, transformA, shapeA, transformB, shapeB);
 		}
-		else if (shapeA->type() == ShapeType::Capsule && shapeB->type() == ShapeType::Polygon)
-		{
-			result = clipCapsulePolygon(epaResult, transformA, shapeA, transformB, shapeB);
-		}
-		else if (shapeA->type() == ShapeType::Polygon && shapeB->type() == ShapeType::Capsule)
-		{
-			result = clipCapsulePolygon(epaResult, transformB, shapeB, transformA, shapeA, true);
-		}
 		else if (shapeA->type() == ShapeType::Polygon && shapeB->type() == ShapeType::Segment)
 		{
 			result = clipPolygonSegment(epaResult, transformA, shapeA, transformB, shapeB);
@@ -499,18 +490,6 @@ namespace ST
 		else if (shapeA->type() == ShapeType::Segment && shapeB->type() == ShapeType::Polygon)
 		{
 			result = clipPolygonSegment(epaResult, transformB, shapeB, transformA, shapeA, true);
-		}
-		else if (shapeA->type() == ShapeType::Capsule && shapeB->type() == ShapeType::Segment)
-		{
-			result = clipCapsuleSegment(epaResult, transformA, shapeA, transformB, shapeB);
-		}
-		else if (shapeA->type() == ShapeType::Segment && shapeB->type() == ShapeType::Capsule)
-		{
-			result = clipCapsuleSegment(epaResult, transformB, shapeB, transformA, shapeA, true);
-		}
-		else if (shapeA->type() == ShapeType::Capsule && shapeB->type() == ShapeType::Capsule)
-		{
-			result = clipCapsuleCapsule(epaResult, transformA, shapeA, transformB, shapeB);
 		}
 		else
 		{
@@ -527,14 +506,238 @@ namespace ST
 		return result;
 	}
 
+	ContactResult Narrowphase2D::collideCircles(const Vector2& positionA, const real& radiusA, const Vector2& positionB,
+		const real& radiusB)
+	{
+		ContactResult result;
+		if (positionA.fuzzyEqual(positionB))
+			return result;
+		CORE_ASSERT(radiusA > 0 && radiusB > 0, "Radius must be non-negative.")
+
+		Vector2 n = (positionB - positionA).normal();
+		result.pA[0] = positionA + n * radiusA;
+		result.pB[0] = positionB - n * radiusB;
+		Vector2 v = result.pB[0] - result.pA[0];
+		result.penetration[0] = Vector2::dot(v, n);
+		result.normal = n;
+		result.count = 1;
+
+		return result;
+	}
+
+	ContactResult Narrowphase2D::collideCapsules(const Transform& transformA, const Shape* shapeA,
+	                                             const Transform& transformB, const Shape* shapeB)
+	{
+		ContactResult result;
+
+		const Capsule* capsuleA = static_cast<const Capsule*>(shapeA);
+		const Capsule* capsuleB = static_cast<const Capsule*>(shapeB);
+		real radiusA = capsuleA->radius();
+		real radiusB = capsuleB->radius();
+		Vector2 A1 = transformA.translatePoint({ 0, capsuleA->halfLength() });
+		Vector2 A2 = transformA.translatePoint({ 0, -capsuleA->halfLength() });
+		Vector2 B1 = transformB.translatePoint({ 0, capsuleB->halfLength() });
+		Vector2 B2 = transformB.translatePoint({ 0, -capsuleB->halfLength() });
+		const Vector2 va = A2 - A1;
+		const Vector2 vb = B2 - B1;
+		const Vector2 vba = A1 - B1;
+		const real dab = va.dot(vb);
+		const real daa = va.dot(va);
+		const real dbb = vb.dot(vb);
+		const real daba = va.dot(vba);
+		const real dbba = vb.dot(vba);
+		const real det = dab * dab - daa * dbb;
+		Vector2 finalNormal;
+
+		real t = 0;
+		if (!realEqual(det, 0))
+			t = Math::clamp((daba * dbb - dab * dbba) / det, 0, 1);
+
+		real u = Math::clamp((t * dab + dbba) / dbb, 0, 1);
+		t = Math::clamp((u * dab - daba) / daa, 0, 1);
+
+		Vector2 P = A1 + t * (A2 - A1);
+		Vector2 Q = B1 + u * (B2 - B1);
+		Vector2 n = (Q - P);
+		const real square = n.square();
+		if (square < 1e-8f)
+		{
+			const Vector2 na = va.ortho().normal();
+			const Vector2 nb = vb.ortho().normal();
+
+			const real naB1 = B1.dot(na);
+			const real naB2 = B2.dot(na);
+			const real nbA1 = A1.dot(nb);
+			const real nbA2 = A2.dot(nb);
+			const real naCenter = A1.dot(na);
+			const real nbCenter = B1.dot(nb);
+
+			const real naMax = Math::max(naB1, naB2) + radiusB;
+			const real naMin = Math::min(naB1, naB2) - radiusB;
+			const real nbMax = Math::max(nbA1, nbA2) + radiusA;
+			const real nbMin = Math::min(nbA1, nbA2) - radiusA;
+
+			const real naMinSeperation = Math::min(Math::abs(naMax - naCenter + radiusA),
+				Math::abs(naMin - naCenter - radiusA));
+			const real nbMinSeperation = Math::min(Math::abs(nbMax - nbCenter + radiusB),
+				Math::abs(nbMin - nbCenter - radiusB));
+
+			finalNormal = na;
+
+			if (naMinSeperation > nbMinSeperation - 1e-4)
+			{
+				finalNormal = nb;
+			}
+
+			Vector2 CenterA = 0.5 * (A1 + A2);
+			Vector2 CenterB = 0.5 * (B1 + B2);
+			if (finalNormal.dot(CenterB - CenterA) < 0)
+			{
+				finalNormal.negate();
+			}
+		}
+		else
+		{
+			n /= Math::sqrt(square);
+			finalNormal = n;
+
+			result.count = 1;
+			result.pA[0] = P + n * radiusA;
+			result.pB[0] = Q - n * radiusB;
+		}
+
+
+		const real tA1 = (A1 - B1).dot(vb) / dbb;
+		const real tA2 = (A2 - B1).dot(vb) / dbb;
+		const real tB1 = (B1 - A1).dot(va) / daa;
+		const real tB2 = (B2 - A1).dot(va) / daa;
+
+		const bool outsideA = (tA1 < 0 && tA2 < 0) || (tA1 > 1 && tA2 > 1);
+		const bool outsideB = (tB1 < 0 && tB2 < 0) || (tB1 > 1 && tB2 > 1);
+
+		const real dotA = Math::abs(finalNormal.dot(va));
+		const real dotB = Math::abs(finalNormal.dot(vb));
+		if ((!outsideA || !outsideB) && (dotA < 1e-4f || dotB < 1e-4f))
+		{
+			std::array<Vector2, 4> edge;
+			bool isRefA = dotA < dotB;
+			if (isRefA)
+			{
+				// ref A1, A2, inc B1, B2
+				edge[0] = A1;
+				edge[1] = A2;
+				edge[2] = B1;
+				edge[3] = B2;
+			}
+			else
+			{
+				// ref B1, B2, inc A1, A2
+				edge[0] = B1;
+				edge[1] = B2;
+				edge[2] = A1;
+				edge[3] = A2;
+			}
+
+			Vector2 refV = edge[1] - edge[0];
+			Vector2 incV = edge[3] - edge[2];
+			real rr = refV.square();
+			real t_inc1 = (edge[2] - edge[0]).dot(refV) / rr;
+			real t_inc2 = (edge[3] - edge[0]).dot(refV) / rr;
+			t_inc1 = Math::clamp(t_inc1, 0, 1);
+			t_inc2 = Math::clamp(t_inc2, 0, 1);
+			Vector2 p_inc1 = edge[0] + t_inc1 * (edge[1] - edge[0]);
+			Vector2 p_inc2 = edge[0] + t_inc2 * (edge[1] - edge[0]);
+			real detAll = finalNormal.cross(incV);
+			if (Math::abs(detAll) > 1e-4)
+			{
+
+				real det1 = (edge[2] - p_inc1).cross(incV);
+				real det2 = (edge[2] - p_inc2).cross(incV);
+
+				real tn_inc1 = det1 / detAll;
+				real tn_inc2 = det2 / detAll;
+
+				Vector2 pn_inc1 = p_inc1 + tn_inc1 * finalNormal;
+				Vector2 pn_inc2 = p_inc2 + tn_inc2 * finalNormal;
+
+				if (dotA > dotB)
+				{
+					result.pA[0] = pn_inc1 + finalNormal * radiusA;
+					result.pA[1] = pn_inc2 + finalNormal * radiusA;
+					result.pB[0] = p_inc1 - finalNormal * radiusB;
+					result.pB[1] = p_inc2 - finalNormal * radiusB;
+					result.count = 2;
+				}
+				else
+				{
+					result.pA[0] = p_inc1 + finalNormal * radiusA;
+					result.pA[1] = p_inc2 + finalNormal * radiusA;
+					result.pB[0] = pn_inc1 - finalNormal * radiusB;
+					result.pB[1] = pn_inc2 - finalNormal * radiusB;
+					result.count = 2;
+				}
+			}
+			else
+			{
+				Vector2 cA, cB;
+				if (isRefA)
+				{
+					if (vb.dot(finalNormal) > 0)
+					{
+						cA = p_inc1;
+						cB = B1;
+					}
+					else
+					{
+						cA = p_inc2;
+						cB = B2;
+					}
+				}
+				else
+				{
+					if (va.dot(finalNormal) > 0)
+					{
+						cA = A2;
+						cB = p_inc2;
+					}
+					else
+					{
+						cA = A1;
+						cB = p_inc1;
+					}
+				}
+
+				result.count = 1;
+				result.pA[0] = cA + finalNormal * radiusA;
+				result.pB[0] = cB - finalNormal * radiusB;
+			}
+
+		}
+
+		
+		result.normal = finalNormal;
+		result.penetration[0] = (result.pB[0] - result.pA[0]).dot(result.normal);
+		result.penetration[1] = (result.pB[1] - result.pA[1]).dot(result.normal);
+		return result;
+	}
+
+	ContactResult Narrowphase2D::collideBoxCapsule(const Transform& transformA, const real& halfWidth,
+		const real& halfHeight, const Transform& transformB, const Shape* shapeB)
+	{
+		ContactResult result;
+		const Capsule* capsuleB = static_cast<const Capsule*>(shapeB);
+
+		return result;
+	}
+
 	std::array<Vector2, 2> Narrowphase2D::getPolygonClipEdge(const Transform& transform, const Shape* shape,
-		const Vector2& clipNormal, const Vector2& supportPoint, const int32_t& idx)
+	                                                         const Vector2& clipNormal, const Vector2& supportPoint, const int32_t& idx)
 	{
 		std::array<Vector2, 2> p;
 		p[0] = supportPoint;
 		const Polygon* polygon = static_cast<const Polygon*>(shape);
-		int32_t prevIdx = (idx - 1 + polygon->vertices().size()) % polygon->vertices().size();
-		int32_t nextIdx = (idx + 1) % polygon->vertices().size();
+		int32_t prevIdx = (idx - 1 + polygon->count()) % polygon->count();
+		int32_t nextIdx = (idx + 1) % polygon->count();
 		Vector2 prevVertex = transform.translatePoint(polygon->vertices()[prevIdx]);
 		Vector2 nextVertex = transform.translatePoint(polygon->vertices()[nextIdx]);
 		Vector2 vCurrToPrev = prevVertex - supportPoint;
@@ -545,45 +748,6 @@ namespace ST
 		return p;
 	}
 
-
-	std::array<Vector2, 2> Narrowphase2D::getCapsuleClipEdge(const Transform& transform, const real& halfWidth,
-	                                                         const real& halfHeight, const Vector2& localP)
-	{
-		std::array<Vector2, 2> p;
-		if (halfWidth > halfHeight)
-		{
-			real pY = localP.y > 0 ? halfHeight : -halfHeight;
-			if (localP.x > 0)
-			{
-				p[0].set(halfWidth - halfHeight, pY);
-				p[1].set(-halfWidth + halfHeight, pY);
-			}
-			else
-			{
-				p[0].set(-halfWidth + halfHeight, pY);
-				p[1].set(halfWidth - halfHeight, pY);
-			}
-		}
-		else
-		{
-			real pX = localP.x > 0 ? halfWidth : -halfWidth;
-			if (localP.y > 0)
-			{
-				p[0].set(pX, halfHeight - halfWidth);
-				p[1].set(pX, -(halfHeight - halfWidth));
-			}
-			else
-			{
-				p[0].set(pX, -(halfHeight - halfWidth));
-				p[1].set(pX, halfHeight - halfWidth);
-			}
-		}
-
-		p[0] = transform.translatePoint(p[0]);
-		p[1] = transform.translatePoint(p[1]);
-		return p;
-	}
-
 	ClipEdge Narrowphase2D::clipEdges(const std::array<Vector2, 4>& edge, const Vector2& clipNormal)
 	{
 		ClipEdge result;
@@ -591,80 +755,39 @@ namespace ST
 		// C, D : incEdge
 		// n: collision normal
 		// v: incEdge normal
-		// PA = C + u * v = A + t * n
-		// PB = C + w * v = B + s * n
-		// t * n - u * v = C - A
-		// s * n - w * v = C - B
-		// solve for t, u, s, w and check sign
 		const Vector2& A = edge[0];
 		const Vector2& B = edge[1];
 		const Vector2& C = edge[2];
 		const Vector2& D = edge[3];
-		const real normCD = (D - C).norm();
 		Vector2 v = (edge[3] - edge[2]).normal();
 		Vector2 n = clipNormal;
 		real det = v.x * n.y - n.x * v.y;
 		if (realEqual(det, 0))
 			return result;
 
-		real det1 = v.x * (C.y - A.y) - v.y * (C.x - A.x);
-		real det2 = n.x * (C.y - A.y) - n.y * (C.x - A.x);
-		real det3 = v.x * (C.y - B.y) - v.y * (C.x - B.x);
-		real det4 = n.x * (C.y - B.y) - n.y * (C.x - B.x);
+		// 1. Project incident edge to reference edge and clamp to [0,1], resulting in tC, tD and pC, pD
+		// 2. Start from projection point, with normal n, clip incident edge, resulting in tnC, tnD and pnC, pnD
+		// 3. Clip point pair: pC-pnC, pD-pnD, penetration maybe positive, which means no collision
+		const real tC = Math::clamp(Algorithm2D::pointToSegmentWeight(A, B, C, false), 0, 1);
+		const real tD = Math::clamp(Algorithm2D::pointToSegmentWeight(A, B, D, false), 0, 1);
+		const Vector2 pC = tC * A + (1 - tC) * B;
+		const Vector2 pD = tD * A + (1 - tD) * B;
 
-		real t = det1 / det;
-		real u = det2 / det;
-		real s = det3 / det;
-		real w = det4 / det;
+		const real denom = n.cross(D - C);
+		const real det1 = (C - pC).cross(D - C);
+		const real det2 = (C - pD).cross(D - C);
+		const real tnC = det1 / denom;
+		const real tnD = det2 / denom;
 
-		Vector2 pA = A + t * n; // pA = A + t * n = C + t * v
-		Vector2 pB = B + s * n; // pB = B + s * n = C + w * v
+		const Vector2 pnC = pC + tnC * n;
+		const Vector2 pnD = pD + tnD * n;
 
-		//pA = h * C + (1 - h) * D
-		//pB = r * C + (1 - r) * D
-		real h = 1 - (u / normCD);
-		real r = 1 - (w / normCD);
+		result.count = 2;
+		result.refEdge[0] = pC;
+		result.refEdge[1] = pD;
+		result.incEdge[0] = pnC;
+		result.incEdge[1] = pnD;
 
-		real tC = Algorithm2D::pointToSegmentWeight(A, B, C, false);
-		real tD = Algorithm2D::pointToSegmentWeight(A, B, D, false);
-
-		Vector2 pC = tC * A + (1 - tC) * B;
-		Vector2 pD = tD * A + (1 - tD) * B;
-
-
-		Vector2 AC = C - A;
-		Vector2 AD = D - A;
-
-		// clip incident edge first, then get reference edge projection point
-
-		//check pC in clip region and located in AB
-		if (Vector2::dot(AC, n) >= 0 && tC >= 0 && tC <= 1 && result.count < 2)
-		{
-			result.refEdge[result.count] = pC;
-			result.incEdge[result.count] = C;
-			result.count++;
-		}
-		//check pA in clip region and located in CD
-		if (t >= 0 && h >= 0 && h <= 1 && result.count < 2)
-		{
-			result.refEdge[result.count] = A;
-			result.incEdge[result.count] = pA;
-			result.count++;
-		}
-		//check pD in clip region and located in AB
-		if (Vector2::dot(AD, n) >= 0 && tD >= 0 && tD <= 1 && result.count < 2)
-		{
-			result.refEdge[result.count] = pD;
-			result.incEdge[result.count] = D;
-			result.count++;
-		}
-		//check pB in clip region and located in CD
-		if (s >= 0 && r >= 0 && r <= 1 && result.count < 2)
-		{
-			result.refEdge[result.count] = B;
-			result.incEdge[result.count] = pB;
-			result.count++;
-		}
 		return result;
 	}
 
@@ -724,7 +847,7 @@ namespace ST
 			{
 				result.pA[i] = clipResult.refEdge[i];
 				result.pB[i] = clipResult.incEdge[i];
-				result.penetration[i] = (result.pA[i] - result.pB[i]).norm();
+				result.penetration[i] = (result.pB[i] - result.pA[i]).dot(epaResult.normal);
 			}
 		}
 		else
@@ -733,237 +856,13 @@ namespace ST
 			{
 				result.pA[i] = clipResult.incEdge[i];
 				result.pB[i] = clipResult.refEdge[i];
-				result.penetration[i] = (result.pA[i] - result.pB[i]).norm();
+				result.penetration[i] = (result.pB[i] - result.pA[i]).dot(epaResult.normal);
 			}
 		}
 		return result;
 	}
 
 	ContactResult Narrowphase2D::clipPolygonSegment(const Epa2DResult& epaResult, const Transform& transformA,
-		const Shape* shapeA, const Transform& transformB, const Shape* shapeB, bool swap)
-	{
-		ContactResult result;
-		return result;
-	}
-
-	ContactResult Narrowphase2D::clipCapsulePolygon(const Epa2DResult& epaResult, const Transform& transformA,
-		const Shape* shapeA, const Transform& transformB, const Shape* shapeB, bool swap)
-	{
-		ContactResult result;
-		// suppose shapeA: capsule, shapeB: polygon
-		Vector2 clipNormal = epaResult.normal;
-		std::array<Vector2, 4> edge;
-		int idxA = 0;
-		int idxB = 1;
-		if (swap)
-		{
-			idxA = 1;
-			idxB = 0;
-		}
-
-		bool sameCapsule = epaResult.simplex.m[0].v[idxA].i == epaResult.simplex.m[1].v[idxA].i;
-		int32_t idx = epaResult.simplex.m[0].v[idxB].i;
-		Vector2 currVertex = epaResult.simplex.m[0].v[idxB].v;
-		auto edgeB = getPolygonClipEdge(transformB, shapeB, clipNormal, currVertex, idx);
-		if (!sameCapsule)
-		{
-			edge[0] = epaResult.simplex.m[0].v[idxA].v;
-			edge[1] = epaResult.simplex.m[1].v[idxA].v;
-			
-			edge[2] = edgeB[0];
-			edge[3] = edgeB[1];
-
-			clipNormal = -epaResult.normal;
-			if (swap)
-				clipNormal.negate();
-			ClipEdge clipResult = clipEdges(edge, clipNormal);
-
-			result.count = clipResult.count;
-			result.normal = epaResult.normal;
-			if (!swap)
-			{
-				for (int i = 0; i < clipResult.count; ++i)
-				{
-					result.pA[i] = clipResult.refEdge[i];
-					result.pB[i] = clipResult.incEdge[i];
-					result.penetration[i] = (result.pA[i] - result.pB[i]).norm();
-				}
-			}
-			else
-			{
-				for (int i = 0; i < clipResult.count; ++i)
-				{
-					result.pA[i] = clipResult.incEdge[i];
-					result.pB[i] = clipResult.refEdge[i];
-					result.penetration[i] = (result.pA[i] - result.pB[i]).norm();
-				}
-			}
-		}
-		else
-		{
-			const Capsule* capsule = static_cast<const Capsule*>(shapeA);
-			Vector2 localP = transformA.inverseTranslatePoint(epaResult.simplex.m[0].v[idxA].v);
-			auto edgeA = getCapsuleClipEdge(transformA, capsule->halfWidth(), capsule->halfHeight(), localP);
-
-			real dotA = Math::abs(Vector2::dot((edgeA[1] - edgeA[0]), epaResult.normal));
-			real dotB = Math::abs(Vector2::dot((edgeB[1] - edgeB[0]), epaResult.normal));
-			if (dotA < dotB)
-			{
-				edge[0] = edgeA[0];
-				edge[1] = edgeA[1];
-				edge[2] = edgeB[0];
-				edge[3] = edgeB[1];
-				clipNormal = -epaResult.normal;
-			}
-			else
-			{
-				edge[0] = edgeB[0];
-				edge[1] = edgeB[1];
-				edge[2] = edgeA[0];
-				edge[3] = edgeA[1];
-				clipNormal = epaResult.normal;
-			}
-
-			if (swap)
-			{
-				clipNormal.negate();
-			}
-
-			auto clipResult = clipEdges(edge, clipNormal);
-			result.count = clipResult.count;
-			result.normal = epaResult.normal;
-			for (int i = 0; i < clipResult.count; ++i)
-			{
-				if (dotA < dotB)
-				{
-					result.pA[i] = clipResult.refEdge[i];
-					result.pB[i] = clipResult.incEdge[i];
-				}
-				else
-				{
-					result.pA[i] = clipResult.incEdge[i];
-					result.pB[i] = clipResult.refEdge[i];
-				}
-				if (swap)
-				{
-					Vector2 p = result.pA[i];
-					result.pA[i] = result.pB[i];
-					result.pB[i] = p;
-				}
-				result.penetration[i] = (result.pA[i] - result.pB[i]).norm();
-			}
-
-			result.pA[0] = epaResult.simplex.m[2].v[0].v;
-			result.pB[0] = epaResult.simplex.m[2].v[1].v;
-			result.penetration[0] = epaResult.penetration;
-			if (result.count == 0)
-				result.count++;
-		}
-		return result;
-	}
-
-	ContactResult Narrowphase2D::clipCapsuleCapsule(const Epa2DResult& epaResult, const Transform& transformA,
-		const Shape* shapeA, const Transform& transformB, const Shape* shapeB)
-	{
-		ContactResult result;
-		std::array<Vector2, 4> edge;
-		Vector2 clipNormal = epaResult.normal;
-		bool sameA = epaResult.simplex.m[0].v[0].i == epaResult.simplex.m[1].v[0].i;
-		bool sameB = epaResult.simplex.m[0].v[1].i == epaResult.simplex.m[1].v[1].i;
-		if (!sameA && !sameB)
-		{
-			edge[0] = epaResult.simplex.m[0].v[0].v;
-			edge[1] = epaResult.simplex.m[1].v[0].v;
-			edge[2] = epaResult.simplex.m[0].v[1].v;
-			edge[3] = epaResult.simplex.m[1].v[1].v;
-			clipNormal = -epaResult.normal;
-			auto clipResult = clipEdges(edge, clipNormal);
-			result.count = clipResult.count;
-			result.normal = epaResult.normal;
-			for (int i = 0; i < clipResult.count; ++i)
-			{
-				result.pA[i] = clipResult.refEdge[i];
-				result.pB[i] = clipResult.incEdge[i];
-				result.penetration[i] = (result.pA[i] - result.pB[i]).norm();
-			}
-			return result;
-		}
-		std::array<Vector2, 2> edgeA, edgeB;
-		if (sameA)
-		{
-			const Capsule* capsuleA = static_cast<const Capsule*>(shapeA);
-			real halfWidth = capsuleA->halfWidth();
-			real halfHeight = capsuleA->halfHeight();
-			const Vector2 localP = transformA.inverseTranslatePoint(epaResult.simplex.m[0].v[0].v);
-			edgeA = getCapsuleClipEdge(transformA, halfWidth, halfHeight, localP);
-		}
-		else
-		{
-			edgeA[0] = epaResult.simplex.m[0].v[0].v;
-			edgeA[1] = epaResult.simplex.m[1].v[0].v;
-		}
-
-		if (sameB)
-		{
-			const Capsule* capsuleB = static_cast<const Capsule*>(shapeB);
-			real halfWidth = capsuleB->halfWidth();
-			real halfHeight = capsuleB->halfHeight();
-			const Vector2 localP = transformB.inverseTranslatePoint(epaResult.simplex.m[0].v[1].v);
-			edgeB = getCapsuleClipEdge(transformB, halfWidth, halfHeight, localP);
-		}
-		else
-		{
-			edgeB[0] = epaResult.simplex.m[0].v[1].v;
-			edgeB[1] = epaResult.simplex.m[1].v[1].v;
-		}
-
-		real dotA = Math::abs(Vector2::dot((edgeA[1] - edgeA[0]), epaResult.normal));
-		real dotB = Math::abs(Vector2::dot((edgeB[1] - edgeB[0]), epaResult.normal));
-		if (dotA < dotB)
-		{
-			edge[0] = edgeA[0];
-			edge[1] = edgeA[1];
-			edge[2] = edgeB[0];
-			edge[3] = edgeB[1];
-			clipNormal = -epaResult.normal;
-		}
-		else
-		{
-			edge[0] = edgeB[0];
-			edge[1] = edgeB[1];
-			edge[2] = edgeA[0];
-			edge[3] = edgeA[1];
-		}
-
-
-		auto clipResult = clipEdges(edge, clipNormal);
-		result.count = clipResult.count;
-		result.normal = epaResult.normal;
-		for (int i = 0; i < clipResult.count; ++i)
-		{
-			if (dotA < dotB)
-			{
-				result.pA[i] = clipResult.refEdge[i];
-				result.pB[i] = clipResult.incEdge[i];
-			}
-			else
-			{
-				result.pA[i] = clipResult.incEdge[i];
-				result.pB[i] = clipResult.refEdge[i];
-			}
-			result.penetration[i] = (result.pA[i] - result.pB[i]).norm();
-		}
-
-		result.pA[0] = epaResult.simplex.m[2].v[0].v;
-		result.pB[0] = epaResult.simplex.m[2].v[1].v;
-		result.penetration[0] = epaResult.penetration;
-		if (result.count == 0)
-			result.count++;
-
-		return result;
-	}
-
-	ContactResult Narrowphase2D::clipCapsuleSegment(const Epa2DResult& epaResult, const Transform& transformA,
 		const Shape* shapeA, const Transform& transformB, const Shape* shapeB, bool swap)
 	{
 		ContactResult result;
@@ -982,12 +881,14 @@ namespace ST
 		const real normAB = (B - A).square();
 		const real normAC = (C - A).square();
 		const real normBC = (C - B).square();
-		const real det = A.y * B.x - A.x * B.y + A.x * C.y - A.y * C.x + B.y * C.x - B.x * C.y;
+		real u = C.cross(B);
+		real v = A.cross(C);
+		real w = B.cross(A);
+		const real det = u + v + w;
 		CORE_ASSERT(det != 0.0f, "Invalid simplex3")
-		const real u = (B.y * C.x - C.y * B.x) / det;
-		const real v = (C.y * A.x - A.y * C.x) / det;
-		const real w = 1 - u - v;
-
+		u /= det;
+		v /= det;
+		w = 1 - u - v;
 
 		// 1. find closest edge to origin
 		const real h_BC = u * std::abs(u) / (normBC + 1e-9f);
@@ -1035,16 +936,16 @@ namespace ST
 		const Vector2& C = simplex.m[2].p;
 		
 		// find barycentric coordinates of origin
-		const real det = A.y * B.x - A.x * B.y + A.x * C.y - A.y * C.x + B.y * C.x - B.x * C.y;
-		//assert(det != 0.0f);
-		const real u = (B.y * C.x - C.y * B.x) / (det + 1e-9f);
-		const real v = (C.y * A.x - A.y * C.x) / (det + 1e-9f);
-		const real w = 1 - u - v;
+		
+		real u = C.cross(B);
+		real v = A.cross(C);
+		real w = B.cross(A);
+		const real det = u + v + w;
+		const real detSign = std::copysign(1.0f, det);
 
-		// get barycentric weight of AB, AC, BC
-		const real t_AB = originToSegmentWeight(A, B);
-		const real t_AC = originToSegmentWeight(A, C);
-		const real t_BC = originToSegmentWeight(B, C);
+		u *= detSign;
+		v *= detSign;
+		w *= detSign;
 
 		// use them two check closest feature
 
@@ -1054,6 +955,11 @@ namespace ST
 			result.simplex.isContainOrigin = true;
 			return result;
 		}
+
+		// get barycentric weight of AB, AC, BC
+		const real t_AB = originToSegmentWeight(A, B);
+		const real t_AC = originToSegmentWeight(A, C);
+		const real t_BC = originToSegmentWeight(B, C);
 
 		// Check vertex case
 		if (t_AC > 1 && t_AB > 1)

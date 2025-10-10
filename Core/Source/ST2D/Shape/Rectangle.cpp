@@ -48,10 +48,10 @@ namespace ST
 	}
 	void Rectangle::calcVertices()
 	{
-		m_vertices.clear();
-		m_vertices.emplace_back(Vector2(-m_width * (0.5f), m_height * (0.5f)));
-		m_vertices.emplace_back(Vector2(-m_width * (0.5f), -m_height * (0.5f)));
-		m_vertices.emplace_back(Vector2(m_width * (0.5f), -m_height * (0.5f)));
-		m_vertices.emplace_back(Vector2(m_width * (0.5f), m_height * (0.5f)));
+		m_count = 4;
+		m_vertices[0] = Vector2(-m_width * (0.5f), m_height * (0.5f));
+		m_vertices[1] = Vector2(-m_width * (0.5f), -m_height * (0.5f));
+		m_vertices[2] = Vector2(m_width * (0.5f), -m_height * (0.5f));
+		m_vertices[3] = Vector2(m_width * (0.5f), m_height * (0.5f));
 	}
 }

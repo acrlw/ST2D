@@ -161,7 +161,7 @@ namespace ST
 
 		static Vector2 findDirectionByEdge(const SimplexVertex& v1, const SimplexVertex& v2, bool pointToOrigin);
 
-		static VertexIndexPair findFurthestPoint(const std::vector<Vector2>& vertices,
+		static VertexIndexPair findFurthestPoint(const Vector2* vertices, const uint32_t& count,
 			const Vector2& direction);
 
 		static ContactPair generateContacts(CollisionInfo& info, const Transform& transformA, const Shape* shapeA,

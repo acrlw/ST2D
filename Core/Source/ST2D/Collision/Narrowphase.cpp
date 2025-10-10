@@ -278,7 +278,7 @@ namespace ST
 		case ShapeType::Polygon:
 		{
 			auto polygon = static_cast<const Polygon*>(shape);
-			VertexIndexPair result = findFurthestPoint(polygon->vertices(), rot_dir);
+			VertexIndexPair result = findFurthestPoint(polygon->vertices().data(), polygon->count(), rot_dir);
 			target = result.vertex;
 			finalIndex = result.index;
 			break;
@@ -308,7 +308,7 @@ namespace ST
 		{
 			auto capsule = static_cast<const Capsule*>(shape);
 			target = Algorithm2D::computeCapsuleProjectionPoint(
-				capsule->halfWidth(), capsule->halfHeight(), rot_dir);
+				capsule->halfLength(), capsule->radius(), rot_dir);
 			finalIndex = 0;
 			const Vector2 test(Math::abs(target.x), Math::abs(target.y));
 			const Vector2 topRight = capsule->topRight();
@@ -339,13 +339,13 @@ namespace ST
 		return perpendicularOfAB;
 	}
 
-	VertexIndexPair Narrowphase::findFurthestPoint(const std::vector<Vector2>& vertices,
+	VertexIndexPair Narrowphase::findFurthestPoint(const Vector2* vertices, const uint32_t& count,
 		const Vector2& direction)
 	{
 		real max = Constant::NegativeMin;
 		Vector2 target;
 		Index index = 0;
-		for (Index i = 0; i < vertices.size(); i++)
+		for (Index i = 0; i < count; i++)
 		{
 			real result = Vector2::dot(vertices[i], direction);
 			if (max < result)
@@ -1136,68 +1136,6 @@ namespace ST
 	{
 		ContactPair pair;
 
-		auto polygonA = static_cast<const Polygon*>(shapeA);
-
-		const Vector2 va1 = transformA.translatePoint(polygonA->vertices()[featureA.index[0]]);
-		const Vector2 va2 = transformA.translatePoint(polygonA->vertices()[featureA.index[1]]);
-
-		const Vector2 localB1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
-
-		auto capsule = static_cast<const Capsule*>(shapeB);
-		const real halfWidth = capsule->halfWidth();
-		const real halfHeight = capsule->halfHeight();
-
-		real lhs = Math::abs(localB1.y);
-		real rhs = halfHeight - halfWidth;
-
-		if (halfWidth > halfHeight)
-		{
-			lhs = Math::abs(localB1.x);
-			rhs = halfWidth - halfHeight;
-		}
-
-		const bool isVertexB = fuzzyRealEqual(lhs, rhs, Constant::TrignometryEpsilon);
-
-		const bool isEdgeB = featureB.index[0] == 1 || featureB.index[1] == 1;
-
-		if (isEdgeB || isVertexB)
-		{
-			Vector2 localB = localB1;
-
-			if (halfWidth > halfHeight)
-				localB.x = -localB.x;
-			else
-				localB.y = -localB.y;
-
-			Vector2 vb2 = transformB.translatePoint(localB);
-
-			pair = clipTwoEdge(va1, va2, featureB.vertex[0], vb2, info);
-		}
-		else
-		{
-			pair = clipEdgeVertex(va1, va2, featureB.vertex[0], info);
-			//check if another vertex is valid.
-			Vector2 vb1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
-			Vector2 vb2(halfWidth, halfHeight - halfWidth);
-			if (halfWidth > halfHeight)
-				vb2.set(halfWidth - halfHeight, halfHeight);
-
-			vb2.matchSign(vb1);
-
-			if (halfWidth > halfHeight)
-				vb2.x = -vb2.x;
-			else
-				vb2.y = -vb2.y;
-
-			vb2 = transformB.translatePoint(vb2);
-
-			Vector2 b = vb2 - va1;
-
-			if (!Math::sameSign(b.dot(va2 - va1), b.dot(vb2 - va2)) &&
-				Algorithm2D::checkPointsOnSameSide(va1, va2, va1 + info.normal, vb2))
-				pair.addContact(Algorithm2D::pointToLineSegment(va1, va2, vb2), vb2);
-		}
-
 		return pair;
 	}
 
@@ -1217,68 +1155,7 @@ namespace ST
 		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		ContactPair pair;
-		const Vector2 localB1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
-
-		auto capsule = static_cast<const Capsule*>(shapeB);
-
-		auto edgeA = static_cast<const Segment*>(shapeA);
-		const Vector2 va1 = transformA.translatePoint(edgeA->startPoint());
-		const Vector2 va2 = transformA.translatePoint(edgeA->endPoint());
-
-		const real halfWidth = capsule->halfWidth();
-		const real halfHeight = capsule->halfHeight();
-		real lhs = Math::abs(localB1.y);
-		real rhs = halfHeight - halfWidth;
-		if (halfWidth > halfHeight)
-		{
-			lhs = Math::abs(localB1.x);
-			rhs = halfWidth - halfHeight;
-		}
-
-		const bool isVertexB = fuzzyRealEqual(lhs, rhs, Constant::TrignometryEpsilon);
-
-		const bool isEdgeB = featureB.index[0] == 1 || featureB.index[1] == 1;
-
-		if (isEdgeB || isVertexB)
-		{
-			//numerical error
-			Vector2 localB = localB1;
-
-			if (halfWidth > halfHeight)
-				localB.x = -localB.x;
-			else
-				localB.y = -localB.y;
-
-			Vector2 vb2 = transformB.translatePoint(localB);
-
-
-			pair = clipTwoEdge(va1, va2, featureB.vertex[0], vb2, info);
-		}
-		else
-		{
-			pair = clipEdgeVertex(va1, va2, featureB.vertex[0], info);
-			//check if another vertex is valid.
-			Vector2 vb1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
-			Vector2 vb2(halfWidth, halfHeight - halfWidth);
-			if (halfWidth > halfHeight)
-				vb2.set(halfWidth - halfHeight, halfHeight);
-
-			vb2.matchSign(vb1);
-
-			if (halfWidth > halfHeight)
-				vb2.x = -vb2.x;
-			else
-				vb2.y = -vb2.y;
-
-			vb2 = transformB.translatePoint(vb2);
-
-			Vector2 b = vb2 - va1;
-
-			if (!Math::sameSign(b.dot(va2 - va1), b.dot(vb2 - va2)) &&
-				Algorithm2D::checkPointsOnSameSide(va1, va2, va1 + info.normal, vb2))
-				pair.addContact(Algorithm2D::pointToLineSegment(va1, va2, vb2), vb2);
-		}
-
+		
 		return pair;
 	}
 
@@ -1299,124 +1176,6 @@ namespace ST
 	{
 		ContactPair pair;
 
-		const Vector2 localA1 = transformA.inverseTranslatePoint(featureA.vertex[0]);
-		const Vector2 localB1 = transformB.inverseTranslatePoint(featureB.vertex[0]);
-
-		const bool isEdgeA = featureA.index[0] == 1 || featureA.index[1] == 1;
-		const bool isEdgeB = featureB.index[0] == 1 || featureB.index[1] == 1;
-
-
-		auto capsuleA = static_cast<const Capsule*>(shapeA);
-		auto capsuleB = static_cast<const Capsule*>(shapeB);
-
-		//test for a
-		real halfWidth = capsuleA->halfWidth();
-		real halfHeight = capsuleA->halfHeight();
-
-		real lhs = Math::abs(localA1.y);
-		real rhs = halfHeight - halfWidth;
-
-		if (halfWidth > halfHeight)
-		{
-			lhs = Math::abs(localA1.x);
-			rhs = halfWidth - halfHeight;
-		}
-
-		const bool isVertexA = fuzzyRealEqual(lhs, rhs, Constant::TrignometryEpsilon);
-
-		//test for b
-		halfWidth = capsuleB->halfWidth();
-		halfHeight = capsuleB->halfHeight();
-
-		lhs = Math::abs(localB1.y);
-		rhs = halfHeight - halfWidth;
-
-		if (halfWidth > halfHeight)
-		{
-			lhs = Math::abs(localB1.x);
-			rhs = halfWidth - halfHeight;
-		}
-
-
-		const bool isVertexB = fuzzyRealEqual(lhs, rhs, Constant::TrignometryEpsilon);
-
-		enum class Oper
-		{
-			ROUND_ROUND = 1,
-			ROUND_EDGE = 2,
-			EDGE_ROUND = 3,
-			EDGE_EDGE = 4
-		};
-		auto oper = Oper::ROUND_ROUND;
-
-
-		if (!isEdgeA && !isEdgeB)
-		{
-			//numerical problem
-			if (isVertexA && isVertexB)
-				oper = Oper::EDGE_EDGE;
-			else if (!isVertexA && isVertexB)
-				oper = Oper::ROUND_EDGE;
-			else if (isVertexA && !isVertexB)
-				oper = Oper::EDGE_ROUND;
-		}
-		else if (isEdgeA && isEdgeB)
-		{
-			oper = Oper::EDGE_EDGE;
-		}
-		else if (isEdgeA && !isEdgeB)
-		{
-			//edge to vertex case
-			oper = Oper::EDGE_ROUND;
-			//numerical problem
-			if (isVertexB)
-				oper = Oper::EDGE_EDGE;
-		}
-		else if (!isEdgeA && isEdgeB)
-		{
-			//vertex to edge case
-			oper = Oper::ROUND_EDGE;
-			if (isVertexA)
-				oper = Oper::EDGE_EDGE;
-		}
-		switch (oper)
-		{
-		case Oper::ROUND_ROUND:
-			pair = clipRoundRound(transformA, shapeA, transformB, shapeB, featureA, featureB, info);
-			break;
-		case Oper::ROUND_EDGE:
-			info.normal.negate();
-			pair = clipEdgeVertex(featureB.vertex[0], featureB.vertex[1], featureA.vertex[0], info);
-			info.normal.negate();
-			std::swap(pair.points[0], pair.points[2]);
-			break;
-		case Oper::EDGE_ROUND:
-			pair = clipEdgeVertex(featureA.vertex[0], featureA.vertex[1], featureB.vertex[0], info);
-			break;
-		case Oper::EDGE_EDGE:
-			const Vector2 va1 = featureA.vertex[0];
-			const Vector2 vb1 = featureB.vertex[0];
-
-			Vector2 localA = localA1;
-
-			if (capsuleA->halfWidth() > capsuleA->halfHeight())
-				localA.x = -localA.x;
-			else
-				localA.y = -localA.y;
-
-			Vector2 localB = localB1;
-
-			if (capsuleB->halfWidth() > capsuleB->halfHeight())
-				localB.x = -localB.x;
-			else
-				localB.y = -localB.y;
-
-			const Vector2 va2 = transformA.translatePoint(localA);
-			const Vector2 vb2 = transformB.translatePoint(localB);
-
-			pair = clipTwoEdge(va1, va2, vb1, vb2, info);
-			break;
-		}
 		return pair;
 	}
 

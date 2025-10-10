@@ -74,7 +74,7 @@ namespace ST
 
 		static Vector2 computeCenter(const std::vector<Vector2>& vertices);
 		static Vector2 computeCenter(const std::list<Vector2>& vertices);
-		static Vector2 computeCenter(Vector2* vertices, const uint32_t& count);
+		static Vector2 computeCenter(const Vector2* vertices, const uint32_t& count);
 
 		static PointsResult shortestLengthLineSegmentEllipse(const real& a, const real& b, const Vector2& p1, const Vector2& p2);
 
@@ -87,7 +87,7 @@ namespace ST
 
 
 		static Vector2 computeEllipseProjectionPoint(const real& a, const real& b, const Vector2& direction);
-		static Vector2 computeCapsuleProjectionPoint(const real& halfWidth, const real& halfHeight, const Vector2& direction);
+		static Vector2 computeCapsuleProjectionPoint(const real& halfLength, const real& radius, const Vector2& direction);
 		static Vector2 computeSectorProjectionPoint(const real& startRadian, const real& spanRadian, const real& radius, const Vector2& direction);
 		static bool checkOriginInTriangle(const Vector2& a, const Vector2& b, const Vector2& c);
 		static bool checkPointsOnSameSide(const Vector2& edgePoint1, const Vector2& edgePoint2, const Vector2& refPoint, const Vector2 targetPoint);

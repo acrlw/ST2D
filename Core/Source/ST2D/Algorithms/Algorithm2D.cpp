@@ -424,7 +424,7 @@ namespace ST
 		return Vector2();
 	}
 
-	Vector2 Algorithm2D::computeCenter(Vector2* vertices, const uint32_t& count)
+	Vector2 Algorithm2D::computeCenter(const Vector2* vertices, const uint32_t& count)
 	{
 		if (vertices == nullptr || count < 3)
 			return {};
@@ -649,23 +649,11 @@ namespace ST
 		}
 		return target;
 	}
-	Vector2 Algorithm2D::computeCapsuleProjectionPoint(const real& halfWidth, const real& halfHeight, const Vector2& direction)
+	Vector2 Algorithm2D::computeCapsuleProjectionPoint(const real& halfLength, const real& radius, const Vector2& direction)
 	{
-		Vector2 target;
-		if (halfWidth >= halfHeight) // Horizontal
-		{
-			const real radius = halfHeight;
-			const real offset = direction.x >= 0 ? halfWidth - radius : radius - halfWidth;
-			target = direction.normal() * radius;
-			target.x += offset;
-		}
-		else // Vertical
-		{
-			const real radius = halfWidth;
-			const real offset = direction.y >= 0 ? halfHeight - radius : radius - halfHeight;
-			target = direction.normal() * radius;
-			target.y += offset;
-		}
+		const real offset = direction.y >= 0 ? halfLength : -halfLength;
+		Vector2 target = direction.normal() * radius;
+		target.y += offset;
 		return target;
 	}
 

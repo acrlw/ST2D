@@ -1,107 +1,63 @@
 #include "Capsule.h"
 
+#include "ST2D/Algorithms/Algorithm2D.h"
+
 namespace ST
 {
 
-	Capsule::Capsule(real width, real height) : m_halfWidth(width / 2.0f), m_halfHeight(height / 2.0f)
+	Capsule::Capsule(real halfLength, real radius) : m_halfLength(halfLength), m_radius(radius)
 	{
 		m_type = ShapeType::Capsule;
 	}
 	bool Capsule::contains(const Vector2& point, const real& epsilon)
 	{
-		real r = 0, h = 0;
-		Vector2 anchorPoint1, anchorPoint2;
-		if (m_halfWidth >= m_halfHeight)//Horizontal
-		{
-			r = m_halfHeight;
-			h = m_halfWidth - m_halfHeight;
-
-			anchorPoint1.set(h, 0);
-			anchorPoint2.set(-h, 0);
-			if (point.x - anchorPoint1.x <= epsilon && point.x - anchorPoint2.x >= epsilon
-				&& point.y - r <= epsilon && point.y + r >= epsilon)
-				return true;
-		}
-		else//Vertical
-		{
-			r = m_halfWidth;
-			h = m_halfHeight - m_halfWidth;
-			anchorPoint1.set(0, h);
-			anchorPoint2.set(0, -h);
-
-			if (point.y - anchorPoint1.y <= epsilon && point.y - anchorPoint2.y >= epsilon
-				&& point.x - r <= epsilon && point.x + r >= epsilon)
-				return true;
-		}
-		if ((anchorPoint1 - point).square() - r * r <= epsilon ||
-			(anchorPoint2 - point).square() - r * r <= epsilon)
-			return true;
-
-		return false;
+		Vector2 anchor1(0, m_halfLength);
+		Vector2 anchor2(0, -m_halfLength);
+		Vector2 p = Algorithm2D::pointToSegment(anchor1, anchor2, point);
+		bool result = (point - p).norm() < m_radius;
+		return result;
 	}
 
 	void Capsule::scale(const real& factor)
 	{
-		m_halfWidth *= factor;
-		m_halfHeight *= factor;
+		m_halfLength *= factor;
+		m_radius *= factor;
 	}
 
 	Vector2 Capsule::center() const
 	{
-		return Vector2();
+		return {};
 	}
 
-	void Capsule::set(real width, real height)
+	void Capsule::set(real halfLength, real radius)
 	{
-		m_halfWidth = width / 2.0f;
-		m_halfHeight = height / 2.0f;
+		m_halfLength = halfLength;
+		m_radius = radius;
 	}
 
-	void Capsule::setWidth(real width)
+	void Capsule::setRadius(real radius)
 	{
-		m_halfWidth = width * 2.0f;
+		m_radius = radius;
 	}
 
-	void Capsule::setHeight(real height)
+	void Capsule::setHalfLength(real halfLength)
 	{
-		m_halfHeight = height * 2.0f;
+		m_halfLength = halfLength;
 	}
 
-	real Capsule::width()const
+	real Capsule::halfLength() const
 	{
-		return 2.0f * m_halfWidth;
+		return m_halfLength;
 	}
 
-	real Capsule::height()const
+	real Capsule::radius() const
 	{
-		return 2.0f * m_halfHeight;
-	}
-
-	real Capsule::halfWidth() const
-	{
-		return m_halfWidth;
-	}
-
-	real Capsule::halfHeight() const
-	{
-		return m_halfHeight;
+		return m_radius;
 	}
 
 	Vector2 Capsule::topLeft() const
 	{
-		Vector2 result;
-		real r;
-		if (m_halfWidth >= m_halfHeight)//Horizontal
-		{
-			r = m_halfHeight;
-			result.set(-m_halfWidth + r, r);
-		}
-		else//Vertical
-		{
-			r = m_halfWidth;
-			result.set(-r, m_halfHeight - r);
-		}
-		return result;
+		return {-m_radius, m_halfLength + m_radius};
 	}
 	Vector2 Capsule::bottomLeft() const
 	{
@@ -110,19 +66,7 @@ namespace ST
 
 	Vector2 Capsule::topRight() const
 	{
-		Vector2 result;
-		real r;
-		if (m_halfWidth >= m_halfHeight)//Horizontal
-		{
-			r = m_halfHeight;
-			result.set(m_halfWidth - r, r);
-		}
-		else//Vertical
-		{
-			r = m_halfWidth;
-			result.set(r, m_halfHeight - r);
-		}
-		return result;
+		return { m_radius, m_halfLength + m_radius };
 	}
 
 	Vector2 Capsule::bottomRight() const
@@ -130,14 +74,23 @@ namespace ST
 		return -topLeft();
 	}
 
-	std::vector<Vector2> Capsule::boxVertices() const
+	Vector2 Capsule::anchorTop() const
 	{
-		std::vector<Vector2> vertices;
-		vertices.reserve(4);
-		vertices.emplace_back(this->topLeft());
-		vertices.emplace_back(this->bottomLeft());
-		vertices.emplace_back(this->bottomRight());
-		vertices.emplace_back(this->topRight());
+		return { 0, m_halfLength };
+	}
+
+	Vector2 Capsule::anchorBottom() const
+	{
+		return { 0, -m_halfLength };
+	}
+
+	std::array<Vector2, 4> Capsule::boxVertices() const
+	{
+		std::array<Vector2, 4> vertices;
+		vertices[0] = this->topLeft();
+		vertices[1] = this->bottomLeft();
+		vertices[2] = this->bottomRight();
+		vertices[3] = this->topRight();
 		return vertices;
 	}
 }

@@ -11,8 +11,8 @@ namespace STEditor
 	{
 		rect.set(1.0f, 1.0f);
 		ellipse.set(1.0f, 2.0f);
-		capsule.set(2.0f, 4.0f);
-		capsule2.set(0.5f, 1.0f);
+		capsule.set(2.0f, 1.0f);
+		capsule2.set(1.0f, 0.5f);
 		circle.setRadius(0.5f);
 		radius1.setRadius(0.025f);
 		radius2.setRadius(0.05f);
@@ -36,17 +36,21 @@ namespace STEditor
 		}
 
 		m_ellipseVertices.push_back(m_ellipseVertices.front());
-		discreteEllipse.set(m_ellipseVertices);
 
 		//bug: -0.122633040, -0.174755722
 		//tf1.position.set(-0.122633040f, -0.174755722f);
-		tf1.position.set(0, -0.25);
-		tf2.position.set(-0.0f, -1.0f);
-		tf1.rotation = Math::radians(15);
+		//tf1.position.set(0.634936571f, -0.654959798f);
+		//tf2.position.set(1.74482560f, 0.154884547f);
+		//tf1.rotation = 1.59174025f;
+		//tf2.rotation = 1.21300387f;
+		tf1.position.set(0, 0.5f);
+		tf2.position.set(0, -0.5f);
+		tf1.rotation = Math::radians(100);
 		tf2.rotation = Math::radians(90);
 
-		shape1 = &capsule;
-		shape2 = &capsule2;
+		shape1 = &capsule2;
+		shape2 = &capsule;
+		m_shapes = {&rect, &capsule, &capsule2, &circle};
 	}
 
 	void NarrowphaseScene::onUnLoad()
@@ -67,30 +71,63 @@ namespace STEditor
 		renderer.text(tf2.position, Palette::Cyan, "B", 1);
 
 		Color polytopeColor = Palette::Teal;
-		Color penetrationColor = Palette::Yellow;
+		Color penetrationColor = Palette::Teal;
 		polytopeColor.a = 150.0f / 255.0f;
 		
 		auto result = Narrowphase2D::gjk(tf1, shape1, tf2, shape2);
 
 		Color simplexColor = result.isContainOrigin ? Palette::Green : Palette::Purple;
 
-		auto vertices = rect.vertices();
-		if (shape1->type() == ShapeType::Polygon)
+		//auto vertices = rect.vertices();
+		//if (shape1->type() == ShapeType::Polygon)
+		//{
+		//	Transform transform;
+		//	for (int i = 0;i < rect.count();++i)
+		//	{
+		//		transform.position = tf1.translatePoint(vertices[i]);
+		//		renderer.circle(transform, &radius1, Palette::Yellow);
+		//	}
+		//}
+		//if (shape2->type() == ShapeType::Polygon)
+		//{
+		//	Transform transform;
+		//	for (int i = 0; i < rect.count(); ++i)
+		//	{
+		//		transform.position = tf2.translatePoint(vertices[i]);
+		//		renderer.circle(transform, &radius2, Palette::Cyan);
+		//	}
+		//}
+
+		if (shape1->type() == ShapeType::Capsule && shape2->type() == ShapeType::Capsule)
 		{
-			Transform transform;
-			for (int i = 0;i < vertices.size();++i)
+			auto result = Narrowphase2D::collideCapsules(tf1, shape1, tf2, shape2);
+			if (result.count > 0)
 			{
-				transform.position = tf1.translatePoint(vertices[i]);
-				renderer.circle(transform, &radius1, Palette::Yellow);
+				renderer.arrow({}, result.normal, Palette::Red);
+				for (int i = 0;i < result.count; ++i)
+				{
+					renderer.pointFixedSize(result.pA[i], Palette::Yellow, 8);
+					renderer.pointFixedSize(result.pB[i], Palette::Cyan, 8);
+					renderer.pointFixedSize(0.5f * (result.pA[i] + result.pB[i]), Palette::Green, 8);
+				}
 			}
+
 		}
-		if (shape2->type() == ShapeType::Polygon)
+		if (shape1->type() == ShapeType::Circle && shape2->type() == ShapeType::Circle)
 		{
-			Transform transform;
-			for (int i = 0; i < vertices.size(); ++i)
+			const Circle *circleA = static_cast<const Circle*>(shape1);
+			const Circle *circleB = static_cast<const Circle*>(shape2);
+			ContactResult result = Narrowphase2D::collideCircles(tf1.position, circleA->radius(), tf2.position, circleB->radius());
+			if (result.count > 0)
 			{
-				transform.position = tf2.translatePoint(vertices[i]);
-				renderer.circle(transform, &radius2, Palette::Cyan);
+				for (uint8_t i = 0; i < result.count; ++i)
+				{
+					renderer.pointFixedSize(result.pA[i], Palette::Yellow, 6.0f);
+					renderer.pointFixedSize(result.pB[i], Palette::Cyan, 6.0f);
+					renderer.thickLine(result.pA[i], result.pB[i], Palette::Red, 8);
+					std::string penetration = std::format("{:4f}", result.penetration[0]);
+					renderer.text(result.pB[i] + result.normal * 0.1f, Palette::Pink, penetration);
+				}
 			}
 		}
 
@@ -148,14 +185,14 @@ namespace STEditor
 					// get witness points
 					Vector2 pA = epaResult.simplex.m[2].v[0].v;
 					Vector2 pB = epaResult.simplex.m[2].v[1].v;
-					//renderer.pointFixedSize(pA, Palette::Yellow, 6.0f);
-					//renderer.pointFixedSize(pB, Palette::Cyan, 6.0f);
-					//renderer.line(pA, pB, Palette::LightRed);
+					renderer.pointFixedSize(pA, Palette::Yellow, 6.0f);
+					renderer.pointFixedSize(pB, Palette::Cyan, 6.0f);
+					renderer.thickLine(pA, pB, Palette::Red);
 					
-					//renderer.pointFixedSize(epaResult.simplex.m[0].v[0].v, Palette::Yellow, 8.0f);
-					//renderer.pointFixedSize(epaResult.simplex.m[1].v[0].v, Palette::Yellow, 8.0f);
-					//renderer.pointFixedSize(epaResult.simplex.m[0].v[1].v, Palette::Cyan, 8.0f);
-					//renderer.pointFixedSize(epaResult.simplex.m[1].v[1].v, Palette::Cyan, 8.0f);
+					renderer.pointFixedSize(epaResult.simplex.m[0].v[0].v, Palette::Yellow, 8.0f);
+					renderer.pointFixedSize(epaResult.simplex.m[1].v[0].v, Palette::Yellow, 8.0f);
+					renderer.pointFixedSize(epaResult.simplex.m[0].v[1].v, Palette::Cyan, 8.0f);
+					renderer.pointFixedSize(epaResult.simplex.m[1].v[1].v, Palette::Cyan, 8.0f);
 
 					auto contacts = Narrowphase2D::generateContacts(epaResult, tf1, shape1, tf2, shape2);
 					if (contacts.count > 0)
@@ -169,6 +206,8 @@ namespace STEditor
 							renderer.pointFixedSize(contacts.pA[i], Palette::Yellow, 6.0f);
 							renderer.pointFixedSize(contacts.pB[i], Palette::Cyan, 6.0f);
 							renderer.thickLine(contacts.pA[i], contacts.pB[i], Palette::Red, 8);
+							std::string penetrate = std::format("{:4f}", contacts.penetration[i]);
+							renderer.text(contacts.pA[i] - contacts.normal * 0.25f, Palette::Yellow, penetrate);
 						}
 					}
 				}
@@ -202,7 +241,7 @@ namespace STEditor
 					auto v2 = distanceResult.closestPoints[1];
 					renderer.pointFixedSize(v1, Palette::Yellow, 6.0f);
 					renderer.pointFixedSize(v2, Palette::Cyan, 6.0f);
-					renderer.line(v1, v2, Palette::LightRed);
+					renderer.thickLine(v1, v2, Palette::Red);
 				}
 
 			}
@@ -214,11 +253,8 @@ namespace STEditor
 		ImGui::Begin("Narrowphase Scene");
 
 		//ImGui::SliderInt("Polytope Index", &m_currentPolytopeIndex, 0, m_maxPolytopeIndex);
-		ImGui::Checkbox("Show Simplex", &m_showSimplex);
 		ImGui::Checkbox("Show Polytope", &m_showPolytope);
 		ImGui::Checkbox("Show GJK Simplex", &m_showGJKSimplex);
-		ImGui::Checkbox("Enable Linear Sweep", &m_enableLinearSweep);
-		ImGui::Checkbox("Enable Linear Sweep Cast", &m_enableLinearSweepCast);
 		float r1 = radius1.radius();
 		float r2 = radius2.radius();
 		ImGui::SliderFloat("Radius 1", &r1, 0.01, 0.1);
@@ -227,10 +263,32 @@ namespace STEditor
 		radius2.setRadius(r2);
 		float deg1 = Math::degree(tf1.rotation);
 		float deg2 = Math::degree(tf2.rotation);
-		ImGui::SliderFloat("Degree 1", &deg1, 0, 360, "%.1f");
-		ImGui::SliderFloat("Degree 2", &deg2, 0, 360, "%.1f");
+		ImGui::DragFloat("Degree 1", &deg1, 1, 0, 360);
+		ImGui::DragFloat("Degree 2", &deg2, 1, 0, 360);
 		tf1.rotation = Math::radians(deg1);
 		tf2.rotation = Math::radians(deg2);
+		if (ImGui::Button("Switch shape1"))
+		{
+			for (int i = 0;i < m_shapes.size(); ++i)
+			{
+				if (m_shapes[i] == shape1)
+				{
+					shape1 = m_shapes[(i + 1) % m_shapes.size()];
+					break;
+				}
+			}
+		}
+		if (ImGui::Button("Switch shape2"))
+		{
+			for (int i = 0; i < m_shapes.size(); ++i)
+			{
+				if (m_shapes[i] == shape2)
+				{
+					shape2 = m_shapes[(i + 1) % m_shapes.size()];
+					break;
+				}
+			}
+		}
 
 		ImGui::End();
 	}

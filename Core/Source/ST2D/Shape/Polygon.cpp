@@ -1,4 +1,6 @@
 #include "Polygon.h"
+
+#include "ST2D/Log.h"
 #include "ST2D/Algorithms/Algorithm2D.h"
 
 namespace ST
@@ -6,39 +8,41 @@ namespace ST
 	Polygon::Polygon()
 	{
 		m_type = ShapeType::Polygon;
-		m_vertices.reserve(4);
 	}
 
-	const std::vector<Vector2>& Polygon::vertices() const
+	const std::array<Vector2, MaxPolygonVertices>& Polygon::vertices() const
 	{
 		return m_vertices;
 	}
 
 	void Polygon::set(const std::initializer_list<Vector2>& vertices)
 	{
-		for (const Vector2& vertex : vertices)
-			m_vertices.emplace_back(vertex);
+		CORE_ASSERT(vertices.size() < MaxPolygonVertices, "The number of inserted fixed points exceeds the upper limit");
+		std::ranges::copy(vertices, m_vertices.begin());
+		m_count = vertices.size();
 		updateVertices();
 	}
 
-	void Polygon::set(std::vector<Vector2>& vertices)
+	void Polygon::set(const std::array<Vector2, MaxPolygonVertices>& vertices, const uint32_t& count)
 	{
-		m_vertices = std::move(vertices);
+		std::ranges::copy(vertices, m_vertices.begin());
+		m_count = count;
 		updateVertices();
 	}
+
 
 	void Polygon::set(Vector2* vertices, const uint32_t& count)
 	{
-		m_vertices.clear();
-		m_vertices.reserve(count);
+		CORE_ASSERT(count < MaxPolygonVertices, "The number of inserted fixed points exceeds the upper limit");
 		for (uint32_t i = 0; i < count; ++i)
-			m_vertices.emplace_back(vertices[i]);
+			m_vertices[i] = vertices[i];
+		m_count = count;
 		updateVertices();
 	}
 
 	Vector2 Polygon::center()const
 	{
-		return Algorithm2D::computeCenter(this->vertices());
+		return Algorithm2D::computeCenter(m_vertices.data(), m_count);
 	}
 
 	void Polygon::scale(const real& factor)
@@ -63,6 +67,11 @@ namespace ST
 
 		}
 		return true;
+	}
+
+	size_t Polygon::count() const
+	{
+		return m_count;
 	}
 
 	void Polygon::updateVertices()

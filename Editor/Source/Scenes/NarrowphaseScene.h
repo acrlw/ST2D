@@ -28,7 +28,7 @@ namespace STEditor
 		ST::Capsule capsule;
 		ST::Capsule capsule2;
 		ST::Circle circle;
-		ST::Polygon discreteEllipse;
+
 		Shape* shape1 = nullptr;
 		Shape* shape2 = nullptr;
 		Transform tf1, tf2;
@@ -47,5 +47,8 @@ namespace STEditor
 
 		ST::Circle radius1;
 		ST::Circle radius2;
+		std::array<Shape*, 4> m_shapes;
+
+
 	};
 }
