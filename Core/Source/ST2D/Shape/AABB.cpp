@@ -123,7 +123,7 @@ namespace ST
 			realEqual(width, other.width) && realEqual(height, other.height);
 	}
 
-	AABB AABB::fromShape(const Transform& transform, const Shape* shape, const real& factor)
+	AABB AABB::fromShape(const Transform2D& transform, const AbstractShape* shape, const real& factor)
 	{
 		AABB aabb;
 		switch (shape->type())

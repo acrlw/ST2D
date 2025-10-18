@@ -23,17 +23,19 @@ namespace STEditor
 		void onMouseMoved(GLFWwindow* window, Renderer2D& renderer, double xpos, double ypos) override;
 
 	private:
+		ST::Polygon polygon1;
+		ST::Polygon polygon2;
 		ST::Rectangle rect;
 		ST::Ellipse ellipse;
 		ST::Capsule capsule;
 		ST::Capsule capsule2;
 		ST::Circle circle;
 
-		Shape* shape1 = nullptr;
-		Shape* shape2 = nullptr;
-		Transform tf1, tf2;
-		Transform* selectedTransform = nullptr;
-		Transform oldTransform;
+		AbstractShape* shape1 = nullptr;
+		AbstractShape* shape2 = nullptr;
+		Transform2D tf1, tf2;
+		Transform2D* selectedTransform = nullptr;
+		Transform2D oldTransform;
 		Vector2 mouseStart;
 
 		//int m_currentPolytopeIndex = 0;
@@ -47,8 +49,8 @@ namespace STEditor
 
 		ST::Circle radius1;
 		ST::Circle radius2;
-		std::array<Shape*, 4> m_shapes;
-
+		std::array<AbstractShape*, 7> m_shapes;
+		std::array<ShapeBase*, 5> m_shapeBaseArray;
 
 	};
 }

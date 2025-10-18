@@ -40,7 +40,7 @@ namespace STEditor
 		std::vector<real> m_rotations;
 		std::vector<Vector2> m_velocities;
 		std::vector<real> m_angularVelocities;
-		std::vector<ST::Shape*> m_shapes;
+		std::vector<ST::AbstractShape*> m_shapes;
 		std::vector<ST::AABB> m_aabbs;
 
 		ObjectID m_landId;

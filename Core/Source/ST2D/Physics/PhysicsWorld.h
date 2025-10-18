@@ -15,7 +15,7 @@ namespace ST
 
 		std::vector<int> m_objectIds;
 
-		std::vector<Transform> m_transform;
+		std::vector<Transform2D> m_transform;
 		std::vector<Vector2> m_velocity;
 		std::vector<float> m_angularVelocity;
 		std::vector<Vector2> m_force;
@@ -29,7 +29,7 @@ namespace ST
 
 		std::vector<ST::AABB> m_aabb;
 		std::vector<uint32_t> m_bitmask;
-		std::vector<ST::Shape*> m_shape;
+		std::vector<ST::AbstractShape*> m_shape;
 
 
 		IdPool m_objectIdPool;

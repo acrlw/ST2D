@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Shape.h"
+
+#include "AbstractShape.h"
 namespace ST
 {
-    class ST_API Segment : public Shape
+    class ST_API Segment : public AbstractShape
     {
 
     public:

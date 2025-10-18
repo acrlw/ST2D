@@ -72,9 +72,9 @@ namespace ST
 		{
 			real result = radian;
 			while (result > Constant::Pi)
-				result -= Constant::DoublePi;
+				result -= Constant::TwoPi;
 			while (result < -Constant::Pi)
-				result += Constant::DoublePi;
+				result += Constant::TwoPi;
 			return result;
 		}
 
@@ -222,12 +222,12 @@ namespace ST
 
 		ST_API static real radians(const real& degree)
 		{
-			return degree * Constant::Pi * Constant::ReciprocalOf180;
+			return degree * Constant::Pi * Constant::InvHalfPi;
 		}
 
 		ST_API static real degree(const real& radian)
 		{
-			return radian * 180.0f * Constant::ReciprocalOfPi;
+			return radian * 180.0f * Constant::InvPi;
 		}
 
 		ST_API static float fastInvSqrtDouble(double x, size_t maxIter = 4)

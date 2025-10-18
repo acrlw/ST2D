@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Shape.h"
+#include "AbstractShape.h"
 namespace ST
 {
-    class ST_API Ellipse : public Shape
+    class ST_API Ellipse : public AbstractShape
     {
 
     public:

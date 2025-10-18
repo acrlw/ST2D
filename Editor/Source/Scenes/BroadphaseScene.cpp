@@ -510,7 +510,7 @@ namespace STEditor
 			std::uniform_real_distribution<> dist1(-9.0f, 9.0f);
 
 			int index = 0;
-			Transform t;
+			Transform2D t;
 			t.position = Vector2(dist1(gen), dist1(gen));
 			m_transforms[index] = t;
 			m_aabbs[index] = AABB::fromShape(t, m_shapes[index]);
@@ -570,7 +570,7 @@ namespace STEditor
 			{
 				for (real i = 0.0; i < max - j; i += 0.5f)
 				{
-					Transform t;
+					Transform2D t;
 					t.position.set({  i * (1.0f + xSpacing) + offset, j * (1.0f + ySpacing) + 0.25f});
 					t.rotation = 0;
 					int shapeIndex = 0;
@@ -648,7 +648,7 @@ namespace STEditor
 		}
 		{
 
-			Transform trans;
+			Transform2D trans;
 			trans.position.set(40.0f, -0.045);
 
 			m_transforms.push_back(trans);

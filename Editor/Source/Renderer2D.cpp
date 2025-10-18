@@ -1174,7 +1174,7 @@ namespace STEditor
 		m_polyLines.emplace_back(lines);
 	}
 
-	void Renderer2D::shape(const Transform& transform, Shape* shape, const Color& color)
+	void Renderer2D::shape(const Transform2D& transform, AbstractShape* shape, const Color& color)
 	{
 		CORE_ASSERT(shape != nullptr, "Null reference of shape");
 
@@ -1203,11 +1203,11 @@ namespace STEditor
 		}
 	}
 
-	void Renderer2D::polygon(const Transform& transform, Shape* shape, const Color& color)
+	void Renderer2D::polygon(const Transform2D& transform, AbstractShape* shape, const Color& color)
 	{
 		assert(shape != nullptr && shape->type() == ShapeType::Polygon);
 		auto polygon = static_cast<ST::Polygon*>(shape);
-		std::array<Vector2, MaxPolygonVertices> vertices;
+		std::array<Vector2, Constant::MaxPolygonVertices> vertices;
 		for (uint32_t i = 0;i < polygon->count(); ++i)
 			vertices[i] = transform.translatePoint(polygon->vertices()[i]);
 		Color fillColor = color;
@@ -1215,7 +1215,7 @@ namespace STEditor
 		fillAndStroke(vertices.data(), polygon->count(), fillColor, color);
 	}
 
-	void Renderer2D::segment(const Transform& transform, Shape* shape, const Color& color)
+	void Renderer2D::segment(const Transform2D& transform, AbstractShape* shape, const Color& color)
 	{
 		assert(shape != nullptr && shape->type() == ShapeType::Segment);
 		auto edge = static_cast<Segment*>(shape);
@@ -1230,7 +1230,7 @@ namespace STEditor
 		line(center, center + 0.1f * edge->normal(), DarkPalette::Yellow);
 	}
 
-	void Renderer2D::circle(const Transform& transform, Shape* shape, const Color& color)
+	void Renderer2D::circle(const Transform2D& transform, AbstractShape* shape, const Color& color)
 	{
 		assert(shape != nullptr && shape->type() == ShapeType::Circle);
 		const Circle* circle = static_cast<Circle*>(shape);
@@ -1239,7 +1239,7 @@ namespace STEditor
 		vertices.reserve(pointCount);
 		for (int i = 0; i < pointCount; ++i)
 		{
-			real radian = Constant::DoublePi * static_cast<float>(i) / static_cast<float>(pointCount);
+			real radian = Constant::TwoPi * static_cast<float>(i) / static_cast<float>(pointCount);
 			Complex rot(radian);
 			Vector2 point = rot.multiply(Vector2(1.0f, 0.0f)) * circle->radius();
 			vertices.emplace_back(transform.translatePoint(point));
@@ -1249,7 +1249,7 @@ namespace STEditor
 		fillAndStroke(vertices, fillColor, color);
 	}
 
-	void Renderer2D::capsule(const Transform& transform, Shape* shape, const Color& color)
+	void Renderer2D::capsule(const Transform2D& transform, AbstractShape* shape, const Color& color)
 	{
 		assert(shape != nullptr && shape->type() == ShapeType::Capsule);
 		const Capsule* capsule = static_cast<Capsule*>(shape);
@@ -1303,7 +1303,7 @@ namespace STEditor
 		thickLine(anchor1, anchor2, color);
 	}
 
-	void Renderer2D::ellipse(const Transform& transform, Shape* shape, const Color& color)
+	void Renderer2D::ellipse(const Transform2D& transform, AbstractShape* shape, const Color& color)
 	{
 		assert(shape != nullptr && shape->type() == ShapeType::Ellipse);
 		const ST::Ellipse* ellipse = static_cast<ST::Ellipse*>(shape);
@@ -1312,7 +1312,7 @@ namespace STEditor
 		int pointCount = 60 + static_cast<int>(meterToPixel());
 		vertices.reserve(pointCount);
 
-		real step = Constant::DoublePi / static_cast<float>(pointCount);
+		real step = Constant::TwoPi / static_cast<float>(pointCount);
 		real innerRadius = ellipse->A();
 		real outerRadius = ellipse->B();
 		if (ellipse->A() > ellipse->B())
@@ -1320,7 +1320,7 @@ namespace STEditor
 			innerRadius = ellipse->B();
 			outerRadius = ellipse->A();
 		}
-		for (real radian = 0; radian <= Constant::DoublePi; radian += step)
+		for (real radian = 0; radian <= Constant::TwoPi; radian += step)
 		{
 			Vector2 point(outerRadius * Math::cosx(radian), innerRadius * Math::sinx(radian));
 			const Vector2 worldPos = transform.translatePoint(point);
@@ -1332,7 +1332,7 @@ namespace STEditor
 		fillAndStroke(vertices, fillColor, color);
 	}
 
-	void Renderer2D::orientation(const Transform& transform)
+	void Renderer2D::orientation(const Transform2D& transform)
 	{
 		Vector2 xP(0.15f, 0);
 		Vector2 yP(0, 0.15f);

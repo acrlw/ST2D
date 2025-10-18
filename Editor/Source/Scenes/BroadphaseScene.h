@@ -43,12 +43,12 @@ namespace STEditor
 		ST::Polygon m_polygon;
 		ST::Capsule m_capsule;
 		ST::Polygon m_triangle;
-		std::array<ST::Shape*, 5> m_shapesArray = { &m_rectangle, &m_circle, &m_capsule, &m_triangle, &m_polygon };
+		std::array<ST::AbstractShape*, 5> m_shapesArray = { &m_rectangle, &m_circle, &m_capsule, &m_triangle, &m_polygon };
 
-		std::vector<Transform> m_transforms;
+		std::vector<Transform2D> m_transforms;
 		std::vector<ST::AABB> m_aabbs;
 		std::vector<uint32_t> m_bitmasks;
-		std::vector<ST::Shape*> m_shapes;
+		std::vector<ST::AbstractShape*> m_shapes;
 		std::vector<int> m_objectIds;
 
 		DynamicBVT m_dbvt;

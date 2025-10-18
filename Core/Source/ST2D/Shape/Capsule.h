@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Shape.h"
+#include "AbstractShape.h"
 
 namespace ST
 {
-    class ST_API Capsule : public Shape
+    class ST_API Capsule : public AbstractShape
     {
     public:
         Capsule(real halfLength = 0.0f, real radius = 0.0f);

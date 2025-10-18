@@ -1,8 +1,9 @@
 #pragma once
 
 #include "ST2D/Algorithms/Algorithm2D.h"
-#include "ST2D/Shape/Shape.h"
+#include "ST2D/Shape/AbstractShape.h"
 #include "Simplex.h"
+#include "ST2D/Math/Transform2D.h"
 
 
 namespace ST
@@ -145,50 +146,50 @@ namespace ST
 	{
 	public:
 
-		static Simplex gjk(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 30);
+		static Simplex gjk(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const size_t& iteration = 30);
 
-		static CollisionInfo epa(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 12, const real& epsilon = Constant::GeometryEpsilon);
+		static CollisionInfo epa(const Simplex& simplex, const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const size_t& iteration = 12, const real& epsilon = Constant::GeometryEpsilon);
 
-		static CollisionInfo findClosestSimplex(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 12);
+		static CollisionInfo findClosestSimplex(const Simplex& simplex, const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const size_t& iteration = 12);
 
-		static SimplexVertex support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Vector2& direction);
+		static SimplexVertex support(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Vector2& direction);
 
-		static VertexIndexPair findFurthestPoint(const Transform& transform, const Shape* shape, const Vector2& direction);
+		static VertexIndexPair findFurthestPoint(const Transform2D& transform, const AbstractShape* shape, const Vector2& direction);
 
 		static Vector2 findDirectionByEdge(const SimplexVertex& v1, const SimplexVertex& v2, bool pointToOrigin);
 
 		static VertexIndexPair findFurthestPoint(const Vector2* vertices, const uint32_t& count,
 			const Vector2& direction);
 
-		static ContactPair generateContacts(CollisionInfo& info, const Transform& transformA, const Shape* shapeA,
-		                                    const Transform& transformB, const Shape* shapeB);
+		static ContactPair generateContacts(CollisionInfo& info, const Transform2D& transformA, const AbstractShape* shapeA,
+		                                    const Transform2D& transformB, const AbstractShape* shapeB);
 
-		static CollisionInfo distance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const size_t& iteration = 30);
+		static CollisionInfo distance(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const size_t& iteration = 30);
 
-		static SweepVolume linearSweep(const Transform& start, const Transform& end, const Shape* shape);
+		static SweepVolume linearSweep(const Transform2D& start, const Transform2D& end, const AbstractShape* shape);
 
-		static bool linearSweepCast(const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction,
-			const real& maxDistance, Transform& resultA);
+		static bool linearSweepCast(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB, const AbstractShape* shapeB, const Vector2& direction,
+			const real& maxDistance, Transform2D& resultA);
 
 	private:
 
-		static bool linearSweepBackwardCast(const Simplex& startSimplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction, 
-			Transform& resultA);
+		static bool linearSweepBackwardCast(const Simplex& startSimplex, const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB, const AbstractShape* shapeB, const Vector2& direction, 
+			Transform2D& resultA);
 
-		static bool linearSweepForwardCast(CollisionInfo& info, const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction,
-			Transform& resultA);
+		static bool linearSweepForwardCast(CollisionInfo& info, const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB, const AbstractShape* shapeB, const Vector2& direction,
+			Transform2D& resultA);
 
 		static void reconstructSimplexByVoronoi(Simplex& simplex);
 
-		static bool perturbSimplex(Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Vector2& dir);
+		static bool perturbSimplex(Simplex& simplex, const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Vector2& dir);
 
-		static Feature findFeatures(const Simplex& simplex, const Vector2& normal, const Transform& transform, const Shape* shape,
+		static Feature findFeatures(const Simplex& simplex, const Vector2& normal, const Transform2D& transform, const AbstractShape* shape,
 			const Index& AorB);
 
 		static ContactPair clipTwoEdge(const Vector2& va1, const Vector2& va2, const Vector2& vb1, const Vector2& vb2,
@@ -197,32 +198,32 @@ namespace ST
 		static ContactPair clipIncidentEdge(std::array<ClipVertex, 2>& incEdge, std::array<Vector2, 2> refEdge,
 			const Vector2& normal, bool swap);
 
-		static ContactPair clipPolygonPolygon(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
+		static ContactPair clipPolygonPolygon(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
-		static ContactPair clipPolygonEdge(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
+		static ContactPair clipPolygonEdge(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
-		static ContactPair clipPolygonCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
+		static ContactPair clipPolygonCapsule(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
-		static ContactPair clipPolygonRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
+		static ContactPair clipPolygonRound(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
-		static ContactPair clipEdgeCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
+		static ContactPair clipEdgeCapsule(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info);
 
-		static ContactPair clipEdgeRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
+		static ContactPair clipEdgeRound(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
 
-		static ContactPair clipCapsuleCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
+		static ContactPair clipCapsuleCapsule(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
 
-		static ContactPair clipCapsuleRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
+		static ContactPair clipCapsuleRound(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
 
-		static ContactPair clipRoundRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-			const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
+		static ContactPair clipRoundRound(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+			const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info);
 
 		static ContactPair clipEdgeVertex(const Vector2& va1, const Vector2& va2, const Vector2& vb,
 		                                  const CollisionInfo& info);

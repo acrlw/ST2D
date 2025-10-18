@@ -4,14 +4,10 @@ namespace ST
 {
 	Vector2::Vector2(const real& _x, const real& _y) : x(_x), y(_y)
 	{
-		assert(!std::isnan(x));
-		assert(!std::isnan(y));
 	}
 
 	Vector2::Vector2(const Vector2& copy) : x(copy.x), y(copy.y)
 	{
-		assert(!std::isnan(x));
-		assert(!std::isnan(y));
 	}
 
 	Vector2 Vector2::operator+(const Vector2& rhs) const

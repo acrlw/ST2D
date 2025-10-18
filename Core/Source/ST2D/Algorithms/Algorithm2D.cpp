@@ -72,8 +72,13 @@ namespace ST
 		return result;
 	}
 
+	real Algorithm2D::minIntervalSeparation(const real& tMin, const real& tMax, const real& uMin, const real& uMax)
+	{
+		return Math::max(tMin, uMin) - Math::min(uMax, tMax);
+	}
+
 	RaycastHit Algorithm2D::raycastCircle(const Vector2& p, const Vector2& dir,
-		const Vector2& center, const real& radius)
+	                                      const Vector2& center, const real& radius)
 	{
 		RaycastHit result;
 		if ((p - center).square() < radius * radius)
@@ -637,9 +642,9 @@ namespace ST
 		{
 			const real k = direction.y / direction.x;
 			//line offset constant d
-			const real a2 = pow(a, 2.0f);
-			const real b2 = pow(b, 2.0f);
-			const real k2 = pow(k, 2.0f);
+			const real a2 = a * a;
+			const real b2 = b * b;
+			const real k2 = k * k;
 			real d = sqrt((a2 + b2 * k2) / k2);
 			if (Vector2::dot(Vector2(0, d), direction) < 0)
 				d = d * -1;
@@ -664,9 +669,9 @@ namespace ST
 		auto clampRadian = [](const real& radian)
 			{
 				real result = radian;
-				result -= std::floor(result / Constant::DoublePi) * Constant::DoublePi;
+				result -= std::floor(result / Constant::TwoPi) * Constant::TwoPi;
 				if (result < 0)
-					result += Constant::DoublePi;
+					result += Constant::TwoPi;
 				return result;
 			};
 
@@ -707,7 +712,7 @@ namespace ST
 				if (theta > originStart)
 					theta = originTheta;
 				if (clampStart > clampEnd)
-					result = Matrix2x2(Math::clamp(theta, clampStart - Constant::DoublePi, clampEnd)).multiply(Vector2{ 1, 0 }) * radius;
+					result = Matrix2x2(Math::clamp(theta, clampStart - Constant::TwoPi, clampEnd)).multiply(Vector2{ 1, 0 }) * radius;
 				else
 					result = Matrix2x2(Math::clamp(theta, clampStart, clampEnd)).multiply(Vector2{ 1, 0 }) * radius;
 			}
@@ -793,5 +798,30 @@ namespace ST
 		//assert(!realEqual(det, 0));
 		const real u = (dir2.x * (p2.y - p1.y) - dir2.y * (p2.x - p1.x)) / det;
 		return p1 + dir1 * u;
+	}
+
+	SegmentClosestResult Algorithm2D::segmentClosestPoint(const Vector2& A1, const Vector2& A2, const Vector2& B1,
+		const Vector2& B2)
+	{
+		SegmentClosestResult result;
+		const Vector2 va = A2 - A1;
+		const Vector2 vb = B2 - B1;
+		const Vector2 vb1a1 = A1 - B1;
+		const real dotVaVb = va.dot(vb);
+		const real dotVaVa = va.dot(va);
+		const real dotVbVb = vb.dot(vb);
+		const real dotVaVb1a1 = va.dot(vb1a1);
+		const real dotVbVb1a1 = vb.dot(vb1a1);
+		const real det = dotVaVb * dotVaVb - dotVaVa * dotVbVb;
+
+		if (!realEqual(det, 0))
+			result.t = Math::clamp((dotVaVb1a1 * dotVbVb - dotVaVb * dotVbVb1a1) / det, 0, 1);
+
+		result.u = Math::clamp((result.t * dotVaVb + dotVbVb1a1) / dotVbVb, 0, 1);
+		result.t = Math::clamp((result.u * dotVaVb - dotVaVb1a1) / dotVaVa, 0, 1);
+
+		result.P = A1 + result.t * (A2 - A1);
+		result.Q = B1 + result.u * (B2 - B1);
+		return result;
 	}
 }

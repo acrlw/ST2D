@@ -9,6 +9,7 @@ namespace STEditor
 
 	void NarrowphaseScene::onLoad()
 	{
+		ShapeBase shapeBase = ShapeBase::makeCircle(1.0);
 		rect.set(1.0f, 1.0f);
 		ellipse.set(1.0f, 2.0f);
 		capsule.set(2.0f, 1.0f);
@@ -16,6 +17,12 @@ namespace STEditor
 		circle.setRadius(0.5f);
 		radius1.setRadius(0.025f);
 		radius2.setRadius(0.05f);
+		//polygon1.set({ {1, 4}, {2.5, 2}, {3.5, 4}, {2.5, 5} });
+		polygon1.set({ {1.5800994071555, -0.7368124542028}, {0.5159216346796, 1.106397516011},{-1.1584559306791, 0.8111595753453},
+			{-0.8111595753453, -1.1584559306791} });
+
+		polygon2.set({ {6.5, 1}, {7, 3}, {7, 5}, {5, 6}, {3, 6},
+		{2, 5}, {1, 3}, {1, 1}, {2.5, -0.5}, {5, 0}});
 
 		real innerRadius = ellipse.A();
 		real outerRadius = ellipse.B();
@@ -27,9 +34,9 @@ namespace STEditor
 		}
 
 		int pointCount = 120;
-		real step = Constant::DoublePi / static_cast<float>(pointCount);
+		real step = Constant::TwoPi / static_cast<float>(pointCount);
 
-		for (real radian = 0; radian <= Constant::DoublePi; radian += step)
+		for (real radian = 0; radian <= Constant::TwoPi; radian += step)
 		{
 			Vector2 point(outerRadius * Math::cosx(radian), innerRadius * Math::sinx(radian));
 			m_ellipseVertices.push_back(point);
@@ -43,14 +50,14 @@ namespace STEditor
 		//tf2.position.set(1.74482560f, 0.154884547f);
 		//tf1.rotation = 1.59174025f;
 		//tf2.rotation = 1.21300387f;
-		tf1.position.set(0, 0.5f);
-		tf2.position.set(0, -0.5f);
-		tf1.rotation = Math::radians(100);
-		tf2.rotation = Math::radians(90);
+		tf1.position.set(0, 0.0f);
+		tf2.position.set(0.54621505f, 1.0064106f);
+		tf1.rotation = Math::radians(0.72015364f);
+		tf2.rotation = Math::radians(0.58920408f);
 
-		shape1 = &capsule2;
-		shape2 = &capsule;
-		m_shapes = {&rect, &capsule, &capsule2, &circle};
+		shape1 = &rect;
+		shape2 = &rect;
+		m_shapes = {&rect, &capsule, &capsule2, &circle, &ellipse, &polygon1, &polygon2};
 	}
 
 	void NarrowphaseScene::onUnLoad()
@@ -60,7 +67,7 @@ namespace STEditor
 	void NarrowphaseScene::onUpdate(float deltaTime)
 	{
 		//tf1.rotation += Math::radians(45.0f) * deltaTime;
-		//tf1.rotation = std::fmod(tf1.rotation, Constant::DoublePi);
+		//tf1.rotation = std::fmod(tf1.rotation, Constant::TwoPi);
 	}
 
 	void NarrowphaseScene::onRender(Renderer2D& renderer)
@@ -78,25 +85,27 @@ namespace STEditor
 
 		Color simplexColor = result.isContainOrigin ? Palette::Green : Palette::Purple;
 
-		//auto vertices = rect.vertices();
-		//if (shape1->type() == ShapeType::Polygon)
-		//{
-		//	Transform transform;
-		//	for (int i = 0;i < rect.count();++i)
-		//	{
-		//		transform.position = tf1.translatePoint(vertices[i]);
-		//		renderer.circle(transform, &radius1, Palette::Yellow);
-		//	}
-		//}
-		//if (shape2->type() == ShapeType::Polygon)
-		//{
-		//	Transform transform;
-		//	for (int i = 0; i < rect.count(); ++i)
-		//	{
-		//		transform.position = tf2.translatePoint(vertices[i]);
-		//		renderer.circle(transform, &radius2, Palette::Cyan);
-		//	}
-		//}
+
+		if (shape1->type() == ShapeType::Polygon)
+		{
+			Transform2D transform;
+			const ST::Polygon* polygon = static_cast<const ST::Polygon*>(shape1);
+			for (int i = 0;i < polygon->count();++i)
+			{
+				transform.position = tf1.translatePoint(polygon->vertices()[i]);
+				renderer.circle(transform, &radius1, Palette::Yellow);
+			}
+		}
+		if (shape2->type() == ShapeType::Polygon)
+		{
+			Transform2D transform;
+			const ST::Polygon* polygon = static_cast<const ST::Polygon*>(shape2);
+			for (int i = 0; i < polygon->count(); ++i)
+			{
+				transform.position = tf2.translatePoint(polygon->vertices()[i]);
+				renderer.circle(transform, &radius2, Palette::Cyan);
+			}
+		}
 
 		if (shape1->type() == ShapeType::Capsule && shape2->type() == ShapeType::Capsule)
 		{
@@ -106,13 +115,31 @@ namespace STEditor
 				renderer.arrow({}, result.normal, Palette::Red);
 				for (int i = 0;i < result.count; ++i)
 				{
-					renderer.pointFixedSize(result.pA[i], Palette::Yellow, 8);
-					renderer.pointFixedSize(result.pB[i], Palette::Cyan, 8);
-					renderer.pointFixedSize(0.5f * (result.pA[i] + result.pB[i]), Palette::Green, 8);
+					renderer.pointFixedSize(result.pA[i], Palette::Yellow, 6);
+					renderer.pointFixedSize(result.pB[i], Palette::Cyan, 6);
+					renderer.pointFixedSize(0.5f * (result.pA[i] + result.pB[i]), Palette::Green, 6);
 				}
 			}
 
 		}
+
+		if (shape1->type() == ShapeType::Polygon && shape2->type() == ShapeType::Polygon)
+		{
+			auto result = Narrowphase2D::collidePolygons(tf1, shape1, tf2, shape2, radius1.radius(), radius2.radius());
+
+			renderer.arrow({}, result.normal, Palette::Red);
+			for (int i = 0; i < result.count; ++i)
+			{
+				renderer.pointFixedSize(result.pA[i], Palette::Yellow, 6);
+				renderer.pointFixedSize(result.pB[i], Palette::Cyan, 6);
+
+				renderer.pointFixedSize(0.5f * (result.pA[i] + result.pB[i]), Palette::Green, 6);
+				std::string penetration = std::format("{:4f}", result.penetration[i]);
+				renderer.text(result.pB[i] + result.normal * 0.1f, Palette::Pink, penetration);
+			}
+
+		}
+
 		if (shape1->type() == ShapeType::Circle && shape2->type() == ShapeType::Circle)
 		{
 			const Circle *circleA = static_cast<const Circle*>(shape1);
@@ -124,8 +151,78 @@ namespace STEditor
 				{
 					renderer.pointFixedSize(result.pA[i], Palette::Yellow, 6.0f);
 					renderer.pointFixedSize(result.pB[i], Palette::Cyan, 6.0f);
-					renderer.thickLine(result.pA[i], result.pB[i], Palette::Red, 8);
-					std::string penetration = std::format("{:4f}", result.penetration[0]);
+					renderer.pointFixedSize(0.5f * (result.pA[i] + result.pB[i]), Palette::Green, 6);
+					std::string penetration = std::format("{:4f}", result.penetration[i]);
+					renderer.text(result.pB[i] + result.normal * 0.1f, Palette::Pink, penetration);
+				}
+			}
+		}
+
+		if (shape1->type() == ShapeType::Capsule && shape2->type() == ShapeType::Circle)
+		{
+			auto result = Narrowphase2D::collideCapsuleCircle(tf1, shape1, tf2, shape2);
+			if (result.count > 0)
+			{
+				for (uint8_t i = 0; i < result.count; ++i)
+				{
+					renderer.pointFixedSize(result.pA[i], Palette::Yellow, 6.0f);
+					renderer.pointFixedSize(result.pB[i], Palette::Cyan, 6.0f);
+					renderer.pointFixedSize(0.5f * (result.pA[i] + result.pB[i]), Palette::Green, 6);
+					std::string penetration = std::format("{:4f}", result.penetration[i]);
+					renderer.text(result.pB[i] + result.normal * 0.1f, Palette::Pink, penetration);
+				}
+			}
+		}
+
+		if (shape1->type() == ShapeType::Circle && shape2->type() == ShapeType::Capsule)
+		{
+			auto result = Narrowphase2D::collideCapsuleCircle(tf2, shape2, tf1, shape1);
+			if (result.count > 0)
+			{
+				for (uint8_t i = 0; i < result.count; ++i)
+				{
+					renderer.pointFixedSize(result.pB[i], Palette::Yellow, 6.0f);
+					renderer.pointFixedSize(result.pA[i], Palette::Cyan, 6.0f);
+					renderer.pointFixedSize(0.5f * (result.pA[i] + result.pB[i]), Palette::Green, 6);
+					std::string penetration = std::format("{:4f}", result.penetration[i]);
+					renderer.text(result.pA[i] + result.normal * 0.1f, Palette::Pink, penetration);
+				}
+			}
+		}
+
+		if (shape1->type() == ShapeType::Capsule && shape2->type() == ShapeType::Polygon)
+		{
+			auto result = Narrowphase2D::collideCapsulePolygon(tf1, shape1, tf2, shape2, radius1.radius(), radius2.radius());
+
+			renderer.arrow({}, result.normal, Palette::Red);
+			if (result.count > 0)
+			{
+				for (uint8_t i = 0; i < result.count; ++i)
+				{
+					renderer.pointFixedSize(result.pA[i], Palette::Yellow, 6.0f);
+					renderer.pointFixedSize(result.pB[i], Palette::Cyan, 6.0f);
+
+					renderer.pointFixedSize(0.5f * (result.pA[i] + result.pB[i]), Palette::Green, 6);
+					std::string penetration = std::format("{:4f}", result.penetration[i]);
+					renderer.text(result.pA[i] + result.normal * 0.1f, Palette::Pink, penetration);
+				}
+			}
+		}
+
+		if (shape1->type() == ShapeType::Polygon && shape2->type() == ShapeType::Capsule)
+		{
+			auto result = Narrowphase2D::collideCapsulePolygon(tf2, shape2, tf1, shape1, radius2.radius(), radius1.radius());
+
+			renderer.arrow({}, -result.normal, Palette::Red);
+			if (result.count > 0)
+			{
+				for (uint8_t i = 0; i < result.count; ++i)
+				{
+					renderer.pointFixedSize(result.pB[i], Palette::Yellow, 6.0f);
+					renderer.pointFixedSize(result.pA[i], Palette::Cyan, 6.0f);
+
+					renderer.pointFixedSize(0.5f * (result.pA[i] + result.pB[i]), Palette::Green, 6);
+					std::string penetration = std::format("{:4f}", result.penetration[i]);
 					renderer.text(result.pB[i] + result.normal * 0.1f, Palette::Pink, penetration);
 				}
 			}
@@ -189,10 +286,10 @@ namespace STEditor
 					renderer.pointFixedSize(pB, Palette::Cyan, 6.0f);
 					renderer.thickLine(pA, pB, Palette::Red);
 					
-					renderer.pointFixedSize(epaResult.simplex.m[0].v[0].v, Palette::Yellow, 8.0f);
-					renderer.pointFixedSize(epaResult.simplex.m[1].v[0].v, Palette::Yellow, 8.0f);
-					renderer.pointFixedSize(epaResult.simplex.m[0].v[1].v, Palette::Cyan, 8.0f);
-					renderer.pointFixedSize(epaResult.simplex.m[1].v[1].v, Palette::Cyan, 8.0f);
+					//renderer.pointFixedSize(epaResult.simplex.m[0].v[0].v, Palette::Yellow, 8.0f);
+					//renderer.pointFixedSize(epaResult.simplex.m[1].v[0].v, Palette::Yellow, 8.0f);
+					//renderer.pointFixedSize(epaResult.simplex.m[0].v[1].v, Palette::Cyan, 8.0f);
+					//renderer.pointFixedSize(epaResult.simplex.m[1].v[1].v, Palette::Cyan, 8.0f);
 
 					auto contacts = Narrowphase2D::generateContacts(epaResult, tf1, shape1, tf2, shape2);
 					if (contacts.count > 0)
@@ -205,7 +302,13 @@ namespace STEditor
 							//renderer.pointFixedSize(contactPoint, Palette::Green, 6.0f);
 							renderer.pointFixedSize(contacts.pA[i], Palette::Yellow, 6.0f);
 							renderer.pointFixedSize(contacts.pB[i], Palette::Cyan, 6.0f);
-							renderer.thickLine(contacts.pA[i], contacts.pB[i], Palette::Red, 8);
+
+							Vector2 pAc = contacts.pA[i] + radius1.radius() * contacts.normal;
+							Vector2 pBc = contacts.pB[i] - radius2.radius() * contacts.normal;
+							renderer.pointFixedSize(pAc, Palette::Yellow, 6.0f);
+							renderer.pointFixedSize(pBc, Palette::Cyan, 6.0f);
+
+							renderer.pointFixedSize(0.5f * (pAc + pBc), Palette::Green, 6.0f);
 							std::string penetrate = std::format("{:4f}", contacts.penetration[i]);
 							renderer.text(contacts.pA[i] - contacts.normal * 0.25f, Palette::Yellow, penetrate);
 						}
@@ -215,9 +318,9 @@ namespace STEditor
 			else
 			{
 				//do distance check
-				//auto distanceResult = Narrowphase2D::distanceRound(tf1, shape1, tf2, shape2, 
-				//	radius1.radius(), radius2.radius());
-				auto distanceResult = Narrowphase2D::distance(tf1, shape1, tf2, shape2);
+				auto distanceResult = Narrowphase2D::distanceRound(tf1, shape1, tf2, shape2, 
+					radius1.radius(), radius2.radius());
+				//auto distanceResult = Narrowphase2D::distance(tf1, shape1, tf2, shape2);
 				auto& simplex = distanceResult.simplex;
 				for (size_t i = 0; i < simplex.count; ++i)
 				{
@@ -235,14 +338,13 @@ namespace STEditor
 					renderer.fillAndStroke({ simplex.m[0].p, simplex.m[1].p, simplex.m[2].p }, fillColor, simplexColor);
 				}
 
-				if (distanceResult.distance > 0)
-				{
-					auto v1 = distanceResult.closestPoints[0];
-					auto v2 = distanceResult.closestPoints[1];
-					renderer.pointFixedSize(v1, Palette::Yellow, 6.0f);
-					renderer.pointFixedSize(v2, Palette::Cyan, 6.0f);
-					renderer.thickLine(v1, v2, Palette::Red);
-				}
+				auto v1 = distanceResult.closestPoints[0];
+				auto v2 = distanceResult.closestPoints[1];
+				renderer.pointFixedSize(v1, Palette::Yellow, 6.0f);
+				renderer.pointFixedSize(v2, Palette::Cyan, 6.0f);
+				renderer.thickLine(v1, v2, Palette::Red);
+				std::string penetrate = std::format("{:4f}", distanceResult.distance);
+				renderer.text(0.5 * (v1 + v2), Palette::Yellow, penetrate);
 
 			}
 		}
@@ -257,8 +359,8 @@ namespace STEditor
 		ImGui::Checkbox("Show GJK Simplex", &m_showGJKSimplex);
 		float r1 = radius1.radius();
 		float r2 = radius2.radius();
-		ImGui::SliderFloat("Radius 1", &r1, 0.01, 0.1);
-		ImGui::SliderFloat("Radius 2", &r2, 0.01, 0.1);
+		ImGui::SliderFloat("Radius 1", &r1, 0, 0.1);
+		ImGui::SliderFloat("Radius 2", &r2, 0, 0.1);
 		radius1.setRadius(r1);
 		radius2.setRadius(r2);
 		float deg1 = Math::degree(tf1.rotation);

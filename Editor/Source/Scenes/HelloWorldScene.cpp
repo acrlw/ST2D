@@ -24,7 +24,7 @@ namespace STEditor
 		thetaEasing.update(deltaTime);
 		matEasing.update(deltaTime);
 		if (thetaEasing.isFinished())
-			thetaEasing.restart(0.0f, Constant::DoublePi, 3.0f);
+			thetaEasing.restart(0.0f, Constant::TwoPi, 3.0f);
 		if(matEasing.isFinished())
 		{
 			if(!flip)

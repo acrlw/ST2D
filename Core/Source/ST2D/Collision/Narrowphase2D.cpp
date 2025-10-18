@@ -1,5 +1,6 @@
 #include "Narrowphase2D.h"
 
+#include <algorithm>
 #include <utility>
 
 #include "Simplex.h"
@@ -12,8 +13,8 @@
 #include "ST2D/Shape/Segment.h"
 namespace ST
 {
-	Simplex2D Narrowphase2D::gjk(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const uint32_t& iteration, const Vector2& initialDirection)
+	Simplex2D Narrowphase2D::gjk(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const uint32_t& iteration, const real& epsilon, bool earlyStop, const Vector2& initialDirection)
 	{
 		CORE_ASSERT(shapeA != nullptr && shapeB != nullptr, "Shape is nullptr.");
 
@@ -27,48 +28,65 @@ namespace ST
 			direction = initialDirection;
 
 		simplex.m[0] = support(transformA, shapeA, transformB, shapeB, direction);
-		simplex.m[1] = support(transformA, shapeA, transformB, shapeB, direction.negative());
-		simplex.count = 2;
+		simplex.count++;
+		direction = simplex.m[0].p.negative();
+		uint32_t i = 0;
 
-		//check 1d simplex(line segment) across origin
-		//if it is, just return isCollide=true
-		if (Algorithm2D::checkPointOnSegment(simplex.m[0].p, simplex.m[1].p, { 0,0 }))
+		for (; i < iteration; ++i)
 		{
-			simplex.isContainOrigin = true;
-			return simplex;
-		}
+			MinkowskiDiff newM = support(transformA, shapeA, transformB, shapeB, direction);
+			bool isExists1 = simplex.count == 1 && simplex.m[0].p == newM.p;
+			bool isExists2 = simplex.count == 2 &&
+				simplex.m[0].p == newM.p ||
+				simplex.m[1].p == newM.p;
 
-		for (uint32_t i = 0; i < iteration; ++i)
-		{
-			direction = getDirection(simplex.m[0].p, simplex.m[1].p, true);
-			simplex.m[2] = support(transformA, shapeA, transformB, shapeB, direction);
-			simplex.count = 3;
+			// check if repeated
+			if (isExists1 || isExists2)
+				break;
 
-			// check repeated vertex
-			if (simplex.m[2].p == simplex.m[0].p || simplex.m[2].p == simplex.m[1].p)
+			// check if early stop for gjk collision detection
+			if (earlyStop && newM.p.dot(direction) <= 0)
+				break;
+
+			const real dotm0dir = Vector2::dot(simplex.m[0].p, direction);
+			const real dotm2dir = Vector2::dot(newM.p, direction);
+			const real gain = dotm2dir - dotm0dir;
+			// check if close enough
+			if (gain * gain < epsilon * epsilon * direction.square())
+				break;
+
+			uint32_t count = simplex.count;
+			simplex.m[count] = newM;
+			simplex.count++;
+
+			SolveSimplexResult solveResult;
+			switch (simplex.count)
 			{
-				simplex.count = 2;
+			case 2:
+				solveResult = solveSimplex2(simplex);
+				break;
+			case 3:
+				solveResult = solveSimplex3(simplex);
+				break;
+			default:
+				assert(false && "Invalid simplex for GJK distance check");
 				break;
 			}
+			// the simplex of solution is always a segment(count=2)
 
-			// check if new vertex passes origin
-			if (Vector2::dot(simplex.m[2].p, direction) <= 0)
-				break;
+			simplex = solveResult.simplex;
 
-			// check simplex contains origin by using voronoi region with new vertex
-			// if contains, then return isCollide=true
-			// if not, check which two vertices to keep
-
-			simplex = solveSimplex(simplex);
 			if (simplex.isContainOrigin)
 				break;
+
+			direction = solveResult.direction;
 
 		}
 		return simplex;
 	}
 
-	Epa2DResult Narrowphase2D::epa(const Simplex2D& simplex, const Transform& transformA, const Shape* shapeA,
-		const Transform& transformB, const Shape* shapeB, const uint32_t& iteration, const real& epsilon)
+	Epa2DResult Narrowphase2D::epa(const Simplex2D& simplex, const Transform2D& transformA, const AbstractShape* shapeA,
+		const Transform2D& transformB, const AbstractShape* shapeB, const uint32_t& iteration, const real& epsilon)
 	{
 		Epa2DResult result;
 		result.simplex.isContainOrigin = simplex.isContainOrigin;
@@ -84,8 +102,8 @@ namespace ST
 
 
 		//3. EPA loop
-
-		for (uint32_t i = 0; i < iteration; ++i)
+		uint32_t i = 0;
+		for (; i < iteration; ++i)
 		{
 			// 3.1 find face closest to origin
 			const auto& faceIndex = polytope.faces[polytope.closestFaceIdx];
@@ -121,7 +139,7 @@ namespace ST
 			}
 
 			// check if nVertex exceeds max
-			if (polytope.nFace >= MaxPolytopeFaces - 2)
+			if (polytope.nFace >= MaxPolytopeFaces - 2 || polytope.nVertex >= MaxPolytopeVertices - 1)
 			{
 				result.state = EpaState::MaxFaces;
 				break;
@@ -183,7 +201,10 @@ namespace ST
 		result.simplex.m[2].v[1].v = t * result.simplex.m[0].v[1].v + (1 - t) * result.simplex.m[1].v[1].v;
 
 		result.penetration = result.simplex.m[2].p.norm();
-		result.normal = result.simplex.m[2].p / result.penetration;
+		if (realEqual(result.penetration, 0))
+			result.normal = (result.simplex.m[1].p - result.simplex.m[0].p).ortho().normal();
+		else
+			result.normal = result.simplex.m[2].p / result.penetration;
 
 		//ensure normal always point from A to B
 		if (Vector2::dot(result.normal, transformB.position - transformA.position) < 0)
@@ -197,71 +218,11 @@ namespace ST
 		return result;
 	}
 
-	Distance2DResult Narrowphase2D::distance(const Transform& transformA, const Shape* shapeA,
-		const Transform& transformB, const Shape* shapeB, const uint32_t& iteration, const real& epsilon)
+	Distance2DResult Narrowphase2D::distance(const Transform2D& transformA, const AbstractShape* shapeA,
+		const Transform2D& transformB, const AbstractShape* shapeB, const uint32_t& iteration, const real& epsilon)
 	{
 		Distance2DResult result;
-		Vector2 direction = transformB.position - transformA.position;
-		if (direction.fuzzyEqual({ 0, 0 }))
-			direction.set(1, 1);
-
-		// get minkowski difference from direction to build initial simplex1(point)
-		result.simplex.m[0] = support(transformA, shapeA, transformB, shapeB, direction);
-		result.simplex.count++;
-		direction = result.simplex.m[0].p.negative();
-		uint32_t i = 0;
-
-		for (;i < iteration; ++i)
-		{
-			MinkowskiDiff newM = support(transformA, shapeA, transformB, shapeB, direction);
-			bool isExists1 = result.simplex.count == 1 && result.simplex.m[0].p == newM.p;
-			bool isExists2 = result.simplex.count == 2 &&
-				result.simplex.m[0].p == newM.p ||
-				result.simplex.m[1].p == newM.p;
-
-			// check if repeated
-			if (isExists1 || isExists2)
-				break;
-
-			const real dotm0dir = Vector2::dot(result.simplex.m[0].p, direction);
-			const real dotm2dir = Vector2::dot(newM.p, direction);
-			const real gain = dotm2dir - dotm0dir;
-			// check if close enough
-			if (gain * gain < epsilon * epsilon * direction.square())
-				break;
-
-			// add newM to simplex
-			uint32_t count = result.simplex.count;
-			result.simplex.m[count] = newM;
-			result.simplex.count++;
-
-			SolveSimplexResult solveResult;
-			switch (result.simplex.count)
-			{
-			case 1:
-				solveResult = solveSimplex1(result.simplex);
-				break;
-			case 2:
-				solveResult = solveSimplex2(result.simplex);
-				break;
-			case 3:
-				solveResult = solveSimplex3(result.simplex);
-				break;
-			default:
-				assert(false && "Invalid simplex for GJK distance check");
-				return result;
-			}
-			// the simplex of solution is always a segment(count=2)
-
-			result.simplex = solveResult.simplex;
-
-			if (result.simplex.isContainOrigin)
-				return result;
-
-			direction = solveResult.direction;
-			
-
-		}
+		result.simplex = gjk(transformA, shapeA, transformB, shapeB, iteration, epsilon, false);
 
 		if (result.simplex.count == 1)
 		{
@@ -282,15 +243,15 @@ namespace ST
 
 	}
 
-	Distance2DResult Narrowphase2D::distanceRound(const Transform& transformA, const Shape* shapeA,
-	                                              const Transform& transformB, const Shape* shapeB, const real& radius1, const real& radius2,
+	Distance2DResult Narrowphase2D::distanceRound(const Transform2D& transformA, const AbstractShape* shapeA,
+	                                              const Transform2D& transformB, const AbstractShape* shapeB, const real& radius1, const real& radius2,
 	                                              const uint32_t& iteration, const real& epsilon)
 	{
 		Distance2DResult result = distance(transformA, shapeA, transformB, shapeB, iteration, epsilon);
 		const Vector2 normal = (result.closestPoints[1] - result.closestPoints[0]).normal();
 		result.closestPoints[0] += radius1 * normal;
 		result.closestPoints[1] -= radius2 * normal;
-
+		result.distance = (result.closestPoints[1] - result.closestPoints[0]).dot(normal);
 		return result;
 	}
 
@@ -346,8 +307,8 @@ namespace ST
 		return polytope;
 	}
 
-	MinkowskiDiff Narrowphase2D::support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Vector2& direction)
+	MinkowskiDiff Narrowphase2D::support(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Vector2& direction)
 	{
 		MinkowskiDiff result;
 		result.v[0] = findFurthestVertex(transformA, shapeA, direction);
@@ -357,7 +318,7 @@ namespace ST
 	}
 
 
-	FurthestVertex Narrowphase2D::findFurthestVertex(const Transform& transform, const Shape* shape, const Vector2& direction)
+	FurthestVertex Narrowphase2D::findFurthestVertex(const Transform2D& transform, const AbstractShape* shape, const Vector2& direction)
 	{
 		FurthestVertex result;
 		Complex rot(-transform.rotation);
@@ -368,6 +329,7 @@ namespace ST
 		{
 			auto polygon = static_cast<const Polygon*>(shape);
 			result = findFurthestVertexHillClimbing(polygon->vertices().data(), polygon->count(), rot_dir);
+			//result = findFurthestVertexSupportField(shape, rot_dir);
 			break;
 		}
 		case ShapeType::Circle:
@@ -437,6 +399,7 @@ namespace ST
 	FurthestVertex Narrowphase2D::findFurthestVertexHillClimbing(const Vector2* vertices, const int32_t& count,
 		const Vector2& direction, int32_t startIndex)
 	{
+		ZoneScopedN("[GJK] findFurthestVertexSupportField");
 		if (count == 0)
 			return {};
 
@@ -458,6 +421,43 @@ namespace ST
 		return FurthestVertex{ vertices[currentIndex], currentIndex };
 	}
 
+	FurthestVertex Narrowphase2D::findFurthestVertexSupportField(const AbstractShape* shape, const Vector2& direction)
+	{
+		ZoneScopedN("[GJK] findFurthestVertexSupportField");
+		FurthestVertex result;
+		const Polygon* polygon = static_cast<const Polygon*>(shape);
+		real theta = direction.theta();
+		if (theta < 0)
+			theta += Constant::TwoPi;
+		uint32_t degLB = static_cast<uint32_t>(std::floor(Math::degree(theta) * Constant::MaxSupportFieldSize / 360)) % Constant::MaxSupportFieldSize;
+		uint32_t degUB = static_cast<uint32_t>(std::ceil(Math::degree(theta) * Constant::MaxSupportFieldSize / 360)) % Constant::MaxSupportFieldSize;
+
+		uint32_t degLBIdx = polygon->supportField()[degLB];
+		uint32_t degUBIdx = polygon->supportField()[degUB];
+		if (degLBIdx == degUBIdx)
+		{
+			result.v = polygon->vertices()[degLBIdx];
+			result.i = degLBIdx;
+		}
+		else
+		{
+			real maxDot = Constant::NegativeMin;
+			uint32_t it = degLBIdx;
+			while (true)
+			{
+				real dot = direction.dot(polygon->vertices()[it]);
+				if (maxDot > dot || it == degUBIdx)
+					break;
+				maxDot = dot;
+				it = it + 1 == polygon->count() ? 0 : it + 1;
+			}
+			result.v = polygon->vertices()[it];
+			result.i = it;
+		}
+
+		return result;
+	}
+
 	Vector2 Narrowphase2D::getDirection(const Vector2 p1, const Vector2 p2, bool pointToOrigin)
 	{
 		const Vector2 ao = p1.negative();
@@ -475,13 +475,13 @@ namespace ST
 		return orthoAB * scale;
 	}
 
-	ContactResult Narrowphase2D::generateContacts(const Epa2DResult& epaResult, const Transform& transformA,
-		const Shape* shapeA, const Transform& transformB, const Shape* shapeB)
+	ContactResult Narrowphase2D::generateContacts(const Epa2DResult& epaResult, const Transform2D& transformA,
+		const AbstractShape* shapeA, const Transform2D& transformB, const AbstractShape* shapeB)
 	{
 		ContactResult result;
 		if (shapeA->type() == ShapeType::Polygon && shapeB->type() == ShapeType::Polygon)
 		{
-			result = clipPolygonPolygon(epaResult, transformA, shapeA, transformB, shapeB);
+			result = clipPolygons(epaResult, transformA, shapeA, transformB, shapeB);
 		}
 		else if (shapeA->type() == ShapeType::Polygon && shapeB->type() == ShapeType::Segment)
 		{
@@ -506,8 +506,213 @@ namespace ST
 		return result;
 	}
 
+	MaxPenetrationResult Narrowphase2D::findMaxPenetration(const Vector2* polygonA, const uint32_t& countA,
+		const Vector2* polygonB, const uint32_t& countB)
+	{
+		MaxPenetrationResult result;
+		result.penetration = Constant::Max;
+		for (uint32_t i = 0;i < countA;++i)
+		{
+			uint32_t nextIdx = i + 1 == countA ? 0 : i + 1;
+			Vector2 edge = polygonA[nextIdx] - polygonA[i];
+			Vector2 normal = edge.negative().ortho().normal();
+
+			//find the deepest penetration of polygon b
+			real max = Constant::NegativeMin;
+			uint32_t targetIdx = 0;
+			for (uint32_t j = 0;j < countB;++j)
+			{
+				real dot = (polygonB[j] - polygonA[i]).dot(-normal);
+				if (max < dot)
+				{
+					max = dot;
+					targetIdx = j;
+				}
+			}
+
+			if (max < result.penetration)
+			{
+				result.refIdx = i;
+				result.incIdx = targetIdx;
+				result.penetration = max;
+				result.normal = normal;
+			}
+		}
+		result.penetration = -result.penetration;
+		return result;
+	}
+
+	ContactResult Narrowphase2D::collidePolygons(const Transform2D& transformA, const AbstractShape* shapeA,
+		const Transform2D& transformB, const AbstractShape* shapeB, const real& skinRadiusA, const real& skinRadiusB)
+	{
+		ZoneScopedN("[SAT] collidePolygons");
+		ContactResult result;
+		const Polygon* polygonA = static_cast<const Polygon*>(shapeA);
+		const Polygon* polygonB = static_cast<const Polygon*>(shapeB);
+		std::array<Vector2, Constant::MaxPolygonVertices> polyAVertices;
+		std::array<Vector2, Constant::MaxPolygonVertices> polyBVertices;
+
+		for (uint32_t i = 0; i < polygonA->count(); ++i)
+			polyAVertices[i] = transformA.translatePoint(polygonA->vertices()[i]);
+
+		for (uint32_t i = 0; i < polygonB->count(); ++i)
+			polyBVertices[i] = transformB.translatePoint(polygonB->vertices()[i]);
+
+		MaxPenetrationResult resultRefA = findMaxPenetration(polyAVertices.data(), polygonA->count(), polyBVertices.data(), polygonB->count());
+		MaxPenetrationResult resultRefB = findMaxPenetration(polyBVertices.data(), polygonB->count(), polyAVertices.data(), polygonA->count());
+
+		bool isRefA = resultRefA.penetration > resultRefB.penetration;
+		Vector2 normal;
+		std::array<Vector2, 2> refEdge;
+		std::array<Vector2, 2> incEdge;
+		real exactPenetration = -(skinRadiusA + skinRadiusB);
+		if (isRefA)
+		{
+			normal = resultRefA.normal;
+			exactPenetration += resultRefA.penetration;
+			refEdge[0] = polyAVertices[resultRefA.refIdx];
+			refEdge[1] = polyAVertices[(resultRefA.refIdx + 1) % polygonA->count()];
+			incEdge[0] = polyBVertices[resultRefA.incIdx];
+			uint32_t nextIdx = (resultRefA.incIdx + 1) % polygonB->count();
+			uint32_t prevIdx = (resultRefA.incIdx + polygonB->count() - 1) % polygonB->count();
+			real dotNext = Math::abs((polyBVertices[nextIdx] - polyBVertices[resultRefA.incIdx]).dot(resultRefA.normal));
+			real dotPrev = Math::abs((polyBVertices[prevIdx] - polyBVertices[resultRefA.incIdx]).dot(resultRefA.normal));
+			incEdge[1] = dotNext < dotPrev ? polyBVertices[nextIdx] : polyBVertices[prevIdx];
+
+		}
+		else
+		{
+			normal = resultRefB.normal;
+			exactPenetration += resultRefB.penetration;
+			refEdge[0] = polyBVertices[resultRefB.refIdx];
+			refEdge[1] = polyBVertices[(resultRefB.refIdx + 1) % polygonB->count()];
+			incEdge[0] = polyAVertices[resultRefB.incIdx];
+			uint32_t nextIdx = (resultRefB.incIdx + 1) % polygonA->count();
+			uint32_t prevIdx = (resultRefB.incIdx + polygonA->count() - 1) % polygonA->count();
+			real dotNext = Math::abs((polyAVertices[nextIdx] - polyAVertices[resultRefB.incIdx]).dot(resultRefB.normal));
+			real dotPrev = Math::abs((polyAVertices[prevIdx] - polyAVertices[resultRefB.incIdx]).dot(resultRefB.normal));
+			incEdge[1] = dotNext < dotPrev ? polyAVertices[nextIdx] : polyAVertices[prevIdx];
+			
+		}
+
+		//auto segmentClosest = Algorithm2D::segmentClosestPoint(refEdge[0], refEdge[1], incEdge[0], incEdge[1]);
+		//const real dotRef = Math::abs((segmentClosest.Q - segmentClosest.P).dot((refEdge[1] - refEdge[0]).normal()));
+		//if (dotRef < 1e-5f || exactPenetration < 0)
+		//{
+		//	auto clipResult = clipEdges(refEdge, incEdge);
+		//	result.count = clipResult.count;
+		//	result.normal = normal;
+		//	for (int i = 0; i < clipResult.count; ++i)
+		//	{
+		//		if (isRefA)
+		//		{
+		//			result.pA[i] = clipResult.refEdge[i] + normal * skinRadiusA;
+		//			result.pB[i] = clipResult.incEdge[i] - normal * skinRadiusB;
+		//			result.penetration[i] = (result.pB[i] - result.pA[i]).dot(normal);
+		//		}
+		//		else
+		//		{
+		//			result.pA[i] = clipResult.incEdge[i] - normal * skinRadiusA;
+		//			result.pB[i] = clipResult.refEdge[i] + normal * skinRadiusB;
+		//			result.penetration[i] = (result.pA[i] - result.pB[i]).dot(normal);
+		//			result.normal = -normal;
+		//		}
+		//	}
+		//}
+		//else
+		//{
+		//	result.count = 1;
+		//	normal = (segmentClosest.Q - segmentClosest.P).normal();
+		//	if (isRefA)
+		//	{
+		//		result.pA[0] = segmentClosest.P + normal * skinRadiusA;
+		//		result.pB[0] = segmentClosest.Q - normal * skinRadiusB;
+		//	}
+		//	else
+		//	{
+		//		normal.negate();
+		//		result.pA[0] = segmentClosest.Q + normal * skinRadiusA;
+		//		result.pB[0] = segmentClosest.P - normal * skinRadiusB;
+		//	}
+		//	result.penetration[0] = (result.pB[0] - result.pA[0]).dot(normal);
+		//	result.normal = normal;
+		//}
+
+
+		auto clipResult = clipEdges(refEdge, incEdge);
+		result.count = clipResult.count;
+		result.normal = normal;
+		if (clipResult.count == 1)
+		{
+			normal = (clipResult.incEdge[0] - clipResult.refEdge[0]).normal();
+			if (isRefA)
+			{
+				result.pA[0] = clipResult.refEdge[0] + normal * skinRadiusA;
+				result.pB[0] = clipResult.incEdge[0] - normal * skinRadiusB;
+				result.penetration[0] = (result.pB[0] - result.pA[0]).dot(normal);
+				result.normal = normal;
+			}
+			else
+			{
+				result.pA[0] = clipResult.incEdge[0] - normal * skinRadiusA;
+				result.pB[0] = clipResult.refEdge[0] + normal * skinRadiusB;
+				result.penetration[0] = (result.pA[0] - result.pB[0]).dot(normal);
+				result.normal = -normal;
+			}
+		}
+		else
+		{
+			//track clip result contains exact penetration
+			bool flag = true;
+			for (int i = 0; i < clipResult.count; ++i)
+			{
+				if (isRefA)
+				{
+					result.pA[i] = clipResult.refEdge[i] + normal * skinRadiusA;
+					result.pB[i] = clipResult.incEdge[i] - normal * skinRadiusB;
+					result.penetration[i] = (result.pB[i] - result.pA[i]).dot(normal);
+					real error = result.penetration[i] - exactPenetration;
+					flag &= error > Constant::GeometryEpsilon;
+				}
+				else
+				{
+					result.pA[i] = clipResult.incEdge[i] - normal * skinRadiusA;
+					result.pB[i] = clipResult.refEdge[i] + normal * skinRadiusB;
+					result.penetration[i] = (result.pA[i] - result.pB[i]).dot(normal);
+					real error = result.penetration[i] - exactPenetration;
+					flag &= error > Constant::GeometryEpsilon;
+					result.normal = -normal;
+				}
+			}
+			if (flag)
+			{
+				//if clip result doesn't contain exact penetration, reduce to 1
+				result.count = 1;
+				result.penetration[0] = exactPenetration;
+				if (isRefA)
+				{
+					result.pA = refEdge;
+					result.pB = incEdge;
+				}
+				else
+				{
+					result.pA = incEdge;
+					result.pB = refEdge;
+				}
+
+				auto segmentResult = Algorithm2D::segmentClosestPoint(result.pA[0], result.pA[1], result.pB[0], result.pB[1]);
+				
+				result.normal = (segmentResult.Q - segmentResult.P).normal();
+				result.pA[0] = segmentResult.P + skinRadiusA * result.normal;
+				result.pB[0] = segmentResult.Q - skinRadiusB * result.normal;
+			}
+		}
+
+		return result;
+	}
+
 	ContactResult Narrowphase2D::collideCircles(const Vector2& positionA, const real& radiusA, const Vector2& positionB,
-		const real& radiusB)
+	                                            const real& radiusB)
 	{
 		ContactResult result;
 		if (positionA.fuzzyEqual(positionB))
@@ -525,39 +730,79 @@ namespace ST
 		return result;
 	}
 
-	ContactResult Narrowphase2D::collideCapsules(const Transform& transformA, const Shape* shapeA,
-	                                             const Transform& transformB, const Shape* shapeB)
+	ContactResult Narrowphase2D::collideCapsuleCircle(const Transform2D& transformA, const AbstractShape* shapeA,
+		const Transform2D& transformB, const AbstractShape* shapeB)
+	{
+		const Capsule* capsule = static_cast<const Capsule*>(shapeA);
+		const Circle* circle = static_cast<const Circle*>(shapeB);
+		Vector2 A1 = transformA.translatePoint({ 0, capsule->halfLength() });
+		Vector2 A2 = transformA.translatePoint({ 0, -capsule->halfLength() });
+		return collideCapsuleCircle(A1, A2, capsule->radius(), transformB.position, circle->radius());
+	}
+
+	ContactResult Narrowphase2D::collideCapsuleCircle(const Vector2& A1, const Vector2& A2, const real& radiusA,
+	                                                  const Vector2& positionB, const real& radiusB)
 	{
 		ContactResult result;
+		result.count = 1;
+		const real t = Algorithm2D::pointToSegmentWeight(A1, A2, positionB);
+		result.pA[0] = t * A1 + (1 - t) * A2;
+		result.pB[0] = positionB;
+		result.normal = result.pB[0] - result.pA[0];
+		const real square = result.normal.square();
+		if (square < 1e-8f)
+			// circle on the capsule, use ortho of A1-A2
+			result.normal = (A2 - A1).ortho().normal();
+		else
+			result.normal /= Math::sqrt(square);
 
+		result.pA[0] += result.normal * radiusA;
+		result.pB[0] -= result.normal * radiusB;
+		result.penetration[0] = (result.pB[0] - result.pA[0]).dot(result.normal);
+
+		return result;
+	}
+
+	ContactResult Narrowphase2D::collideCapsules(const Transform2D& transformA, const AbstractShape* shapeA,
+	                                             const Transform2D& transformB, const AbstractShape* shapeB)
+	{
 		const Capsule* capsuleA = static_cast<const Capsule*>(shapeA);
 		const Capsule* capsuleB = static_cast<const Capsule*>(shapeB);
-		real radiusA = capsuleA->radius();
-		real radiusB = capsuleB->radius();
 		Vector2 A1 = transformA.translatePoint({ 0, capsuleA->halfLength() });
 		Vector2 A2 = transformA.translatePoint({ 0, -capsuleA->halfLength() });
 		Vector2 B1 = transformB.translatePoint({ 0, capsuleB->halfLength() });
 		Vector2 B2 = transformB.translatePoint({ 0, -capsuleB->halfLength() });
+		return collideCapsules(A1, A2, B1, B2, capsuleA->radius(), capsuleB->radius());
+	}
+
+	ContactResult Narrowphase2D::collideCapsules(const Vector2& A1, const Vector2& A2, const Vector2& B1,
+		const Vector2& B2, const real& radiusA, const real& radiusB)
+	{
+		ContactResult result;
 		const Vector2 va = A2 - A1;
 		const Vector2 vb = B2 - B1;
-		const Vector2 vba = A1 - B1;
-		const real dab = va.dot(vb);
-		const real daa = va.dot(va);
-		const real dbb = vb.dot(vb);
-		const real daba = va.dot(vba);
-		const real dbba = vb.dot(vba);
-		const real det = dab * dab - daa * dbb;
+		const Vector2 vb1a1 = A1 - B1;
+		const Vector2 vb1a2 = A2 - B1;
+		const Vector2 va1b2 = B2 - A1;
+		const real dotVaVb = va.dot(vb);
+		const real dotVaVa = va.dot(va);
+		const real dotVbVb = vb.dot(vb);
+		const real dotVaVb1a1 = va.dot(vb1a1);
+		const real dotVbVb1a1 = vb.dot(vb1a1);
+		const real dotVbVa2b1 = vb1a2.dot(vb);
+		const real dotVaVa1b2 = va1b2.dot(va);
+		const real det = dotVaVb * dotVaVb - dotVaVa * dotVbVb;
 		Vector2 finalNormal;
 
 		real t = 0;
 		if (!realEqual(det, 0))
-			t = Math::clamp((daba * dbb - dab * dbba) / det, 0, 1);
+			t = Math::clamp((dotVaVb1a1 * dotVbVb - dotVaVb * dotVbVb1a1) / det, 0, 1);
 
-		real u = Math::clamp((t * dab + dbba) / dbb, 0, 1);
-		t = Math::clamp((u * dab - daba) / daa, 0, 1);
+		real u = Math::clamp((t * dotVaVb + dotVbVb1a1) / dotVbVb, 0, 1);
+		t = Math::clamp((u * dotVaVb - dotVaVb1a1) / dotVaVa, 0, 1);
 
-		Vector2 P = A1 + t * (A2 - A1);
-		Vector2 Q = B1 + u * (B2 - B1);
+		const Vector2 P = A1 + t * (A2 - A1);
+		const Vector2 Q = B1 + u * (B2 - B1);
 		Vector2 n = (Q - P);
 		const real square = n.square();
 		if (square < 1e-8f)
@@ -577,14 +822,12 @@ namespace ST
 			const real nbMax = Math::max(nbA1, nbA2) + radiusA;
 			const real nbMin = Math::min(nbA1, nbA2) - radiusA;
 
-			const real naMinSeperation = Math::min(Math::abs(naMax - naCenter + radiusA),
-				Math::abs(naMin - naCenter - radiusA));
-			const real nbMinSeperation = Math::min(Math::abs(nbMax - nbCenter + radiusB),
-				Math::abs(nbMin - nbCenter - radiusB));
+			const real naMinSeparation = Algorithm2D::minIntervalSeparation(naCenter - radiusA, naCenter + radiusA, naMin, naMax);
+			const real nbMinSeparation = Algorithm2D::minIntervalSeparation(nbCenter - radiusB, nbCenter + radiusB, nbMin, nbMax);
 
 			finalNormal = na;
 
-			if (naMinSeperation > nbMinSeperation - 1e-4)
+			if (naMinSeparation > nbMinSeparation - 1e-4)
 			{
 				finalNormal = nb;
 			}
@@ -606,21 +849,21 @@ namespace ST
 			result.pB[0] = Q - n * radiusB;
 		}
 
-
-		const real tA1 = (A1 - B1).dot(vb) / dbb;
-		const real tA2 = (A2 - B1).dot(vb) / dbb;
-		const real tB1 = (B1 - A1).dot(va) / daa;
-		const real tB2 = (B2 - A1).dot(va) / daa;
+		const real tA1 = dotVbVb1a1 / dotVbVb;
+		const real tA2 = dotVbVa2b1 / dotVbVb;
+		const real tB1 = dotVaVb1a1 / dotVaVa;
+		const real tB2 = dotVaVa1b2 / dotVaVa;
 
 		const bool outsideA = (tA1 < 0 && tA2 < 0) || (tA1 > 1 && tA2 > 1);
 		const bool outsideB = (tB1 < 0 && tB2 < 0) || (tB1 > 1 && tB2 > 1);
 
-		const real dotA = Math::abs(finalNormal.dot(va));
-		const real dotB = Math::abs(finalNormal.dot(vb));
-		if ((!outsideA || !outsideB) && (dotA < 1e-4f || dotB < 1e-4f))
+		const real dotA = Math::abs(finalNormal.dot(va.normal()));
+		const real dotB = Math::abs(finalNormal.dot(vb.normal()));
+		// if it doesn't appear outside case and normal is orthogonal to one of edges, that can clip
+		if ((!outsideA || !outsideB) && (dotA < 1e-6f || dotB < 1e-6f))
 		{
 			std::array<Vector2, 4> edge;
-			bool isRefA = dotA < dotB;
+			bool isRefA = dotA <= dotB;
 			if (isRefA)
 			{
 				// ref A1, A2, inc B1, B2
@@ -647,8 +890,8 @@ namespace ST
 			t_inc2 = Math::clamp(t_inc2, 0, 1);
 			Vector2 p_inc1 = edge[0] + t_inc1 * (edge[1] - edge[0]);
 			Vector2 p_inc2 = edge[0] + t_inc2 * (edge[1] - edge[0]);
-			real detAll = finalNormal.cross(incV);
-			if (Math::abs(detAll) > 1e-4)
+			real detAll = finalNormal.cross(incV.normal());
+			if (Math::abs(detAll) > 1e-6)
 			{
 
 				real det1 = (edge[2] - p_inc1).cross(incV);
@@ -714,23 +957,190 @@ namespace ST
 
 		}
 
-		
+
 		result.normal = finalNormal;
 		result.penetration[0] = (result.pB[0] - result.pA[0]).dot(result.normal);
 		result.penetration[1] = (result.pB[1] - result.pA[1]).dot(result.normal);
 		return result;
 	}
 
-	ContactResult Narrowphase2D::collideBoxCapsule(const Transform& transformA, const real& halfWidth,
-		const real& halfHeight, const Transform& transformB, const Shape* shapeB)
+	ContactResult Narrowphase2D::collideCapsulePolygon(const Transform2D& transformA, const AbstractShape* shapeA,
+		const Transform2D& transformB, const AbstractShape* shapeB, const real& skinRadiusA, const real& skinRadiusB)
+	{
+
+		const Capsule* capsule = static_cast<const Capsule*>(shapeA);
+		return collideCapsulePolygon(transformA, capsule->halfLength(), capsule->radius(), transformB, shapeB, skinRadiusA, skinRadiusB);
+	}
+
+	ContactResult Narrowphase2D::collideCapsulePolygon(const Transform2D& transformA, const real& halfLength,
+		const real& radius, const Transform2D& transformB, const AbstractShape* shapeB,
+		const real& skinRadiusA, const real& skinRadiusB)
+	{
+		Vector2 A1 = transformA.translatePoint({ 0, halfLength });
+		Vector2 A2 = transformA.translatePoint({ 0, -halfLength });
+		return collideCapsulePolygon(A1, A2, radius, transformB, shapeB, skinRadiusA, skinRadiusB);
+	}
+
+	ContactResult Narrowphase2D::collideCapsulePolygon(const Vector2& A1, const Vector2& A2, const real& radiusA,
+		const Transform2D& transformB, const AbstractShape* shapeB, const real& skinRadiusA, const real& skinRadiusB)
 	{
 		ContactResult result;
-		const Capsule* capsuleB = static_cast<const Capsule*>(shapeB);
+		
+		const Polygon* polygonB = static_cast<const Polygon*>(shapeB);
+		std::array<Vector2, 2> polyAVertices = {A1, A2};
+		std::array<Vector2, Constant::MaxPolygonVertices> polyBVertices;
+
+		for (uint32_t i = 0; i < polygonB->count(); ++i)
+			polyBVertices[i] = transformB.translatePoint(polygonB->vertices()[i]);
+
+
+		MaxPenetrationResult refA = findMaxPenetration(polyAVertices.data(), 2, polyBVertices.data(), polygonB->count());
+		MaxPenetrationResult refB = findMaxPenetration(polyBVertices.data(), polygonB->count(), polyAVertices.data(), 2);
+
+		bool isRefA = refA.penetration > refB.penetration;
+		std::array<Vector2, 2> refEdge;
+		std::array<Vector2, 2> incEdge;
+		Vector2 normal;
+
+		if (isRefA)
+		{
+			normal = refA.normal;
+
+			refEdge[0] = polyAVertices[0];
+			refEdge[1] = polyAVertices[1];
+			incEdge[0] = polyBVertices[refA.incIdx];
+			uint32_t nextIdx = (refA.incIdx + 1) % polygonB->count();
+			uint32_t prevIdx = (refA.incIdx + polygonB->count() - 1) % polygonB->count();
+			real dotNext = Math::abs((polyBVertices[nextIdx] - polyBVertices[refA.incIdx]).dot(refA.normal));
+			real dotPrev = Math::abs((polyBVertices[prevIdx] - polyBVertices[refA.incIdx]).dot(refA.normal));
+			incEdge[1] = dotNext < dotPrev ? polyBVertices[nextIdx] : polyBVertices[prevIdx];
+
+		}
+		else
+		{
+			normal = refB.normal;
+
+			refEdge[0] = polyBVertices[refB.refIdx];
+			refEdge[1] = polyBVertices[(refB.refIdx + 1) % polygonB->count()];
+			incEdge[0] = polyAVertices[0];
+			incEdge[1] = polyAVertices[1];
+		}
+		auto segmentClosest = Algorithm2D::segmentClosestPoint(refEdge[0], refEdge[1], incEdge[0], incEdge[1]);
+		const real dotRef = Math::abs((segmentClosest.Q - segmentClosest.P).dot((refEdge[1] - refEdge[0]).normal()));
+		if (dotRef < 1e-5f)
+		{
+			auto clipResult = clipEdges(refEdge, incEdge);
+			result.count = clipResult.count;
+			result.normal = normal;
+			for (int i = 0; i < clipResult.count; ++i)
+			{
+				if (isRefA)
+				{
+					result.pA[i] = clipResult.refEdge[i] + normal * (radiusA + skinRadiusA);
+					result.pB[i] = clipResult.incEdge[i] - normal * skinRadiusB;
+					result.penetration[i] = (result.pB[i] - result.pA[i]).dot(normal);
+				}
+				else
+				{
+					result.pA[i] = clipResult.incEdge[i] - normal * (radiusA + skinRadiusA);
+					result.pB[i] = clipResult.refEdge[i] + normal * skinRadiusB;
+					result.penetration[i] = (result.pA[i] - result.pB[i]).dot(normal);
+					result.normal = -normal;
+				}
+			}
+		}
+		else
+		{
+			result.count = 1;
+			normal = (segmentClosest.Q - segmentClosest.P).normal();
+			if (isRefA)
+			{
+				result.pA[0] = segmentClosest.P + normal * (radiusA + skinRadiusA);
+				result.pB[0] = segmentClosest.Q - normal * skinRadiusB;
+			}
+			else
+			{
+				normal.negate();
+				result.pA[0] = segmentClosest.Q + normal * (radiusA + skinRadiusA);
+				result.pB[0] = segmentClosest.P - normal * skinRadiusB;
+			}
+			result.penetration[0] = (result.pB[0] - result.pA[0]).dot(normal);
+			result.normal = normal;
+		}
 
 		return result;
 	}
 
-	std::array<Vector2, 2> Narrowphase2D::getPolygonClipEdge(const Transform& transform, const Shape* shape,
+	ContactResult Narrowphase2D::collideCirclePolygon(const Transform2D& transformA, const AbstractShape* shapeA,
+	                                                  const Transform2D& transformB, const AbstractShape* shapeB)
+	{
+		const Circle* circle = static_cast<const Circle*>(shapeA);
+		return collideCirclePolygon(transformA.position, circle->radius(), transformB, shapeB);
+	}
+
+	ContactResult Narrowphase2D::collideCirclePolygon(const Vector2& positionA, const real& radiusA,
+		const Transform2D& transformB, const AbstractShape* shapeB)
+	{
+		ContactResult result;
+		return result;
+	}
+
+	ClipEdge Narrowphase2D::clipEdges(const Vector2& ref0, const Vector2& ref1, const Vector2& inc0,
+	                                  const Vector2& inc1)
+	{
+		ClipEdge result;
+		// A, B : refEdge
+		// C, D : incEdge
+		// n: collision normal
+		// v: incEdge normal
+		const Vector2& A = ref0;
+		const Vector2& B = ref1;
+		const Vector2& C = inc0;
+		const Vector2& D = inc1;
+		Vector2 v = (D - C).normal();
+		Vector2 n = (A - B).ortho().normal();
+		real det = v.x * n.y - n.x * v.y;
+		if (realEqual(det, 0))
+			return result;
+
+		// 1. Project incident edge to reference edge and clamp to [0,1], resulting in tC, tD and pC, pD
+		// 2. Start from projection point, with normal n, clip incident edge, resulting in tnC, tnD and pnC, pnD
+		// 3. Clip point pair: pC-pnC, pD-pnD, penetration maybe positive, which means no collision
+		const real tC = Math::clamp(Algorithm2D::pointToSegmentWeight(A, B, C, false), 0, 1);
+		const real tD = Math::clamp(Algorithm2D::pointToSegmentWeight(A, B, D, false), 0, 1);
+		const Vector2 pC = tC * A + (1 - tC) * B;
+		const Vector2 pD = tD * A + (1 - tD) * B;
+
+		const real denom = n.cross(C - D);
+		const real det1 = n.cross(C - pC);
+		const real det2 = n.cross(C - pD);
+		const real s = Math::clamp(det1 / denom, 0, 1);
+		const real w = Math::clamp(det2 / denom, 0, 1);
+
+		const Vector2 pnC = C + s * (D - C);
+		const Vector2 pnD = C + w * (D - C);
+
+		result.count = 1;
+		result.refEdge[0] = pC;
+		result.incEdge[0] = pnC;
+		bool onlyVertex = realEqual(tC, tD);
+		if (!onlyVertex)
+		{
+			result.count = 2;
+			result.refEdge[1] = pD;
+			result.incEdge[1] = pnD;
+		}
+
+
+		return result;
+	}
+
+	ClipEdge Narrowphase2D::clipEdges(const std::array<Vector2, 2>& refEdge, const std::array<Vector2, 2>& incEdge)
+	{
+		return clipEdges(refEdge[0], refEdge[1], incEdge[0], incEdge[1]);
+	}
+
+	std::array<Vector2, 2> Narrowphase2D::getPolygonClipEdge(const Transform2D& transform, const AbstractShape* shape,
 	                                                         const Vector2& clipNormal, const Vector2& supportPoint, const int32_t& idx)
 	{
 		std::array<Vector2, 2> p;
@@ -748,56 +1158,18 @@ namespace ST
 		return p;
 	}
 
-	ClipEdge Narrowphase2D::clipEdges(const std::array<Vector2, 4>& edge, const Vector2& clipNormal)
+	ClipEdge Narrowphase2D::clipEdges(const std::array<Vector2, 4>& edge)
 	{
-		ClipEdge result;
-		// A, B : refEdge
-		// C, D : incEdge
-		// n: collision normal
-		// v: incEdge normal
-		const Vector2& A = edge[0];
-		const Vector2& B = edge[1];
-		const Vector2& C = edge[2];
-		const Vector2& D = edge[3];
-		Vector2 v = (edge[3] - edge[2]).normal();
-		Vector2 n = clipNormal;
-		real det = v.x * n.y - n.x * v.y;
-		if (realEqual(det, 0))
-			return result;
-
-		// 1. Project incident edge to reference edge and clamp to [0,1], resulting in tC, tD and pC, pD
-		// 2. Start from projection point, with normal n, clip incident edge, resulting in tnC, tnD and pnC, pnD
-		// 3. Clip point pair: pC-pnC, pD-pnD, penetration maybe positive, which means no collision
-		const real tC = Math::clamp(Algorithm2D::pointToSegmentWeight(A, B, C, false), 0, 1);
-		const real tD = Math::clamp(Algorithm2D::pointToSegmentWeight(A, B, D, false), 0, 1);
-		const Vector2 pC = tC * A + (1 - tC) * B;
-		const Vector2 pD = tD * A + (1 - tD) * B;
-
-		const real denom = n.cross(D - C);
-		const real det1 = (C - pC).cross(D - C);
-		const real det2 = (C - pD).cross(D - C);
-		const real tnC = det1 / denom;
-		const real tnD = det2 / denom;
-
-		const Vector2 pnC = pC + tnC * n;
-		const Vector2 pnD = pD + tnD * n;
-
-		result.count = 2;
-		result.refEdge[0] = pC;
-		result.refEdge[1] = pD;
-		result.incEdge[0] = pnC;
-		result.incEdge[1] = pnD;
-
-		return result;
+		return clipEdges(edge[0], edge[1], edge[2], edge[3]);
 	}
 
-	ContactResult Narrowphase2D::clipPolygonPolygon(const Epa2DResult& epaResult, const Transform& transformA,
-	                                                const Shape* shapeA, const Transform& transformB, const Shape* shapeB)
+	ContactResult Narrowphase2D::clipPolygons(const Epa2DResult& epaResult, const Transform2D& transformA, const AbstractShape* shapeA, 
+		const Transform2D& transformB, const AbstractShape* shapeB)
 	{
 		ContactResult result;
 		bool sameA = epaResult.simplex.m[0].v[0].i == epaResult.simplex.m[1].v[0].i;
 		bool sameB = epaResult.simplex.m[0].v[1].i == epaResult.simplex.m[1].v[1].i;
-		bool swap = sameA; // default: refEdge from A, incEdge from B
+		bool isRefA = !sameA;
 
 		Vector2 clipNormal = epaResult.normal; // default normal is: A -> B, means B + normal * penetration can be separated from A
 		if (!sameA)
@@ -806,123 +1178,65 @@ namespace ST
 			clipNormal.negate();
 		}
 
-		std::array<Vector2, 4> edge;
+		std::array<Vector2, 2> refEdge;
+		std::array<Vector2, 2> incEdge;
 		if (sameA && !sameB)
 		{
-			edge[0] = epaResult.simplex.m[0].v[1].v;
-			edge[1] = epaResult.simplex.m[1].v[1].v;
+			refEdge[0] = epaResult.simplex.m[0].v[1].v;
+			refEdge[1] = epaResult.simplex.m[1].v[1].v;
 			// get incident edge
 			int32_t idx = epaResult.simplex.m[0].v[0].i;
 			Vector2 currVertex = epaResult.simplex.m[0].v[0].v;
 			auto clipEdge = getPolygonClipEdge(transformA, shapeA, epaResult.normal, currVertex, idx);
-			edge[2] = clipEdge[0];
-			edge[3] = clipEdge[1];
+			incEdge[0] = clipEdge[0];
+			incEdge[1] = clipEdge[1];
 		}
 		else if (!sameA && sameB)
 		{
-			edge[0] = epaResult.simplex.m[0].v[0].v;
-			edge[1] = epaResult.simplex.m[1].v[0].v;
+			refEdge[0] = epaResult.simplex.m[0].v[0].v;
+			refEdge[1] = epaResult.simplex.m[1].v[0].v;
 			// get incident edge
 			int32_t idx = epaResult.simplex.m[0].v[1].i;
 			Vector2 currVertex = epaResult.simplex.m[0].v[1].v;
 			auto clipEdge = getPolygonClipEdge(transformB, shapeB, epaResult.normal, currVertex, idx);
-			edge[2] = clipEdge[0];
-			edge[3] = clipEdge[1];
+			incEdge[0] = clipEdge[0];
+			incEdge[1] = clipEdge[1];
 		}
 		else
 		{
-			edge[0] = epaResult.simplex.m[0].v[0].v;
-			edge[1] = epaResult.simplex.m[1].v[0].v;
-			edge[2] = epaResult.simplex.m[0].v[1].v;
-			edge[3] = epaResult.simplex.m[1].v[1].v;
+			refEdge[0] = epaResult.simplex.m[0].v[0].v;
+			refEdge[1] = epaResult.simplex.m[1].v[0].v;
+			incEdge[0] = epaResult.simplex.m[0].v[1].v;
+			incEdge[1] = epaResult.simplex.m[1].v[1].v;
 		}
 
-		ClipEdge clipResult = clipEdges(edge, clipNormal);
+		ClipEdge clipResult = clipEdges(refEdge, incEdge);
 
 		result.count = clipResult.count;
 		result.normal = epaResult.normal;
-		if (!swap)
+
+		for (int i = 0; i < clipResult.count; ++i)
 		{
-			for (int i = 0; i < clipResult.count; ++i)
+			if (isRefA)
 			{
 				result.pA[i] = clipResult.refEdge[i];
 				result.pB[i] = clipResult.incEdge[i];
-				result.penetration[i] = (result.pB[i] - result.pA[i]).dot(epaResult.normal);
 			}
-		}
-		else
-		{
-			for (int i = 0; i < clipResult.count; ++i)
+			else
 			{
 				result.pA[i] = clipResult.incEdge[i];
 				result.pB[i] = clipResult.refEdge[i];
-				result.penetration[i] = (result.pB[i] - result.pA[i]).dot(epaResult.normal);
 			}
+			result.penetration[i] = (result.pB[i] - result.pA[i]).dot(epaResult.normal);
 		}
+
 		return result;
 	}
 
-	ContactResult Narrowphase2D::clipPolygonSegment(const Epa2DResult& epaResult, const Transform& transformA,
-		const Shape* shapeA, const Transform& transformB, const Shape* shapeB, bool swap)
+	ContactResult Narrowphase2D::clipPolygonSegment(const Epa2DResult& epaResult, const Transform2D& transformA,
+		const AbstractShape* shapeA, const Transform2D& transformB, const AbstractShape* shapeB, bool swap)
 	{
 		ContactResult result;
-		return result;
-	}
-
-	Simplex2D Narrowphase2D::solveSimplex(const Simplex2D& simplex)
-	{
-		Simplex2D result;
-		// suppose simplex has 3 points
-		CORE_ASSERT(simplex.count == 3, "Invalid simplex");
-		const Vector2& A = simplex.m[0].p;
-		const Vector2& B = simplex.m[1].p;
-		const Vector2& C = simplex.m[2].p;
-		// 0. find barycentric coordinates of origin
-		const real normAB = (B - A).square();
-		const real normAC = (C - A).square();
-		const real normBC = (C - B).square();
-		real u = C.cross(B);
-		real v = A.cross(C);
-		real w = B.cross(A);
-		const real det = u + v + w;
-		CORE_ASSERT(det != 0.0f, "Invalid simplex3")
-		u /= det;
-		v /= det;
-		w = 1 - u - v;
-
-		// 1. find closest edge to origin
-		const real h_BC = u * std::abs(u) / (normBC + 1e-9f);
-		const real h_AC = v * std::abs(v) / (normAC + 1e-9f);
-		const real h_AB = w * std::abs(w) / (normAB + 1e-9f);
-		////default: closest edge is AB
-		////if min is h_AB, closest edge is AB, no need to swap
-		////if min is h_AC, closest edge is AC, swap B and C
-		////if min is h_BC, closest edge is BC, swap A and C
-		//result = simplex;
-		//if (min == h_AC)
-		//	std::swap(result.m[1], result.m[2]);
-		//else if (min == h_BC)
-		//	std::swap(result.m[0], result.m[2]);
-
-		//const int isMinAB = h_AB < h_AC && h_AB < h_BC;
-		//const int isMinAC = h_AC < h_BC && h_AC < h_AB;
-		//const int isMinBC = h_BC < h_AB && h_BC < h_AC;
-		int idx = 0;
-		idx = h_AC < h_BC && h_AC < h_AB ? 1 : idx;
-		idx = h_BC < h_AB && h_BC < h_AC ? 2 : idx;
-
-		constexpr int permutations[3][3] = {
-		{0, 1, 2}, // Case h_AB is min: new order is A, B, C
-		{0, 2, 1}, // Case h_AC is min: new order is A, C, B
-		{2, 1, 0}  // Case h_BC is min: new order is C, B, A
-		};
-
-		for (int i = 0; i < 3; ++i)
-			result.m[i] = simplex.m[permutations[idx][i]];
-
-		// 3. if u>0, v>0, w>0, origin is in triangle
-		result.isContainOrigin = u > 0 && v > 0 && w > 0;
-		result.count = 3;
 		return result;
 	}
 
@@ -1038,16 +1352,6 @@ namespace ST
 		}
 
 
-		return result;
-	}
-
-	SolveSimplexResult Narrowphase2D::solveSimplex1(const Simplex2D& simplex)
-	{
-		CORE_ASSERT(simplex.count == 1, "solveSimplex1 requires simplex count=1");
-		SolveSimplexResult result;
-		// construct direction : M0-O
-		result.simplex = simplex;
-		result.direction = simplex.m[0].p.negative();
 		return result;
 	}
 

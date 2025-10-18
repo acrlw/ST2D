@@ -102,13 +102,13 @@ namespace STEditor
 		void polyDashedThickLine(const std::vector<Vector2>& points, const Color& color, float thickness = 2.0f, float dashLength = 0.1f, float gapLength = 0.1f);
 		void polyClosedThickLines(const std::vector<Vector2>& points, const Color& color, float thickness = 2.0f);
 
-		void shape(const Transform& transform, Shape* shape, const Color& color);
-		void polygon(const Transform& transform, Shape* shape, const Color& color);
-		void segment(const Transform& transform, Shape* shape, const Color& color);
-		void circle(const Transform& transform, Shape* shape, const Color& color);
-		void capsule(const Transform& transform, Shape* shape, const Color& color);
-		void ellipse(const Transform& transform, Shape* shape, const Color& color);
-		void orientation(const Transform& transform);
+		void shape(const Transform2D& transform, AbstractShape* shape, const Color& color);
+		void polygon(const Transform2D& transform, AbstractShape* shape, const Color& color);
+		void segment(const Transform2D& transform, AbstractShape* shape, const Color& color);
+		void circle(const Transform2D& transform, AbstractShape* shape, const Color& color);
+		void capsule(const Transform2D& transform, AbstractShape* shape, const Color& color);
+		void ellipse(const Transform2D& transform, AbstractShape* shape, const Color& color);
+		void orientation(const Transform2D& transform);
 
 		void aabb(const AABB& aabb, const Color& color);
 		void dashedAABB(const AABB& aabb, const Color& color, float dashLength = 0.1f, float gapLength = 0.1f);

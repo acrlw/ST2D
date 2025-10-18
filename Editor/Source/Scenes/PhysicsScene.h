@@ -83,7 +83,7 @@ namespace STEditor
 		void solveContactPosition(const ObjectPair& pair);
 		void solveJointVelocity(real dt);
 		void solveJointPosition(real dt);
-		real computeInertia(real mass, const Shape* shape);
+		real computeInertia(real mass, const AbstractShape* shape);
 
 
 
@@ -106,7 +106,7 @@ namespace STEditor
 
 		std::vector<ST::AABB> m_aabbs;
 		std::vector<uint32_t> m_bitmasks;
-		std::vector<ST::Shape*> m_shapes;
+		std::vector<ST::AbstractShape*> m_shapes;
 
 
 		std::vector<int> m_dbvtStack;

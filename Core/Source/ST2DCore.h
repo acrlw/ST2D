@@ -13,6 +13,7 @@
 #include "ST2D/Math/Matrix3x3.h"
 #include "ST2D/Math/Matrix4x4.h"
 #include "ST2D/Math/Quaternion.h"
+#include "ST2D/Math/Transform2D.h"
 
 #include "ST2D/Algorithms/Algorithm2D.h"
 #include "ST2D/Collision/Simplex.h"
@@ -31,6 +32,7 @@
 #include "ST2D/Shape/Circle.h"
 #include "ST2D/Shape/Capsule.h"
 #include "ST2D/Shape/Rectangle.h"
+#include "ST2D/Shape/ShapeBase.h"
 
 #include "ST2D/Utility/Easing.h"
 #include "ST2D/ThreadPool.h"

@@ -42,7 +42,7 @@ namespace STEditor
 
 		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
-			Transform transform(m_positions[i], m_rotations[i], 1.0f);
+			Transform2D transform(m_positions[i], m_rotations[i], 1.0f);
 
 			if (m_showObjectID)
 			{
@@ -407,7 +407,7 @@ namespace STEditor
 		ImGui::Columns(2);
 		ImGui::Checkbox("Object", &m_showObject);
 		ImGui::Checkbox("Object Id", &m_showObjectID);
-		ImGui::Checkbox("Transform", &m_showTransform);
+		ImGui::Checkbox("Transform2D", &m_showTransform);
 		ImGui::Checkbox("AABB", &m_showAABB);
 		ImGui::Checkbox("Grid", &m_showGrid);
 		ImGui::Checkbox("DBVT", &m_showDBVT);
@@ -513,7 +513,7 @@ namespace STEditor
 
 	real PhysicsScene::naturalFrequency(real frequency)
 	{
-		return Constant::DoublePi * frequency;
+		return Constant::TwoPi * frequency;
 	}
 
 	real PhysicsScene::springDampingCoefficient(real mass, real naturalFrequency, real dampingRatio)
@@ -555,7 +555,7 @@ namespace STEditor
 			{
 				for (real i = 0.0; i < max - j; i += 1.0f)
 				{
-					Transform t;
+					Transform2D t;
 					t.position.set( i * 1.11f + offset, j * 1.05f + 0.6f);
 					t.rotation = 0;
 
@@ -590,7 +590,7 @@ namespace STEditor
 		}
 		{
 
-			Transform trans;
+			Transform2D trans;
 			trans.position.set(0.0f, -0.05f);
 
 			m_landId = m_objectIdPool.getNewId();
@@ -681,48 +681,87 @@ namespace STEditor
 				if (!m_aabbs[objPair.idA].collide(m_aabbs[objPair.idB]))
 					continue;
 
-				Transform transformA(m_positions[objPair.idA], m_rotations[objPair.idA], 1.0f);
-				Transform transformB(m_positions[objPair.idB], m_rotations[objPair.idB], 1.0f);
+				Transform2D transformA(m_positions[objPair.idA], m_rotations[objPair.idA], 1.0f);
+				Transform2D transformB(m_positions[objPair.idB], m_rotations[objPair.idB], 1.0f);
 
 				const bool isRoundA = m_shapes[objPair.idA]->type() == ShapeType::Circle || m_shapes[objPair.idA]->type() == ShapeType::Ellipse;
 				const bool isRoundB = m_shapes[objPair.idB]->type() == ShapeType::Circle || m_shapes[objPair.idB]->type() == ShapeType::Ellipse;
 
-				auto simplex = Narrowphase::gjk(transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
-				if (simplex.isContainOrigin)
+				auto result = Narrowphase2D::collidePolygons(transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
+				if (result.penetration[0] < 0 || result.penetration[1] < 0)
 				{
-					auto info = Narrowphase::epa(simplex, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
-					auto newContacts = Narrowphase::generateContacts(info, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
-
 					ContactManifold manifold;
-					manifold.count = newContacts.count;
-					manifold.pair = newContacts;
-					manifold.normal = info.normal;
-					manifold.tangent = info.normal.ortho();
-					manifold.penetration = info.penetration;
-
-					if (m_contactManifolds.contains(objPair))
+					for (int i = 0;i < result.count; ++i)
 					{
-						for (int j = 0; j < manifold.pair.count; ++j)
+						if (result.penetration[i] >= 0)
+							continue;
+						manifold.count++;
+						manifold.pair.addContact(result.pA[i], result.pB[i]);
+						manifold.normal = -result.normal;
+						manifold.tangent = manifold.normal.ortho();
+						manifold.penetration = -result.penetration[i];
+
+						if (m_contactManifolds.contains(objPair))
 						{
-							Vector2 newLocalA = transformA.inverseTranslatePoint(manifold.pair.points[j]);
-							Vector2 newLocalB = transformB.inverseTranslatePoint(manifold.pair.points[j + 2]);
-							for (int i = 0; i < m_contactManifolds[objPair].count; ++i)
+							for (int j = 0; j < manifold.pair.count; ++j)
 							{
-								Vector2 oldLocalA = m_contactManifolds[objPair].contacts[i].localA;
-								Vector2 oldLocalB = m_contactManifolds[objPair].contacts[i].localB;
-								const bool isPointA = oldLocalA.fuzzyEqual(newLocalA, Constant::TrignometryEpsilon);
-								const bool isPointB = oldLocalB.fuzzyEqual(newLocalB, Constant::TrignometryEpsilon);
-								if (isPointA || isPointB || isRoundA || isRoundB)
+								Vector2 newLocalA = transformA.inverseTranslatePoint(manifold.pair.points[j]);
+								Vector2 newLocalB = transformB.inverseTranslatePoint(manifold.pair.points[j + 2]);
+								for (int i = 0; i < m_contactManifolds[objPair].count; ++i)
 								{
-									//satisfy the condition, give the old accumulated value to new value
-									manifold.contacts[j] = m_contactManifolds[objPair].contacts[i];
+									Vector2 oldLocalA = m_contactManifolds[objPair].contacts[i].localA;
+									Vector2 oldLocalB = m_contactManifolds[objPair].contacts[i].localB;
+									const bool isPointA = oldLocalA.fuzzyEqual(newLocalA, Constant::TrignometryEpsilon);
+									const bool isPointB = oldLocalB.fuzzyEqual(newLocalB, Constant::TrignometryEpsilon);
+									if (isPointA || isPointB || isRoundA || isRoundB)
+									{
+										//satisfy the condition, give the old accumulated value to new value
+										manifold.contacts[j] = m_contactManifolds[objPair].contacts[i];
+									}
 								}
 							}
 						}
 					}
-
 					m_contactManifolds[objPair] = manifold;
 				}
+
+				//auto simplex = Narrowphase2D::gjk(transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
+				//if (simplex.isContainOrigin)
+				//{
+				//	auto info = Narrowphase2D::epa(simplex, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
+				//	auto newContacts = Narrowphase2D::generateContacts(info, transformA, m_shapes[objPair.idA], transformB, m_shapes[objPair.idB]);
+
+				//	ContactManifold manifold;
+				//	manifold.pair.addContact(newContacts.pA[0], newContacts.pB[0]);
+				//	manifold.pair.addContact(newContacts.pA[1], newContacts.pB[1]);
+				//	manifold.count = newContacts.count;
+				//	manifold.normal = -info.normal;
+				//	manifold.tangent = manifold.normal.ortho();
+				//	manifold.penetration = info.penetration;
+
+				//	if (m_contactManifolds.contains(objPair))
+				//	{
+				//		for (int j = 0; j < manifold.pair.count; ++j)
+				//		{
+				//			Vector2 newLocalA = transformA.inverseTranslatePoint(manifold.pair.points[j]);
+				//			Vector2 newLocalB = transformB.inverseTranslatePoint(manifold.pair.points[j + 2]);
+				//			for (int i = 0; i < m_contactManifolds[objPair].count; ++i)
+				//			{
+				//				Vector2 oldLocalA = m_contactManifolds[objPair].contacts[i].localA;
+				//				Vector2 oldLocalB = m_contactManifolds[objPair].contacts[i].localB;
+				//				const bool isPointA = oldLocalA.fuzzyEqual(newLocalA, Constant::TrignometryEpsilon);
+				//				const bool isPointB = oldLocalB.fuzzyEqual(newLocalB, Constant::TrignometryEpsilon);
+				//				if (isPointA || isPointB || isRoundA || isRoundB)
+				//				{
+				//					//satisfy the condition, give the old accumulated value to new value
+				//					manifold.contacts[j] = m_contactManifolds[objPair].contacts[i];
+				//				}
+				//			}
+				//		}
+				//	}
+
+				//	m_contactManifolds[objPair] = manifold;
+				//}
 			}
 		}
 
@@ -758,7 +797,7 @@ namespace STEditor
 
 		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
-			m_aabbs[i] = AABB::fromShape(Transform(m_positions[i], m_rotations[i], 1.0f), m_shapes[i]);
+			m_aabbs[i] = AABB::fromShape(Transform2D(m_positions[i], m_rotations[i], 1.0f), m_shapes[i]);
 			BroadphaseObjectBinding binding(m_objectIds[i], m_bitmasks[i], m_aabbs[i]);
 
 			if(m_enableDBVT)
@@ -999,8 +1038,8 @@ namespace STEditor
 		{
 			if(value.count > 0)
 			{
-				Transform transformA(m_positions[key.idA], m_rotations[key.idA], 1.0f);
-				Transform transformB(m_positions[key.idB], m_rotations[key.idB], 1.0f);
+				Transform2D transformA(m_positions[key.idA], m_rotations[key.idA], 1.0f);
+				Transform2D transformB(m_positions[key.idB], m_rotations[key.idB], 1.0f);
 
 				value.restitution = Math::min(m_restitutions[key.idA], m_restitutions[key.idB]);
 				value.friction = Math::sqrt(m_frictions[key.idA] * m_frictions[key.idB]);
@@ -1263,8 +1302,8 @@ namespace STEditor
 
 		if (contact.count == 2 && m_enablePositionBlockSolver)
 		{
-			Transform transformA(m_positions[pair.idA], m_rotations[pair.idA], 1.0f);
-			Transform transformB(m_positions[pair.idB], m_rotations[pair.idB], 1.0f);
+			Transform2D transformA(m_positions[pair.idA], m_rotations[pair.idA], 1.0f);
+			Transform2D transformB(m_positions[pair.idB], m_rotations[pair.idB], 1.0f);
 
 			// solve block
 
@@ -1356,8 +1395,8 @@ namespace STEditor
 			// solve one by one
 			for (int i = 0; i < contact.count; ++i)
 			{
-				Transform transformA(m_positions[pair.idA], m_rotations[pair.idA], 1.0f);
-				Transform transformB(m_positions[pair.idB], m_rotations[pair.idB], 1.0f);
+				Transform2D transformA(m_positions[pair.idA], m_rotations[pair.idA], 1.0f);
+				Transform2D transformB(m_positions[pair.idB], m_rotations[pair.idB], 1.0f);
 
 				Vector2 pA = transformA.translatePoint(contact.contacts[i].localA);
 				Vector2 pB = transformB.translatePoint(contact.contacts[i].localB);
@@ -1399,7 +1438,7 @@ namespace STEditor
 
 	}
 
-	real PhysicsScene::computeInertia(real mass, const Shape* shape)
+	real PhysicsScene::computeInertia(real mass, const AbstractShape* shape)
 	{
 		real inertia = 0.0f;
 

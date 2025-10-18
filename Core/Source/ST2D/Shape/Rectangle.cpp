@@ -11,6 +11,8 @@ namespace ST
 	{
 		m_width = width;
 		m_height = height;
+		if (width == 0.0f || height == 0.0f)
+			return;
 		calcVertices();
 	}
 
@@ -53,5 +55,6 @@ namespace ST
 		m_vertices[1] = Vector2(-m_width * (0.5f), -m_height * (0.5f));
 		m_vertices[2] = Vector2(m_width * (0.5f), -m_height * (0.5f));
 		m_vertices[3] = Vector2(m_width * (0.5f), m_height * (0.5f));
+		buildSupportField();
 	}
 }

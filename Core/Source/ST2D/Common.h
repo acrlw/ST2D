@@ -60,9 +60,9 @@ namespace ST
 		constexpr real NegativeMin = -Max;
 		constexpr real Pi = 3.1415926535f;
 		constexpr real HalfPi = Pi / 2.0f;
-		constexpr real DoublePi = Pi * 2.0f;
-		constexpr real ReciprocalOf180 = 1.0f / 180.0f;
-		constexpr real ReciprocalOfPi = 0.3183098861f;
+		constexpr real TwoPi = Pi * 2.0f;
+		constexpr real InvHalfPi = 1.0f / 180.0f;
+		constexpr real InvPi = 0.3183098861f;
 		constexpr real GeometryEpsilon = 1e-5f;
 		constexpr real TrignometryEpsilon = 1e-3f;
 		constexpr real CCDMinVelocity = 100.0f;
@@ -74,5 +74,8 @@ namespace ST
 		constexpr real MinEnergy = 9e-10f;
 		constexpr size_t SleepCountdown = 32;
 		constexpr int GJKRetryTimes = 8;
+
+		constexpr size_t MaxPolygonVertices = 32;
+		constexpr size_t MaxSupportFieldSize = 12;
 	}
 }

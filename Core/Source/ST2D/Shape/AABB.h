@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Shape.h"
+#include "AbstractShape.h"
+#include "ST2D/Math/Transform2D.h"
 
 namespace ST
 {
@@ -35,7 +36,7 @@ namespace ST
 		bool operator==(const AABB& other)const;
 		bool raycast(const Vector2& start, const Vector2& direction)const;
 
-		static AABB fromShape(const Transform& transform, const Shape* shape, const real& factor = 0);
+		static AABB fromShape(const Transform2D& transform, const AbstractShape* shape, const real& factor = 0);
 
 		static AABB fromBox(const Vector2& topLeft, const Vector2& bottomRight);
 		

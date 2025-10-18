@@ -9,8 +9,8 @@
 
 namespace ST
 {
-	Simplex Narrowphase::gjk(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const size_t& iteration)
+	Simplex Narrowphase::gjk(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const size_t& iteration)
 	{
 		CORE_ASSERT(shapeA != nullptr && shapeB != nullptr, "Shape is nullptr.");
 
@@ -66,8 +66,8 @@ namespace ST
 		return simplex;
 	}
 
-	CollisionInfo Narrowphase::epa(const Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const size_t& iteration, const real& epsilon)
+	CollisionInfo Narrowphase::epa(const Simplex& simplex, const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const size_t& iteration, const real& epsilon)
 	{
 		//ZoneScopedN("[Narrowphase] EPA");
 		//return 1d simplex with edge closest to origin
@@ -173,8 +173,8 @@ namespace ST
 		return info;
 	}
 
-	CollisionInfo Narrowphase::findClosestSimplex(const Simplex& simplex, const Transform& transformA, const Shape* shapeA,
-		const Transform& transformB, const Shape* shapeB, const size_t& iteration)
+	CollisionInfo Narrowphase::findClosestSimplex(const Simplex& simplex, const Transform2D& transformA, const AbstractShape* shapeA,
+		const Transform2D& transformB, const AbstractShape* shapeB, const size_t& iteration)
 	{
 		//ZoneScopedN("[Narrowphase] EPA with Priority Queue");
 		//return 1d simplex with edge closest to origin
@@ -252,8 +252,8 @@ namespace ST
 		return info;
 	}
 
-	SimplexVertex Narrowphase::support(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-	                                   const Shape* shapeB, const Vector2& direction)
+	SimplexVertex Narrowphase::support(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+	                                   const AbstractShape* shapeB, const Vector2& direction)
 	{
 		SimplexVertex vertex;
 		VertexIndexPair pair1 = findFurthestPoint(transformA, shapeA, direction);
@@ -266,7 +266,7 @@ namespace ST
 		return vertex;
 	}
 
-	VertexIndexPair Narrowphase::findFurthestPoint(const Transform& transform, const Shape* shape, const Vector2& direction)
+	VertexIndexPair Narrowphase::findFurthestPoint(const Transform2D& transform, const AbstractShape* shape, const Vector2& direction)
 	{
 		VertexIndexPair pair;
 		Vector2 target;
@@ -358,8 +358,8 @@ namespace ST
 		return VertexIndexPair{ target, index };
 	}
 
-	ContactPair Narrowphase::generateContacts(CollisionInfo& info, const Transform& transformA, const Shape* shapeA,
-	                                          const Transform& transformB, const Shape* shapeB)
+	ContactPair Narrowphase::generateContacts(CollisionInfo& info, const Transform2D& transformA, const AbstractShape* shapeA,
+	                                          const Transform2D& transformB, const AbstractShape* shapeB)
 	{
 		CORE_ASSERT(!info.normal.isOrigin(), "Normal is zero vector.");
 
@@ -367,8 +367,8 @@ namespace ST
 		ShapeType typeA = shapeA->type();
 		ShapeType typeB = shapeB->type();
 
-		const Shape* realShapeA = shapeA;
-		const Shape* realShapeB = shapeB;
+		const AbstractShape* realShapeA = shapeA;
+		const AbstractShape* realShapeB = shapeB;
 		Index idxA = 0;
 		Index idxB = 1;
 
@@ -462,8 +462,8 @@ namespace ST
 		return pair;
 	}
 
-	CollisionInfo Narrowphase::distance(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const size_t& iteration)
+	CollisionInfo Narrowphase::distance(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const size_t& iteration)
 	{
 		VertexPair result;
 		CollisionInfo info;
@@ -680,7 +680,7 @@ namespace ST
 		return info;
 	}
 
-	SweepVolume Narrowphase::linearSweep(const Transform& start, const Transform& end, const Shape* shape)
+	SweepVolume Narrowphase::linearSweep(const Transform2D& start, const Transform2D& end, const AbstractShape* shape)
 	{
 		SweepVolume volume;
 		Vector2 direction = end.position - start.position;
@@ -697,8 +697,8 @@ namespace ST
 		return volume;
 	}
 
-	bool Narrowphase::linearSweepCast(const Transform& transformA, const Shape* shapeA, const Transform& transformB, const Shape* shapeB, const Vector2& direction,
-		const real& maxDistance, Transform& resultA)
+	bool Narrowphase::linearSweepCast(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB, const AbstractShape* shapeB, const Vector2& direction,
+		const real& maxDistance, Transform2D& resultA)
 	{
 		resultA.rotation = transformA.rotation;
 		resultA.position = transformA.position;
@@ -707,7 +707,7 @@ namespace ST
 		if (simplex.isContainOrigin)
 			return false;			// suppose initial state cannot collide
 
-		Transform endTransformA;
+		Transform2D endTransformA;
 		endTransformA.rotation = transformA.rotation;
 		endTransformA.position = transformA.position + direction * maxDistance;
 
@@ -728,7 +728,7 @@ namespace ST
 		ST::Polygon sweepPolygon;
 		sweepPolygon.set(volume.vertices().data(), volume.vertices().size());
 
-		Transform volumeTransform;
+		Transform2D volumeTransform;
 		volumeTransform.position = Algorithm2D::computeCenter(volume.vertices());
 
 		simplex = gjk(volumeTransform, &sweepPolygon, transformB, shapeB);
@@ -748,8 +748,8 @@ namespace ST
 		return true;
 	}
 
-	bool Narrowphase::linearSweepBackwardCast(const Simplex& startSimplex, const Transform& transformA, const Shape* shapeA,
-		const Transform& transformB, const Shape* shapeB, const Vector2& direction, Transform& resultA)
+	bool Narrowphase::linearSweepBackwardCast(const Simplex& startSimplex, const Transform2D& transformA, const AbstractShape* shapeA,
+		const Transform2D& transformB, const AbstractShape* shapeB, const Vector2& direction, Transform2D& resultA)
 	{
 		Simplex simplex = startSimplex;
 
@@ -789,8 +789,8 @@ namespace ST
 		return true;
 	}
 
-	bool Narrowphase::linearSweepForwardCast(CollisionInfo& info, const Transform& transformA, const Shape* shapeA,
-		const Transform& transformB, const Shape* shapeB, const Vector2& direction, Transform& resultA)
+	bool Narrowphase::linearSweepForwardCast(CollisionInfo& info, const Transform2D& transformA, const AbstractShape* shapeA,
+		const Transform2D& transformB, const AbstractShape* shapeB, const Vector2& direction, Transform2D& resultA)
 	{
 		real dist = Constant::Max;
 		int counter = 0;
@@ -870,8 +870,8 @@ namespace ST
 		}
 	}
 
-	bool Narrowphase::perturbSimplex(Simplex& simplex, const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Vector2& dir)
+	bool Narrowphase::perturbSimplex(Simplex& simplex, const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Vector2& dir)
 	{
 		Vector2 direction = dir;
 		for (int i = 0; i < Constant::GJKRetryTimes; ++i)
@@ -892,7 +892,7 @@ namespace ST
 		return true;
 	}
 
-	Feature Narrowphase::findFeatures(const Simplex& simplex, const Vector2& normal, const Transform& transform, const Shape* shape,
+	Feature Narrowphase::findFeatures(const Simplex& simplex, const Vector2& normal, const Transform2D& transform, const AbstractShape* shape,
 		const Index& AorB)
 	{
 		Feature feature;
@@ -1102,8 +1102,8 @@ namespace ST
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipPolygonPolygon(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
+	ContactPair Narrowphase::clipPolygonPolygon(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		auto polygonA = static_cast<const Polygon*>(shapeA);
 		auto polygonB = static_cast<const Polygon*>(shapeB);
@@ -1117,8 +1117,8 @@ namespace ST
 		return clipTwoEdge(va1, va2, vb1, vb2, info);
 	}
 
-	ContactPair Narrowphase::clipPolygonEdge(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
+	ContactPair Narrowphase::clipPolygonEdge(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		auto polygonA = static_cast<const Polygon*>(shapeA);
 		auto edgeB = static_cast<const Segment*>(shapeB);
@@ -1131,16 +1131,16 @@ namespace ST
 		return clipTwoEdge(va1, va2, vb1, vb2, info);
 	}
 
-	ContactPair Narrowphase::clipPolygonCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
+	ContactPair Narrowphase::clipPolygonCapsule(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		ContactPair pair;
 
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipPolygonRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
+	ContactPair Narrowphase::clipPolygonRound(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		auto polygonA = static_cast<const Polygon*>(shapeA);
 		const Vector2 va1 = transformA.translatePoint(polygonA->vertices()[featureA.index[0]]);
@@ -1151,16 +1151,16 @@ namespace ST
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipEdgeCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
+	ContactPair Narrowphase::clipEdgeCapsule(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, const CollisionInfo& info)
 	{
 		ContactPair pair;
 		
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipEdgeRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipEdgeRound(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
 		auto edgeA = static_cast<const Segment*>(shapeA);
 		const Vector2 va1 = transformA.translatePoint(edgeA->startPoint());
@@ -1171,16 +1171,16 @@ namespace ST
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipCapsuleCapsule(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipCapsuleCapsule(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
 		ContactPair pair;
 
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipCapsuleRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipCapsuleRound(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
 		ContactPair pair;
 		const Vector2 localA1 = transformA.inverseTranslatePoint(featureA.vertex[0]);
@@ -1203,8 +1203,8 @@ namespace ST
 		return pair;
 	}
 
-	ContactPair Narrowphase::clipRoundRound(const Transform& transformA, const Shape* shapeA, const Transform& transformB,
-		const Shape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
+	ContactPair Narrowphase::clipRoundRound(const Transform2D& transformA, const AbstractShape* shapeA, const Transform2D& transformB,
+		const AbstractShape* shapeB, const Feature& featureA, const Feature& featureB, CollisionInfo& info)
 	{
 		//need to fix old info
 		ContactPair pair;

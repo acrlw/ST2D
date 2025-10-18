@@ -39,7 +39,7 @@ namespace STEditor
 	{
 		for (int i = 0; i < m_objectIds.size(); ++i)
 		{
-			Transform transform{ m_positions[i], m_rotations[i], 1.0f };
+			Transform2D transform{ m_positions[i], m_rotations[i], 1.0f };
 
 			if (m_showObjectID)
 			{
@@ -102,8 +102,8 @@ namespace STEditor
 				if (i != m_bulletId)
 					continue;
 
-				Transform tf;
-				Transform objectTf{ m_positions[i], m_rotations[i], 1.0f };
+				Transform2D tf;
+				Transform2D objectTf{ m_positions[i], m_rotations[i], 1.0f };
 				AABB localAABB = AABB::fromShape(tf, m_shapes[i]);
 				
 
@@ -124,7 +124,7 @@ namespace STEditor
 					minY = Math::min(minY, point.y);
 					maxY = Math::max(maxY, point.y);
 				}
-				Transform stepTf;
+				Transform2D stepTf;
 				stepTf.position = m_positions[i];
 				stepTf.rotation = m_rotations[i];
 				Vector2 stepVelocity = m_velocities[i] * m_timeStep;
@@ -132,7 +132,7 @@ namespace STEditor
 				stepTf.position += stepVelocity;
 				stepTf.rotation += stepRotation;
 
-				Transform specificTf;
+				Transform2D specificTf;
 				// lerp
 				specificTf.position = m_positions[i] + (stepTf.position - m_positions[i]) * m_t;
 				specificTf.rotation = m_rotations[i] + (stepTf.rotation - m_rotations[i]) * m_t;
@@ -142,7 +142,7 @@ namespace STEditor
 
 				if (m_showFeature)
 				{
-					Transform tfB;
+					Transform2D tfB;
 					tfB.position = m_positions[m_objectId];
 					tfB.rotation = m_rotations[m_objectId];
 					tfB.scale = 1.0f;
@@ -218,7 +218,7 @@ namespace STEditor
 						continue;
 
 					real Rl = sqrt(lx * lx + ly * ly);
-					real period = Constant::DoublePi / abs(w);
+					real period = Constant::TwoPi / abs(w);
 					std::vector<real> t_list;
 
 					// solve for dp_x(t)/dt
@@ -366,7 +366,7 @@ namespace STEditor
 	void ContinuousScene::createObjects()
 	{
 		// create island
-		Transform tf{ Vector2(0.0f, 0.0f), 0.0f, 1.0f };
+		Transform2D tf{ Vector2(0.0f, 0.0f), 0.0f, 1.0f };
 		//m_landId = m_idIndex++;
 		//m_objectIds.push_back(m_landId);
 		//m_positions.push_back(Vector2(0.0f, 0.0f));
@@ -428,7 +428,7 @@ namespace STEditor
 		{
 			m_positions[i] += m_velocities[i] * dt;
 			m_rotations[i] += m_angularVelocities[i] * dt;
-			Transform tf{ m_positions[i], m_rotations[i], 1.0f };
+			Transform2D tf{ m_positions[i], m_rotations[i], 1.0f };
 			m_aabbs[i] = AABB::fromShape(tf, m_shapes[i]);
 		}
 	}
